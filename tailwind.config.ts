@@ -11,6 +11,15 @@ const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      /**
+       * ⚠️ `--font-sans` NI `layout.tsx` DAGI `next/font` BERADI.
+       * Bu yerda shrift NOMI yozilsa (masalan "Plus Jakarta Sans"),
+       * brauzer uni tizimdan qidirib topa olmay, standart shriftga
+       * qaytardi — ya'ni `next/font` yuklagan fayl ishlatilmasdi.
+       */
+      fontFamily: {
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -48,10 +57,26 @@ const config: Config = {
           high: "hsl(var(--severity-high))",
         },
       },
+      /**
+       * ⚠️ RADIUS SHKALASI `--radius` DAN HOSILA. Karta yirik
+       * (`2xl`), uning ichidagi element kichikroq bo'lishi kerak:
+       * bir xil radius ichma-ich joylashganda "qavariq" ko'rinardi.
+       */
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        "2xl": "var(--radius)",
+        xl: "calc(var(--radius) - 0.375rem)",
+        lg: "calc(var(--radius) - 0.5rem)",
+        md: "calc(var(--radius) - 0.625rem)",
+        sm: "calc(var(--radius) - 0.75rem)",
+      },
+      /**
+       * ⚠️ SOYA TOKENDAN: kartaning "balandligi" bitta joydan
+       * boshqariladi. Komponentda `shadow-[0_4px...]` yozilsa,
+       * tungi rejimda uni ikkinchi marta e'lon qilish kerak bo'lardi.
+       */
+      boxShadow: {
+        card: "var(--shadow-card)",
+        lift: "var(--shadow-lift)",
       },
       keyframes: {
         "accordion-down": {
@@ -62,10 +87,16 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        /** Karta paydo bo'lishi — ro'yxat "sakramasligi" uchun. */
+        "fade-up": {
+          from: { opacity: "0", transform: "translateY(6px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-up": "fade-up 0.25s ease-out both",
       },
     },
   },

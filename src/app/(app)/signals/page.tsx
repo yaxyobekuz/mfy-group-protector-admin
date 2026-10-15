@@ -99,7 +99,6 @@ export default function SignalsPage() {
     <>
       <PageHeader
         title="Signallar"
-        description="AI MFY guruhlaridagi xabarlardan ajratgan gaplar. Signal — hali muammo emas: tekshirib, murojaatga aylantirasiz yoki e'tiborsiz qoldirasiz."
         actions={
           can("signals.run") ? (
             <Button

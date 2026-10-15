@@ -71,7 +71,6 @@ export default function AuditPage() {
     <>
       <PageHeader
         title="Audit jurnali"
-        description="Kim nima qildi. Jurnal faqat to'ldiriladi — yozuvni tahrirlash yoki o'chirish mumkin emas."
       />
 
       <div className="mb-4 max-w-xs">

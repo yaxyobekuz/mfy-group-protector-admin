@@ -71,7 +71,6 @@ export default function TerritoryPage() {
     <>
       <PageHeader
         title="Hudud"
-        description="Tumanlar va mahallalar (MFY). Telegram guruhi MFY ga biriktirilmasa kuzatuvga qo'yilmaydi va signallari hududsiz qoladi."
       />
 
       <Tabs defaultValue="mahallas">

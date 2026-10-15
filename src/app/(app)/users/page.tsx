@@ -85,7 +85,6 @@ export default function UsersPage() {
     <>
       <PageHeader
         title="Xodimlar"
-        description="Ruxsat — nima qila oladi. Qamrov — kimning ma'lumotini ko'radi. Ikkisi alohida beriladi."
         actions={
           canManage ? (
             <Button onClick={() => setForm({})}>

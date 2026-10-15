@@ -86,7 +86,6 @@ export default function IssuesPage() {
     <>
       <PageHeader
         title="Murojaatlar"
-        description="Rasmiy navbat: AI signallaridan biriktirilgan, botdan yuborilgan va qo'lda kiritilgan murojaatlar."
       />
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

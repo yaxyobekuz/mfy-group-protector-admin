@@ -14,7 +14,12 @@ export const Badge = ({
 }: React.HTMLAttributes<HTMLSpanElement>) => (
   <span
     className={cn(
-      "inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium",
+      // ⚠️ `rounded-full` — panel tilida yorliq "tabletka".
+      //
+      // ⚠️ `whitespace-nowrap`: yorliq tor jadval ustunida IKKI
+      // QATORGA bo'linib ketardi ("Hal\nqilindi") va tabletka
+      // shakli buzilardi.
+      "inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium",
       "bg-secondary text-secondary-foreground",
       className,
     )}

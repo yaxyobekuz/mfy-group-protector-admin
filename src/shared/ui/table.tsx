@@ -25,7 +25,10 @@ export const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
+  // ⚠️ SARLAVHA FONI OHISTA: chiziq o'rniga fon ishlatiladi —
+  // yirik radiusli karta ichida gorizontal chiziq kartani
+  // "kesib" tashlagandek ko'rinardi.
+  <thead ref={ref} className={cn("bg-muted/50", className)} {...props} />
 ));
 TableHeader.displayName = "TableHeader";
 
@@ -56,7 +59,10 @@ export const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-10 whitespace-nowrap px-4 text-left align-middle text-xs font-medium uppercase tracking-wide text-muted-foreground",
+      // ⚠️ KATTA HARF EMAS: uzun o'zbek ustun nomlari ("Biriktirilgan
+      // MFY") katta harfda ikki barobar joy egallab, qatorga
+      // sig'masdi. Ajratish uchun RANG va QALINLIK yetarli.
+      "h-11 whitespace-nowrap px-4 text-left align-middle text-xs font-semibold text-muted-foreground",
       className,
     )}
     {...props}

@@ -9,6 +9,7 @@
  * cheksiz yo'naltirib qolardi.
  */
 
+import { ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -60,16 +61,35 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4">
+      {/*
+        FON NURI — ikki yumshoq dog'.
+
+        ⚠️ `pointer-events-none` + `aria-hidden`: bu sof bezak va
+        u formadagi bosishni "yutib" qolmasligi hamda ekran
+        o'qigichda o'qilmasligi kerak.
+      */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-24 -top-24 size-[28rem] rounded-full bg-primary/15 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-32 -right-24 size-[26rem] rounded-full bg-primary/10 blur-3xl"
+      />
+
+      <Card className="relative w-full max-w-sm shadow-lift">
+        <CardHeader className="items-center pb-5 pt-7 text-center">
+          <span className="mb-3 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground">
+            <ShieldCheck className="size-7" />
+          </span>
           <CardTitle className="text-xl">Viloyat shtabi</CardTitle>
           <CardDescription>
             MFY guruhlaridagi muammolarni aniqlash tizimi
           </CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="pb-7">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="username">Login</Label>
@@ -101,6 +121,7 @@ export default function LoginPage() {
 
             <Button
               type="submit"
+              size="lg"
               className="w-full"
               // ⚠️ BO'SH MAYDONLARDA O'CHIRILGAN: server baribir rad
               // etardi, lekin bu bir keraksiz so'rov va bir

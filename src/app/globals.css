@@ -6,71 +6,141 @@
  * ⚠️ RANGLAR BITTA JOYDA (`:root` + `.dark`). Komponentlarda hex
  * yozilmaydi: tungi rejim uchun har rangni ikkinchi marta e'lon
  * qilish kerak bo'lardi va ular albatta ajralib ketardi.
+ *
+ * ── DIZAYN YO'NALISHI ─────────────────────────────────────────
+ *
+ * Panel "suzuvchi kartalar" tilida: YUMSHOQ fon ustida OQ kartalar,
+ * yirik radius, chegara o'rniga yumshoq soya.
+ *
+ * ⚠️ FON OQ EMAS (`--background` ≠ `--card`). Ikkisi bir xil bo'lsa
+ * karta fondan ajralmay, butun ekran bitta tekis varaqqa aylanardi
+ * va "qayerda nima tugadi" ko'rinmasdi.
+ *
+ * ⚠️ ACCENT BITTA — yashil. Signal/murojaat holatlari uchun rang
+ * MA'NO tashiydi (`labels.ts`), shuning uchun brend rangi ularning
+ * biri bilan to'qnashmasligi kerak.
  */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    /* Fon — sovuq-kulrang, oq EMAS. */
+    --background: 150 12% 95%;
+    --foreground: 155 25% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 155 25% 10%;
 
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
+    /* Brend — to'yingan yashil. */
+    --primary: 152 58% 28%;
+    --primary-foreground: 150 40% 98%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 150 14% 93%;
+    --secondary-foreground: 155 25% 14%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 150 12% 94%;
+    --muted-foreground: 155 10% 42%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 150 30% 92%;
+    --accent-foreground: 152 58% 22%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 48%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    /*
+     * ⚠️ CHEGARA JUDA OCH: kartalar soya bilan ajraladi, chiziq
+     * bilan emas. To'q chegara ularni "quti"ga aylantirardi.
+     */
+    --border: 150 12% 88%;
+    --input: 150 12% 86%;
+    --ring: 152 58% 32%;
 
     /* Jiddiylik — signal kartalarida. */
-    --severity-low: 215 16% 47%;
-    --severity-normal: 36 92% 50%;
-    --severity-high: 0 72% 51%;
+    --severity-low: 155 10% 45%;
+    --severity-normal: 32 92% 46%;
+    --severity-high: 0 72% 48%;
 
-    --radius: 0.625rem;
+    /* ⚠️ YIRIK RADIUS — "suzuvchi karta" tilining asosi. */
+    --radius: 1.25rem;
+
+    /*
+     * SOYALAR — tokenda, chunki ular kartaning "balandligini"
+     * bildiradi va bitta joydan boshqarilishi kerak.
+     */
+    --shadow-card: 0 1px 2px -1px hsl(155 25% 10% / 0.04),
+      0 4px 16px -4px hsl(155 25% 10% / 0.06);
+    --shadow-lift: 0 2px 4px -2px hsl(155 25% 10% / 0.06),
+      0 12px 32px -8px hsl(155 25% 10% / 0.12);
   }
 
   .dark {
-    --background: 222 47% 7%;
-    --foreground: 210 40% 96%;
+    /*
+     * ── TUNGI REJIM: NEYTRAL KO'MIR ──────────────────────────
+     *
+     * ⚠️ FON VA KARTA RANGSIZ (to'yinganlik ~0%). Avval ular
+     * yashil tusda edi va butun ekran "botqoq yashil" bo'lib
+     * ko'rinardi: yashil hamma joyda bo'lgach, u ACCENT bo'lishdan
+     * to'xtab, hech narsani ajratmay qoldi.
+     *
+     * Yashil endi FAQAT accent: tugma, faol menyu bandi,
+     * ta'kidlangan raqam. Fon unga joy beradi, u bilan
+     * raqobatlashmaydi.
+     *
+     * ⚠️ KARTA FONDAN SEZILARLI OCHIQROQ (7% → 11%). Tunda soya
+     * KO'RINMAYDI, ya'ni kartani ajratishning yagona vositasi —
+     * shu farq va `--border`.
+     */
+    --background: 0 0% 7%;
+    --foreground: 0 0% 96%;
 
-    --card: 222 47% 10%;
-    --card-foreground: 210 40% 96%;
+    --card: 0 0% 11%;
+    --card-foreground: 0 0% 96%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
+    /* ⚠️ TUNDA YORQINROQ: to'q fonda quyuq yashil o'qilmasdi. */
+    --primary: 150 52% 45%;
+    --primary-foreground: 0 0% 7%;
 
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 96%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 0 0% 96%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 64%;
 
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 96%;
+    /*
+     * ⚠️ `accent` — HOVER FONI, yashil EMAS. Yashil hover butun
+     * menyuni rangga ko'mib, faol bandni ajratib bo'lmay
+     * qolardi.
+     */
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 96%;
 
-    --destructive: 0 63% 50%;
-    --destructive-foreground: 210 40% 98%;
+    /*
+     * ⚠️ TUNDA YORQINROQ VA TO'YINGANROQ: yuqori jiddiylikdagi
+     * signal kartasining chap chizig'i aynan shu rang bilan
+     * chiziladi va ko'mir fonda quyuq qizil deyarli ko'rinmay,
+     * "e'tibor kerak" belgisi yo'qolardi.
+     */
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217 33% 20%;
-    --input: 217 33% 20%;
-    --ring: 217 91% 60%;
+    /*
+     * ⚠️ CHEGARA TUNDA KO'RINADI va KARTA FONIDAN OCHIQROQ
+     * (11% → 22%): soyaning o'rnini u bosadi. Chegara kartadan
+     * to'qroq yoki teng bo'lsa, u ko'rinmay qolib, kartalar
+     * fonga qo'shilib ketardi.
+     */
+    --border: 0 0% 22%;
+    --input: 0 0% 26%;
+    --ring: 150 52% 45%;
 
-    --severity-low: 215 20% 65%;
-    --severity-normal: 36 92% 55%;
-    --severity-high: 0 72% 60%;
+    --severity-low: 0 0% 62%;
+    --severity-normal: 32 88% 58%;
+    --severity-high: 0 72% 62%;
+
+    /* ⚠️ TUNDA SOYA KUCHLIROQ, lekin baribir ko'rinmaydi —
+       kartani `--card` ning fondan farqi ajratadi. */
+    --shadow-card: 0 1px 2px -1px hsl(0 0% 0% / 0.3),
+      0 4px 16px -4px hsl(0 0% 0% / 0.35);
+    --shadow-lift: 0 2px 4px -2px hsl(0 0% 0% / 0.35),
+      0 12px 32px -8px hsl(0 0% 0% / 0.45);
   }
 }
 
@@ -91,5 +161,42 @@
    */
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+
+  /**
+   * YIRIK KO'RSATKICH RAQAMI.
+   *
+   * ⚠️ `tracking` MANFIY: 40px dan katta o'lchamda standart
+   * oraliq raqamlarni "sochilgan" ko'rsatadi.
+   */
+  .metric {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.035em;
+    line-height: 0.95;
+  }
+
+  /**
+   * ⚠️ FOKUS HALQASI SAQLANADI: dizayn yumshatilganda uni olib
+   * tashlash klaviatura bilan ishlaydigan xodimni yo'ldan
+   * chiqarardi (qayerdaligi ko'rinmay qolardi).
+   */
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
+  }
+
+  /**
+   * ⚠️ HARAKAT KAMAYTIRILISHI HURMAT QILINADI: vestibulyar
+   * sezgirligi bor odamda animatsiya bosh aylanishiga sabab
+   * bo'ladi.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }

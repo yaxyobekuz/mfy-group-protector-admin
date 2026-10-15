@@ -59,10 +59,15 @@ export const SignalCard = ({
         // kartani qizil qilish emas: ro'yxatda bir nechta shunday
         // karta bo'lsa, ekran butunlay qizil bo'lib, ajratish
         // ma'nosi yo'qolardi.
-        signal.severity === "high" && isNew && "border-l-4 border-l-destructive",
+        // ⚠️ `overflow-hidden`: chiziq kartaning YUMALOQ burchagiga
+        // moslashadi. Usiz u to'g'ri burchakli bo'lib, radiusdan
+        // tashqariga chiqib turardi.
+        signal.severity === "high" &&
+          isNew &&
+          "overflow-hidden border-l-4 border-l-destructive",
       )}
     >
-      <CardContent className="space-y-3 p-4">
+      <CardContent className="space-y-3.5 p-5">
         {/* ── Yorliqlar ───────────────────────────────────────── */}
         <div className="flex flex-wrap items-center gap-1.5">
           <Badge className={kind.className}>{kind.label}</Badge>
@@ -79,7 +84,12 @@ export const SignalCard = ({
         </div>
 
         {/* ── Xabar matni (IQTIBOS) ───────────────────────────── */}
-        <blockquote className="border-l-2 border-muted pl-3 text-sm leading-relaxed">
+        {/*
+          ⚠️ FONLI IQTIBOS: chiziqning o'zi yirik radiusli kartada
+          zaif qolardi. Fon matnni "aholi aytgan gap" sifatida
+          ajratib, kartaning qolgan qismidan uzadi.
+        */}
+        <blockquote className="rounded-xl border-l-[3px] border-l-primary/40 bg-muted/60 py-3 pl-4 pr-3 text-sm leading-relaxed">
           {signal.summary}
         </blockquote>
 

@@ -45,7 +45,7 @@ export const SIGNAL_KIND: Record<SignalKind, LabelDef> = {
 export const SIGNAL_SEVERITY: Record<SignalSeverity, LabelDef> = {
   low: {
     label: "Past",
-    className: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+    className: "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300",
   },
   normal: {
     label: "O'rta",
@@ -64,11 +64,11 @@ export const SIGNAL_STATUS: Record<SignalStatus, LabelDef> = {
   },
   attached: {
     label: "Muammoga biriktirilgan",
-    className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+    className: "bg-primary/10 text-primary dark:bg-primary/20",
   },
   dismissed: {
     label: "E'tiborsiz qoldirilgan",
-    className: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+    className: "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-400",
   },
 };
 
@@ -83,22 +83,22 @@ export const ISSUE_STATUS: Record<IssueStatus, LabelDef> = {
   },
   resolved: {
     label: "Hal qilindi",
-    className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+    className: "bg-primary/10 text-primary dark:bg-primary/20",
   },
   rejected: {
     label: "Rad etildi",
-    className: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400",
+    className: "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-400",
   },
 };
 
 export const ISSUE_PRIORITY: Record<IssuePriority, LabelDef> = {
   low: {
     label: "Past",
-    className: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+    className: "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300",
   },
   normal: {
     label: "Oddiy",
-    className: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-200",
+    className: "bg-stone-100 text-stone-700 dark:bg-zinc-800 dark:text-zinc-200",
   },
   high: {
     label: "Yuqori",
@@ -125,7 +125,7 @@ export const ISSUE_SOURCE: Record<IssueSource, LabelDef> = {
   },
   manual: {
     label: "Qo'lda",
-    className: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+    className: "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300",
   },
 };
 

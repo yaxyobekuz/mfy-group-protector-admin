@@ -3,27 +3,27 @@ import type { ReactNode } from "react";
 /**
  * SAHIFA SARLAVHASI.
  *
- * ⚠️ `description` TAVSIYA ETILADI: bu panel atamalari odatiy
- * emas ("signal", "rasmiy guruh") va bir qatorli izoh
- * foydalanuvchiga ularning MA'NOSINI aytadi. Yo'riqnoma o'qiydigan
- * odam yo'q.
+ * ⚠️ `description` PROPI YO'Q va qaytarilmaydi: sarlavha ostidagi
+ * izohlar ataylab olib tashlandi. Propni "ixtiyoriy" holda qoldirish
+ * ularning birma-bir qaytib kelishiga yo'l qo'yardi — har safar
+ * bitta sahifada, va panel yana ikki xil ko'rinishga ega bo'lardi.
  */
 export const PageHeader = ({
   title,
-  description,
   actions,
 }: {
   title: string;
-  description?: string;
   actions?: ReactNode;
 }) => (
-  <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
-    <div className="space-y-1">
-      <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-      {description ? (
-        <p className="max-w-2xl text-sm text-muted-foreground">{description}</p>
-      ) : null}
-    </div>
-    {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+  /**
+   * ⚠️ SARLAVHA YIRIK (`text-3xl`): izoh olib tashlangandan keyin
+   * sahifaning boshi faqat shu qator bilan belgilanadi va kichik
+   * sarlavha karta sarlavhalaridan ajralmay qolardi.
+   */
+  <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <h1 className="text-2xl font-semibold tracking-tight lg:text-3xl">{title}</h1>
+    {actions ? (
+      <div className="flex flex-wrap items-center gap-2">{actions}</div>
+    ) : null}
   </div>
 );

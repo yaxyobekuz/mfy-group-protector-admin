@@ -75,7 +75,6 @@ export default function GroupsPage() {
     <>
       <PageHeader
         title="Telegram guruhlari"
-        description="Bot qo'shilgan guruhlar. Kuzatuv yoqilgan guruhlardagi xabarlar AI tahliliga tushadi — bot guruhda hech narsa yozmaydi."
       />
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

@@ -14,6 +14,7 @@
  * yoki xato topganini bildirmaydi).
  */
 
+import { useTheme } from "next-themes";
 import { useState } from "react";
 import {
   Bar,
@@ -73,18 +74,71 @@ const ALL = "__all__";
  * aralashtirish "yashil kategoriya yaxshi" degan noto'g'ri
  * o'qishni tug'dirardi.
  */
-const CHART_COLORS = [
-  "#2563eb",
-  "#ea580c",
-  "#16a34a",
-  "#9333ea",
-  "#dc2626",
-  "#0891b2",
-  "#c2410c",
-  "#64748b",
+/**
+ * ⚠️ RANGLAR VALIDATORDAN O'TKAZILGAN, ko'z bilan tanlanmagan.
+ * Har ikki rejim uchun tekshirildi: yorug'lik tasmasi, xroma
+ * chegarasi, rang ko'rmaslikda (protan/deutan/tritan) ajralish va
+ * fon bilan kontrast. Qiymatni O'ZGARTIRSANGIZ qayta tekshiring —
+ * "chiroyliroq" ko'ringan rang ko'pincha daltonikda qo'shnisi
+ * bilan qo'shilib ketadi.
+ *
+ * ⚠️ TUNGI RO'YXAT ALOHIDA TANLANGAN, yorug'ining "aylantirilgani"
+ * EMAS: to'q fonda quyuq ranglar kontrast chegarasidan o'tmasdi.
+ *
+ * ⚠️ BIRINCHI SLOT — BREND YASHILI: diagrammada "hal qilingan"
+ * chizig'i panelning qolgan qismidagi yashil bilan bir xil
+ * ma'noni tashishi kerak.
+ */
+const CHART_COLORS_LIGHT = [
+  "#1d7a4d",
+  "#eb6834",
+  "#2a78d6",
+  "#eda100",
+  "#c2185b",
+  "#6250d6",
+  "#00897b",
+];
+
+const CHART_COLORS_DARK = [
+  "#2f9a66",
+  "#d4653a",
+  "#4a8ad8",
+  "#e04f80",
+  "#7d6ce0",
+  "#b8881c",
+  "#179c90",
 ];
 
 export default function ReportsPage() {
+  /**
+   * ⚠️ `resolvedTheme`, `theme` EMAS: `theme` "system" bo'lishi
+   * mumkin va o'shanda qaysi rang kerakligi noma'lum qolardi.
+   *
+   * ⚠️ SERVERDA `undefined` — shuning uchun standart YORUG'.
+   * Aks holda birinchi render'da tungi ranglar chizilib, keyin
+   * yorug'iga almashardi ("miltillash").
+   */
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const chartColors = isDark ? CHART_COLORS_DARK : CHART_COLORS_LIGHT;
+
+  /**
+   * TOOLTIP USLUBI — BITTA JOYDA, uchala diagramma uchun.
+   *
+   * ⚠️ RECHARTS TOOLTIPNI `<body>` DAN TASHQARIDA emas, o'z inline
+   * uslubi bilan chizadi va u mavzuni BILMAYDI: standart holda
+   * oq fon qoladi. Tungi rejimda bu ko'zni qamashtirib, sarlavha
+   * matni (och kulrang) oq fonda deyarli o'qilmasdi.
+   */
+  const tooltipStyle = {
+    fontSize: 12,
+    borderRadius: 12,
+    backgroundColor: isDark ? "#1c1c1c" : "#ffffff",
+    border: `1px solid ${isDark ? "#2e2e2e" : "#e2e8e5"}`,
+    color: isDark ? "#f5f5f5" : "#0f1a15",
+    boxShadow: "0 8px 24px -8px rgb(0 0 0 / 0.25)",
+  } as const;
+
   const [filters, setFilters] = useState<ReportFilters>({
     // ⚠️ STANDART OYNA — 30 KUN: butun tarix bo'yicha hisobot
     // birinchi ochilishda sekin bo'lardi va "bu oy nima bo'ldi"
@@ -109,7 +163,6 @@ export default function ReportsPage() {
     <>
       <PageHeader
         title="Hisobotlar"
-        description={`${formatDateUz(filters.from)} — ${formatDateUz(filters.to)} oralig'idagi murojaatlar.`}
       />
 
       {/* ── Filtrlar ─────────────────────────────────────────── */}
@@ -274,14 +327,24 @@ export default function ReportsPage() {
                       // yaroqsiz qiymatda "—" qaytaradi, shuning
                       // uchun qo'shimcha tekshiruv kerak emas.
                       labelFormatter={(label) => formatDateUz(label as string)}
-                      contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                      contentStyle={tooltipStyle}
+                      // ⚠️ SARLAVHA RANGI ALOHIDA: recharts uni
+                      // `contentStyle` dan OLMAYDI va tunda o'zining
+                      // och kulrangida qolib, o'qilmasdi.
+                      labelStyle={{ color: tooltipStyle.color, fontWeight: 600 }}
                     />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
+                    {/*
+                      ⚠️ "HAL QILINGAN" — BREND YASHILI (slot 0):
+                      panelning qolgan joyida yashil aynan shu
+                      ma'noni tashiydi. Teskari bog'lansa, bitta
+                      ekranda yashil ikki xil narsani bildirardi.
+                    */}
                     <Line
                       type="monotone"
                       dataKey="total"
                       name="Kelgan"
-                      stroke={CHART_COLORS[0]}
+                      stroke={chartColors[2]}
                       strokeWidth={2}
                       dot={false}
                     />
@@ -289,7 +352,7 @@ export default function ReportsPage() {
                       type="monotone"
                       dataKey="resolved"
                       name="Hal qilingan"
-                      stroke={CHART_COLORS[2]}
+                      stroke={chartColors[0]}
                       strokeWidth={2}
                       dot={false}
                     />
@@ -321,12 +384,12 @@ export default function ReportsPage() {
                         fontSize={11}
                         width={110}
                       />
-                      <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                      <Tooltip contentStyle={tooltipStyle} />
                       <Bar dataKey="count" name="Murojaat" radius={[0, 4, 4, 0]}>
                         {territory.data?.districts.map((_, index) => (
                           <Cell
                             key={index}
-                            fill={CHART_COLORS[index % CHART_COLORS.length]}
+                            fill={chartColors[index % chartColors.length]}
                           />
                         ))}
                       </Bar>
@@ -410,7 +473,7 @@ export default function ReportsPage() {
                     <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                     <XAxis type="number" fontSize={11} allowDecimals={false} />
                     <YAxis type="category" dataKey="name" fontSize={11} width={150} />
-                    <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
+                    <Tooltip contentStyle={tooltipStyle} />
                     <Bar dataKey="count" name="Murojaat" radius={[0, 4, 4, 0]}>
                       {categories.data?.map((row, index) => (
                         <Cell
@@ -419,7 +482,7 @@ export default function ReportsPage() {
                           // turadi: panelda u hamma joyda shu rang
                           // bilan ko'rinadi va diagramma boshqa
                           // rang bersa, bog'lash qiyin bo'lardi.
-                          fill={row.color ?? CHART_COLORS[index % CHART_COLORS.length]}
+                          fill={row.color ?? chartColors[index % chartColors.length]}
                         />
                       ))}
                     </Bar>
@@ -463,19 +526,22 @@ export default function ReportsPage() {
                   label="AI signalidan"
                   value={overview.data?.source.signal ?? 0}
                   total={overview.data?.total ?? 0}
-                  color={CHART_COLORS[3]!}
+                  color={chartColors[3]!}
                 />
                 <SourceRow
                   label="Botdan (xodim yubordi)"
                   value={overview.data?.source.bot ?? 0}
                   total={overview.data?.total ?? 0}
-                  color={CHART_COLORS[5]!}
+                  color={chartColors[5]!}
                 />
                 <SourceRow
                   label="Panelda qo'lda"
                   value={overview.data?.source.manual ?? 0}
                   total={overview.data?.total ?? 0}
-                  color={CHART_COLORS[7]!}
+                  // ⚠️ SLOT 6 — oxirgi mavjud rang. Palitra 7 ta
+                  // (0–6): kattaroq indeks `undefined` berib,
+                  // chiziq KO'RINMAY qolardi.
+                  color={chartColors[6]!}
                 />
               </CardContent>
             </Card>

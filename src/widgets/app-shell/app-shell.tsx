@@ -17,7 +17,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { LogOut, Menu, Moon, Sun } from "lucide-react";
+import { LogOut, Menu, Moon, ShieldCheck, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -93,11 +93,34 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
   );
 
   const sidebar = (
-    <nav className="flex h-full flex-col gap-1 p-3">
-      <div className="mb-4 px-2 pt-2">
-        <p className="font-semibold leading-tight">Viloyat shtabi</p>
-        <p className="text-xs text-muted-foreground">MFY muammolari</p>
+    <nav className="flex h-full flex-col gap-1 p-4">
+      {/*
+        BREND.
+
+        ⚠️ MAVZU ALMASHTIRGICHI SHU YERDA: yuqoridagi header olib
+        tashlangan va u boshqa hech qayerda yo'q edi — sidebar'ga
+        ko'chirilmasa tungi rejimni yoqish imkoni butunlay
+        yo'qolardi.
+      */}
+      <div className="mb-6 flex items-center justify-between gap-2 px-1 pt-1">
+        <div className="flex min-w-0 items-center gap-2.5">
+          {/* Belgi — rasm emas, shakl: yuklanishni kutmaydi. */}
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+            <ShieldCheck className="size-5" />
+          </span>
+          <div className="min-w-0 leading-tight">
+            <p className="truncate text-sm font-semibold">Viloyat shtabi</p>
+            <p className="truncate text-xs text-muted-foreground">
+              MFY muammolari
+            </p>
+          </div>
+        </div>
+        <ThemeToggle />
       </div>
+
+      <p className="px-3 pb-2 text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground/70">
+        Menyu
+      </p>
 
       {items.map((item) => {
         // ⚠️ `startsWith` ILDIZ UCHUN ISHLATILMAYDI: `/` hamma
@@ -112,38 +135,64 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
             key={item.href}
             href={item.href}
             onClick={() => setMobileOpen(false)}
+            // ⚠️ `aria-current`: ko'rish qobiliyati cheklangan
+            // foydalanuvchiga faol bandni RANG emas, dastur aytadi.
+            aria-current={isActive ? "page" : undefined}
             className={cn(
-              "flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors",
+              "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
               isActive
-                ? "bg-secondary font-medium text-secondary-foreground"
+                ? "bg-primary font-semibold text-primary-foreground shadow-card"
                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
             )}
           >
-            <item.icon className="size-4 shrink-0" />
+            <item.icon className="size-[1.125rem] shrink-0" />
             <span className="flex-1 truncate">{item.label}</span>
             {/* ⚠️ NOL KO'RSATILMAYDI: "0" yorlig'i e'tiborni
                 tortadi, lekin hech narsa bildirmaydi. */}
             {count > 0 ? (
-              <Badge className="tabular bg-primary/10 text-primary">{count}</Badge>
+              <Badge
+                className={cn(
+                  "tabular rounded-full px-2",
+                  // ⚠️ FAOL BANDDA KONTRAST TESKARI: yashil fonda
+                  // yashil yorliq o'qilmasdi.
+                  isActive
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "bg-primary/10 text-primary",
+                )}
+              >
+                {count}
+              </Badge>
             ) : null}
           </Link>
         );
       })}
 
-      <div className="mt-auto border-t pt-3">
-        <div className="px-2.5 pb-2">
-          <p className="truncate text-sm font-medium">
-            {user.username}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {USER_ROLE[user.role]} · {SCOPE_KIND[user.scopeKind]}
-          </p>
+      {/*
+        PROFIL — pastda, alohida kartada.
+
+        ⚠️ KARTA ICHIDA: sidebar oxiridagi oddiy matn "menyu bandi"
+        bo'lib ko'rinib, bosiladigandek tuyulardi.
+      */}
+      <div className="mt-auto space-y-2 pt-4">
+        <div className="rounded-xl bg-secondary/70 p-3">
+          <div className="flex items-center gap-2.5">
+            {/* Bosh harf — avatar rasmi yo'q. */}
+            <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/15 text-sm font-semibold uppercase text-primary">
+              {user.username.slice(0, 1)}
+            </span>
+            <div className="min-w-0 leading-tight">
+              <p className="truncate text-sm font-medium">{user.username}</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {USER_ROLE[user.role]} · {SCOPE_KIND[user.scopeKind]}
+              </p>
+            </div>
+          </div>
         </div>
 
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start text-muted-foreground"
+          className="w-full justify-start px-3 text-muted-foreground hover:text-destructive"
           onClick={() => void logout()}
         >
           <LogOut className="size-4" />
@@ -154,9 +203,21 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
   );
 
   return (
-    <div className="flex min-h-screen">
-      {/* Doimiy sidebar — katta ekranda. */}
-      <aside className="hidden w-60 shrink-0 border-r bg-card lg:block">
+    /**
+     * ⚠️ `h-screen` + `overflow-hidden`: sidebar QIMIRLAMAYDI,
+     * faqat asosiy maydon aylanadi. Butun sahifa birga aylanganda
+     * uzun jadvalda menyu ekrandan chiqib ketardi va operator
+     * boshqa bo'limga o'tish uchun har safar tepaga qaytarardi.
+     */
+    <div className="flex h-screen gap-0 overflow-hidden p-0 lg:gap-4 lg:p-4">
+      {/*
+        Doimiy sidebar — katta ekranda.
+
+        ⚠️ "SUZUVCHI": fonga yopishgan emas, o'z kartasi bor
+        (`rounded-2xl` + soya). Chegara bilan u ekranni ikkiga
+        kesib tashlardi.
+      */}
+      <aside className="hidden w-[16.5rem] shrink-0 rounded-2xl bg-card shadow-card dark:border dark:border-border lg:block">
         {sidebar}
       </aside>
 
@@ -176,32 +237,47 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
             className="absolute inset-0 bg-black/60"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="relative h-full w-64 border-r bg-card">{sidebar}</aside>
+          <aside className="relative h-full w-[17rem] bg-card shadow-lift dark:border-r dark:border-border">
+            {sidebar}
+          </aside>
         </div>
       ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center gap-2 border-b bg-card px-4">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/*
+          MENYU TUGMASI — FAQAT MOBILDA.
+
+          ⚠️ HEADER OLIB TASHLANGAN, lekin bu tugma QOLDI: u kichik
+          ekranda sidebar'ni ochadigan YAGONA yo'l edi va u bilan
+          birga o'chirilsa, telefonda navigatsiya butunlay
+          yo'qolardi.
+
+          ⚠️ `sticky` + `z-40`: sahifa aylanganda ham joyida qoladi,
+          lekin mobil overlay (`z-50`) dan PASTDA turadi — aks holda
+          menyu ochiqligida tugma uning ustida ko'rinib qolardi.
+        */}
+        <div className="flex shrink-0 items-center gap-2 px-3 py-2 lg:hidden">
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
             onClick={() => setMobileOpen(true)}
             aria-label="Menyu"
           >
-            <Menu className="size-4" />
+            <Menu className="size-5" />
           </Button>
-
-          <div className="flex-1" />
-
-          <ThemeToggle />
-        </header>
+          <span className="text-sm font-semibold">Viloyat shtabi</span>
+        </div>
 
         {/*
           ⚠️ `min-w-0`: usiz keng jadval flex konteynerni cho'zib,
           sidebar'ni ekrandan chiqarib yuborardi.
+
+          ⚠️ AYLANISH SHU YERDA (`overflow-y-auto`), sahifada emas —
+          sidebar joyida qolishi uchun.
         */}
-        <main className="min-w-0 flex-1 p-4 lg:p-6">{children}</main>
+        <main className="min-w-0 flex-1 overflow-y-auto px-4 pb-8 pt-2 lg:px-6 lg:pt-4">
+          {children}
+        </main>
       </div>
     </div>
   );
