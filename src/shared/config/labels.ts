@@ -18,6 +18,8 @@ import type {
   SignalKind,
   SignalSeverity,
   SignalStatus,
+  ThreatAction,
+  ThreatKind,
   UserRole,
 } from "../api/types";
 
@@ -155,6 +157,8 @@ export const AUDIT_ACTION: Record<string, string> = {
   "group.official_on": "Guruhni rasmiy deb belgiladi",
   "group.official_off": "Guruhdan rasmiy belgisini oldi",
   "group.assign_mahalla": "Guruhga MFY biriktirdi",
+  "group.guard_on": "Xavfsizlik qalqonini yoqdi",
+  "group.guard_off": "Xavfsizlik qalqonini o'chirdi",
   "signal.attach": "Signalni muammoga biriktirdi",
   "signal.dismiss": "Signalni e'tiborsiz qoldirdi",
   "issue.create": "Muammo yaratdi",
@@ -182,3 +186,90 @@ export const AUDIT_ACTION: Record<string, string> = {
 
 /** Sanoq so'zi — "12 ta murojaat". */
 export const plural = (count: number, word: string): string => `${count} ta ${word}`;
+
+// ═══════════════════════════════════════════════════════════════════
+//  XAVFSIZLIK
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * ⚠️ TUR MA'NO TASHIYDI va rang shunga qarab beriladi: apk — qasddan
+ * tarqatilgan dastur (qizil), qisqartirilgan havola esa ko'pincha
+ * oddiy e'lon (sariq). Ikkisini bitta rangga bo'yash ma'muriyatga
+ * "nima jiddiyroq" degan savolda yordam bermasdi.
+ */
+export const THREAT_KIND: Record<ThreatKind, LabelDef> = {
+  apk_file: {
+    label: "O'rnatma fayl",
+    className: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-200",
+  },
+  unknown_file: {
+    label: "Noma'lum fayl",
+    className: "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300",
+  },
+  suspicious_url: {
+    label: "Shubhali havola",
+    className: "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300",
+  },
+  shortened_url: {
+    label: "Qisqartirilgan havola",
+    className: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+  },
+  masked_url: {
+    label: "Yashirilgan manzil",
+    className: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-200",
+  },
+};
+
+/**
+ * ⚠️ "O'CHIRILDI" VA "O'CHIRILMADI" ANIQ AJRATILGAN: bot admin
+ * bo'lmasa o'chira olmaydi va bu holat ko'rinmasa, ma'muriyat
+ * "himoya ishlayapti" deb o'ylab yuraverardi.
+ */
+export const THREAT_ACTION: Record<ThreatAction, LabelDef> = {
+  deleted: {
+    label: "O'chirildi",
+    className: "bg-primary/10 text-primary dark:bg-primary/20",
+  },
+  detected: {
+    label: "O'chirilmadi",
+    className: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+  },
+  delete_failed: {
+    label: "Xato — o'chmadi",
+    className: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-200",
+  },
+};
+
+/**
+ * QOIDA KALITINI O'ZBEKCHAGA AYLANTIRADI.
+ *
+ * ⚠️ KALIT `turi:qiymat` SHAKLIDA (`installer_extension:apk`) —
+ * qiymat o'zgaruvchan, shuning uchun prefiks bo'yicha mos keladi.
+ * Tanilmagan kalit KALIT ko'rinishida chiqadi (audit bilan ayni
+ * yondashuv): bu `undefined` dan yaxshi va yangi qoida qo'shilganda
+ * panel darhol ishlayveradi.
+ */
+export const threatReason = (reason: string): string => {
+  const [key, value] = reason.split(":");
+
+  switch (key) {
+    case "installer_extension":
+      return `O'rnatma fayl kengaytmasi (.${value})`;
+    case "installer_mime":
+      return "O'rnatma fayl turi";
+    case "archive_extension":
+      return `Arxiv — ichidagi noma'lum (.${value})`;
+    case "double_extension":
+      return `Ikki kengaytmali nom (.${value} yashirilgan)`;
+    case "blocked_host":
+      return "Qora ro'yxatdagi domen";
+    case "url_shortener":
+      return "Qisqartirgich — manzil ko'rinmaydi";
+    case "userinfo_in_url":
+      return "Havolada @ belgisi — manzil yashirilgan";
+    case "raw_ip_host":
+      return "Domen o'rniga IP manzil";
+    default:
+      return reason;
+  }
+};

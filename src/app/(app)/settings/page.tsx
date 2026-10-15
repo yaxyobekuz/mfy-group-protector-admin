@@ -54,6 +54,26 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
 import { PageHeader } from "@/widgets/page-header/page-header";
 
+/**
+ * Qatorlarga bo'lingan domen ro'yxatini massivga aylantiradi.
+ *
+ * ⚠️ `https://` OLIB TASHLANADI: foydalanuvchi to'liq havola
+ * yopishtirishi tabiiy, lekin server FAQAT domen qabul qiladi
+ * (taqqoslash domen bo'yicha) va u 400 bilan rad etardi.
+ */
+const toHostList = (value: string): string[] =>
+  value
+    .split("\n")
+    .map((line) =>
+      line
+        .trim()
+        .toLowerCase()
+        .replace(/^https?:\/\//, "")
+        .replace(/^www\./, "")
+        .replace(/\/.*$/, ""),
+    )
+    .filter(Boolean);
+
 export default function SettingsPage() {
   const settings = useSettings();
   const status = useSignalStatus();
@@ -67,6 +87,10 @@ export default function SettingsPage() {
     messageRetentionHours: 24,
     alertChatIds: "",
     alertMinSeverity: "high" as SignalSeverity,
+    guardDeleteFiles: true,
+    guardDeleteUrls: true,
+    guardBlockedHosts: "",
+    guardAllowedHosts: "",
   });
 
   /**
@@ -88,6 +112,10 @@ export default function SettingsPage() {
       // kiritish uchun eng oddiy usul — har qatorga bittasi.
       alertChatIds: data.alertChatIds.join("\n"),
       alertMinSeverity: data.alertMinSeverity,
+      guardDeleteFiles: data.guardDeleteFiles,
+      guardDeleteUrls: data.guardDeleteUrls,
+      guardBlockedHosts: data.guardBlockedHosts.join("\n"),
+      guardAllowedHosts: data.guardAllowedHosts.join("\n"),
     });
   }, [settings.data]);
 
@@ -108,6 +136,13 @@ export default function SettingsPage() {
         .map((line) => line.trim())
         .filter(Boolean),
       alertMinSeverity: form.alertMinSeverity,
+
+      guardDeleteFiles: form.guardDeleteFiles,
+      guardDeleteUrls: form.guardDeleteUrls,
+      // ⚠️ `alertChatIds` BILAN AYNI SABAB: bo'sh satr serverdagi
+      // domen tekshiruvida (`@Matches`) yiqilardi.
+      guardBlockedHosts: toHostList(form.guardBlockedHosts),
+      guardAllowedHosts: toHostList(form.guardAllowedHosts),
     });
   };
 
@@ -263,6 +298,106 @@ export default function SettingsPage() {
                   <p className="text-xs text-muted-foreground">
                     Tahlildan keyin guruh xabarlari o&apos;chiriladi — bu aholining
                     yozishmasi. Signallar saqlanib qoladi.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* ── XAVFSIZLIK QALQONI ──────────────────────────── */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Xavfsizlik qalqoni</CardTitle>
+                <CardDescription>
+                  {/*
+                    ⚠️ BU YERDA FAQAT "NIMANI ZARARLI DEYISH"
+                    sozlanadi. Qalqonning O'ZI har guruhda alohida
+                    yoqiladi (Telegram guruhlari bo'limi) — bitta
+                    global tugma bilan hamma guruhda o'chirish
+                    boshlanishi mumkin emas.
+                  */}
+                  Qalqon har guruhda alohida yoqiladi. Bu yerda faqat nima
+                  zararli hisoblanishi belgilanadi.
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="guard-files">O&apos;rnatma fayllarni o&apos;chirish</Label>
+                    <p className="text-xs text-muted-foreground">
+                      APK, EXE va shunga o&apos;xshash fayllar hamda arxivlar.
+                    </p>
+                  </div>
+                  <Switch
+                    id="guard-files"
+                    checked={form.guardDeleteFiles}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, guardDeleteFiles: checked }))
+                    }
+                  />
+                </div>
+
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="guard-urls">Shubhali havolalarni o&apos;chirish</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Qisqartirgichlar, yashirilgan manzillar va qora ro&apos;yxatdagi
+                      domenlar.
+                    </p>
+                  </div>
+                  <Switch
+                    id="guard-urls"
+                    checked={form.guardDeleteUrls}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, guardDeleteUrls: checked }))
+                    }
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="allowed">Ruxsat etilgan domenlar</Label>
+                  <Textarea
+                    id="allowed"
+                    value={form.guardAllowedHosts}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        guardAllowedHosts: event.target.value,
+                      }))
+                    }
+                    placeholder={"gov.uz\nt.me"}
+                    rows={3}
+                  />
+                  {/*
+                    ⚠️ OQ RO'YXAT QORA RO'YXATDAN USTUN turishi
+                    AYTILADI: aks holda ma'muriyat ikkalasiga
+                    bitta domenni yozib, qaysi biri ishlashini
+                    bilmay qolardi.
+                  */}
+                  <p className="text-xs text-muted-foreground">
+                    Har qatorga bitta domen. Bu domenlar hech qachon
+                    o&apos;chirilmaydi — qora ro&apos;yxatdan ustun turadi.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="blocked">Bloklangan domenlar</Label>
+                  <Textarea
+                    id="blocked"
+                    value={form.guardBlockedHosts}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        guardBlockedHosts: event.target.value,
+                      }))
+                    }
+                    placeholder={"evil.com\nfake-bank.net"}
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Faqat domen (havola emas). Subdomenlar ham qamrab olinadi:
+                    <code className="ml-1">evil.com</code> →{" "}
+                    <code>sub.evil.com</code>.
                   </p>
                 </div>
               </CardContent>

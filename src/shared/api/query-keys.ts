@@ -43,6 +43,12 @@ export const queryKeys = {
     stats: () => ["groups", "stats"] as const,
   },
 
+  security: {
+    all: () => ["security"] as const,
+    list: (params?: QueryParams) => ["security", "list", params ?? {}] as const,
+    stats: () => ["security", "stats"] as const,
+  },
+
   signals: {
     all: () => ["signals"] as const,
     list: (params?: QueryParams) => ["signals", "list", params ?? {}] as const,

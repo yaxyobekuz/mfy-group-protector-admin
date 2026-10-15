@@ -139,6 +139,13 @@ export interface TelegramGroup {
   isOfficial: boolean;
   officialAt: string | null;
   officialBy: PersonRef | null;
+  /**
+   * ⚠️ `isOfficial` DAN ALOHIDA: qalqon aholini himoya qiladi
+   * (zararli fayl/havolani o'chiradi), `isOfficial` esa
+   * yozishmani O'QISHGA rozilik. Ikkisi bog'liq emas.
+   */
+  guardEnabled: boolean;
+  guardAt: string | null;
   /** ⚠️ `null` = hali biriktirilmagan. Bu NORMAL holat. */
   mahalla: MahallaWithDistrict | null;
   joinedAt: string;
@@ -153,6 +160,76 @@ export interface GroupStats {
   official: number;
   unassigned: number;
   pendingMessages: number;
+  /** Qalqon yoqilgan guruhlar soni. */
+  guarded: number;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  XAVFSIZLIK
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * ⚠️ `SecurityEvent` — `Signal` EMAS. Signal AI taxmini va u odam
+ * qaroriga muhtoj; bu yerda esa qoida qat'iy va bot ALLAQACHON
+ * harakat qilgan. Shuning uchun kartada "biriktirish" tugmasi yo'q.
+ */
+export type ThreatKind =
+  | "apk_file"
+  | "unknown_file"
+  | "suspicious_url"
+  | "shortened_url"
+  | "masked_url";
+
+export type ThreatAction = "deleted" | "detected" | "delete_failed";
+
+export interface SecurityEvent {
+  id: string;
+  chatId: string;
+  messageId: string | null;
+
+  kind: ThreatKind;
+  action: ThreatAction;
+
+  senderTgId: string | null;
+  senderName: string | null;
+  senderUsername: string | null;
+
+  fileName: string | null;
+  fileMime: string | null;
+  fileSize: number | null;
+  fileUniqueId: string | null;
+
+  url: string | null;
+  urlHost: string | null;
+
+  /** Qoida kaliti (`installer_extension:apk`). */
+  reason: string;
+
+  /** ⚠️ Xabar o'chirilgan — matn faqat shu yerda qoladi. */
+  messageText: string | null;
+  errorMessage: string | null;
+
+  sentAt: string | null;
+  createdAt: string;
+
+  group: {
+    chatId: string;
+    title: string;
+    username: string | null;
+    guardEnabled: boolean;
+    mahalla: MahallaWithDistrict | null;
+  };
+}
+
+export interface SecurityStats {
+  total: number;
+  deleted: number;
+  /** ⚠️ O'chirilmagan — bot admin emas yoki Telegram rad etdi. */
+  failed: number;
+  last24h: number;
+  byKind: Partial<Record<ThreatKind, number>>;
+  guardedGroups: number;
+  totalGroups: number;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -406,6 +483,15 @@ export interface Settings {
   messageRetentionHours: number;
   alertChatIds: string[];
   alertMinSeverity: SignalSeverity;
+
+  /** ── XAVFSIZLIK QALQONI ─────────────────────────────────────── */
+  guardDeleteFiles: boolean;
+  guardDeleteUrls: boolean;
+  /** ⚠️ Faqat domen (`evil.com`), to'liq havola EMAS. */
+  guardBlockedHosts: string[];
+  /** ⚠️ Qora ro'yxatdan USTUN turadi. */
+  guardAllowedHosts: string[];
+
   updatedAt: string;
   updatedBy: string | null;
 }

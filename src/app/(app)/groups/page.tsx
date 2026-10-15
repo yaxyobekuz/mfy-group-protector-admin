@@ -26,6 +26,7 @@ import {
   useSetOfficial,
   type GroupFilters,
 } from "@/features/groups/api";
+import { useSetGuard } from "@/features/security/api";
 import { useMahallas } from "@/features/territory/api";
 import { ApiError } from "@/shared/api/client";
 import { formatDateUz } from "@/shared/lib/date";
@@ -66,6 +67,7 @@ export default function GroupsPage() {
   const mahallas = useMahallas();
 
   const setOfficial = useSetOfficial();
+  const setGuard = useSetGuard();
   const assignMahalla = useAssignMahalla();
 
   const patch = (next: Partial<GroupFilters>) =>
@@ -183,6 +185,7 @@ export default function GroupsPage() {
                 <TableHead>Guruh</TableHead>
                 <TableHead>MFY</TableHead>
                 <TableHead>Kuzatuv</TableHead>
+                <TableHead>Qalqon</TableHead>
                 <TableHead className="text-right">Navbat</TableHead>
                 <TableHead className="text-right">Signal</TableHead>
               </TableRow>
@@ -287,11 +290,44 @@ export default function GroupsPage() {
                       <Badge
                         className={
                           group.isOfficial
-                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
-                            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                            ? "bg-primary/10 text-primary dark:bg-primary/20"
+                            : "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-400"
                         }
                       >
                         {group.isOfficial ? "Yoqilgan" : "O'chirilgan"}
+                      </Badge>
+                    )}
+                  </TableCell>
+
+                  {/* ── Qalqon ──────────────────────────────── */}
+                  {/*
+                    ⚠️ KUZATUVDAN ALOHIDA USTUN: `isOfficial` —
+                    yozishmani O'QISHGA rozilik, qalqon esa
+                    aholini himoya qiladi. Bitta ustunga
+                    qo'shilsa, ular bir narsadek ko'rinardi.
+                  */}
+                  <TableCell>
+                    {can("security.guard") ? (
+                      <Switch
+                        checked={group.guardEnabled}
+                        onCheckedChange={(checked) =>
+                          setGuard.mutate({
+                            chatId: group.chatId,
+                            guardEnabled: checked,
+                          })
+                        }
+                        disabled={setGuard.isPending}
+                        aria-label="Xavfsizlik qalqoni"
+                      />
+                    ) : (
+                      <Badge
+                        className={
+                          group.guardEnabled
+                            ? "bg-primary/10 text-primary dark:bg-primary/20"
+                            : "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-400"
+                        }
+                      >
+                        {group.guardEnabled ? "Yoqilgan" : "O'chirilgan"}
                       </Badge>
                     )}
                   </TableCell>

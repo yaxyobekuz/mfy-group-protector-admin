@@ -92,6 +92,10 @@ export const useSaveSettings = () => {
       messageRetentionHours?: number;
       alertChatIds?: string[];
       alertMinSeverity?: SignalSeverity;
+      guardDeleteFiles?: boolean;
+      guardDeleteUrls?: boolean;
+      guardBlockedHosts?: string[];
+      guardAllowedHosts?: string[];
     }) => api.patch<Settings>("/settings", input),
     onSuccess: () => {
       toast.success("Sozlamalar saqlandi");

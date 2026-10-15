@@ -17,6 +17,7 @@ import {
   Radio,
   ScrollText,
   Settings,
+  ShieldAlert,
   Users,
 } from "lucide-react";
 
@@ -47,6 +48,12 @@ export const NAV_ITEMS: NavItem[] = [
     badge: "issues",
   },
   { href: "/groups", label: "Telegram guruhlari", icon: Radio, permission: "groups.view" },
+  {
+    href: "/security",
+    label: "Xavfsizlik",
+    icon: ShieldAlert,
+    permission: "security.view",
+  },
   { href: "/territory", label: "Hudud", icon: MapPin, permission: "territory.view" },
   { href: "/reports", label: "Hisobotlar", icon: FileText, permission: "reports.view" },
   { href: "/users", label: "Xodimlar", icon: Users, permission: "users.view" },
