@@ -218,6 +218,10 @@ export const THREAT_KIND: Record<ThreatKind, LabelDef> = {
     label: "Yashirilgan manzil",
     className: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-200",
   },
+  scam_text: {
+    label: "Firibgarlik matni",
+    className: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-200",
+  },
 };
 
 /**
@@ -269,6 +273,14 @@ export const threatReason = (reason: string): string => {
       return "Havolada @ belgisi — manzil yashirilgan";
     case "raw_ip_host":
       return "Domen o'rniga IP manzil";
+    case "domain_mismatch":
+      return `Ko'rinishda ${value}, amalda boshqa sayt`;
+    case "scam_phrase":
+      return `Firibgarlik iborasi ("${value}") + ishonchsiz havola`;
+    case "scam_phrase_money":
+      return `Firibgarlik iborasi ("${value}") + katta summa`;
+    case "scam_phrase_urgency":
+      return `Firibgarlik iborasi ("${value}") + shoshiltirish`;
     default:
       return reason;
   }

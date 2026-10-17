@@ -178,7 +178,8 @@ export type ThreatKind =
   | "unknown_file"
   | "suspicious_url"
   | "shortened_url"
-  | "masked_url";
+  | "masked_url"
+  | "scam_text";
 
 export type ThreatAction = "deleted" | "detected" | "delete_failed";
 
