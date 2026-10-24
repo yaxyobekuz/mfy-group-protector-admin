@@ -96,6 +96,13 @@ export const useSaveSettings = () => {
       guardDeleteUrls?: boolean;
       guardBlockedHosts?: string[];
       guardAllowedHosts?: string[];
+
+      // ── MOBIL ILOVA ────────────────────────────────────────
+      mobileEnabled?: boolean;
+      mobileAiClassify?: boolean;
+      mobileMaxAttachments?: number;
+      /** ⚠️ 0 — CHEKSIZ (`schema.prisma`). */
+      mobileDailyLimit?: number;
     }) => api.patch<Settings>("/settings", input),
     onSuccess: () => {
       toast.success("Sozlamalar saqlandi");

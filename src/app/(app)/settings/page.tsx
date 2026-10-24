@@ -41,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
+import { CATEGORY_ICONS } from "@/shared/config/category-icons";
 import { Switch } from "@/shared/ui/switch";
 import { CardSkeleton, EmptyState, Spinner } from "@/shared/ui/states";
 import {
@@ -91,6 +92,10 @@ export default function SettingsPage() {
     guardDeleteUrls: true,
     guardBlockedHosts: "",
     guardAllowedHosts: "",
+    mobileEnabled: true,
+    mobileAiClassify: true,
+    mobileMaxAttachments: 5,
+    mobileDailyLimit: 10,
   });
 
   /**
@@ -116,6 +121,10 @@ export default function SettingsPage() {
       guardDeleteUrls: data.guardDeleteUrls,
       guardBlockedHosts: data.guardBlockedHosts.join("\n"),
       guardAllowedHosts: data.guardAllowedHosts.join("\n"),
+      mobileEnabled: data.mobileEnabled,
+      mobileAiClassify: data.mobileAiClassify,
+      mobileMaxAttachments: data.mobileMaxAttachments,
+      mobileDailyLimit: data.mobileDailyLimit,
     });
   }, [settings.data]);
 
@@ -143,6 +152,11 @@ export default function SettingsPage() {
       // domen tekshiruvida (`@Matches`) yiqilardi.
       guardBlockedHosts: toHostList(form.guardBlockedHosts),
       guardAllowedHosts: toHostList(form.guardAllowedHosts),
+
+      mobileEnabled: form.mobileEnabled,
+      mobileAiClassify: form.mobileAiClassify,
+      mobileMaxAttachments: form.mobileMaxAttachments,
+      mobileDailyLimit: form.mobileDailyLimit,
     });
   };
 
@@ -404,6 +418,115 @@ export default function SettingsPage() {
             </Card>
 
             {/* ── BILDIRISHNOMA ───────────────────────────────── */}
+            {/* ── MOBIL ILOVA ─────────────────────────────────── */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Mobil ilova (fuqaro murojaati)</CardTitle>
+                <CardDescription>
+                  {/*
+                    ⚠️ "O'CHIRISH" NIMANI ANGLATISHINI AYTISH
+                    KERAK: operator uni "yangi murojaat qabul
+                    qilinmaydi" deb emas, "ilova sekinlashadi" deb
+                    tushunib bosib qo'yishi mumkin.
+                  */}
+                  Ilova o&apos;chirilsa fuqarolar yangi murojaat yubora olmaydi.
+                  Yuborilganlari joyida qoladi.
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="mobile-enabled">Ilova yoqilgan</Label>
+                    <p className="text-xs text-muted-foreground">
+                      O&apos;chirilsa fuqaroga &laquo;ilova vaqtincha
+                      o&apos;chirilgan&raquo; deb ko&apos;rsatiladi.
+                    </p>
+                  </div>
+                  <Switch
+                    id="mobile-enabled"
+                    checked={form.mobileEnabled}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, mobileEnabled: checked }))
+                    }
+                  />
+                </div>
+
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="mobile-ai">AI yo&apos;nalish taklif qilsin</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {/*
+                        ⚠️ DOKTRINA EKRANDA AYTILADI: AI bu yerda
+                        faqat TAKLIF qiladi va uni fuqaroning
+                        O'ZI tasdiqlaydi — ya'ni "AI taxmini
+                        rasmiy navbatga tekshirilmasdan tushmaydi"
+                        qoidasi buzilmaydi.
+                      */}
+                      AI faqat taklif qiladi — yo&apos;nalishni fuqaroning
+                      o&apos;zi tasdiqlaydi. O&apos;chirilsa oqim taklifsiz
+                      davom etadi.
+                    </p>
+                  </div>
+                  <Switch
+                    id="mobile-ai"
+                    checked={form.mobileAiClassify}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, mobileAiClassify: checked }))
+                    }
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="mobile-files">Bitta murojaatga fayl</Label>
+                    <Input
+                      id="mobile-files"
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={form.mobileMaxAttachments}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          mobileMaxAttachments: Number(event.target.value),
+                        }))
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">Surat yoki video, 1–10.</p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="mobile-limit">Kunlik chegara</Label>
+                    <Input
+                      id="mobile-limit"
+                      type="number"
+                      min={0}
+                      max={200}
+                      value={form.mobileDailyLimit}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          mobileDailyLimit: Number(event.target.value),
+                        }))
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {/*
+                        ⚠️ CHEGARA BLOKLASHDAN YUMSHOQROQ CHORA
+                        (`mobile.service.ts` izohi) va buni
+                        operator bilishi kerak — aks holda u
+                        darhol cheklashga o'tardi.
+                      */}
+                      Bitta fuqaro bir kunda nechta murojaat yubora oladi.
+                      <strong className="font-medium"> 0 — cheksiz.</strong>{" "}
+                      Cheklashdan yumshoqroq chora.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm">Telegram bildirishnomasi</CardTitle>
@@ -608,6 +731,11 @@ const CategoryDialog = ({
   const [description, setDescription] = useState(initial.description ?? "");
   const [isActive, setActive] = useState(initial.isActive ?? true);
 
+  // ── MOBIL ILOVA MAYDONLARI ────────────────────────────────────
+  const [icon, setIcon] = useState(initial.icon ?? "more");
+  const [slaHours, setSlaHours] = useState(initial.slaHours ?? 72);
+  const [orgName, setOrgName] = useState(initial.orgName ?? "");
+
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
@@ -658,6 +786,79 @@ const CategoryDialog = ({
             />
           </div>
 
+          {/* ── MOBIL ILOVA ──────────────────────────────── */}
+          <div className="space-y-4 rounded-xl border border-border p-4">
+            <div>
+              <p className="text-sm font-medium">Mobil ilova</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {/*
+                  ⚠️ ILOVA UCHUN ALOHIDA YO'NALISHLAR OCHILMAYDI
+                  (`prisma/seed.ts` izohi): ilovadagi ro'yxat —
+                  AYNAN shu ro'yxat. Operator buni bilishi kerak,
+                  aks holda u "ilova uchun" takroriy yo'nalishlar
+                  ochib yuborardi.
+                */}
+                Bu yo&apos;nalish ilovada ham shu nom bilan ko&apos;rinadi.
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="c-icon">Belgi</Label>
+                <Select value={icon} onValueChange={setIcon}>
+                  <SelectTrigger id="c-icon">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORY_ICONS.map((item) => (
+                      <SelectItem key={item.key} value={item.key}>
+                        {item.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Ilovadagi ro&apos;yxatda ko&apos;rinadi.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="c-sla">Javob muddati (soat)</Label>
+                <Input
+                  id="c-sla"
+                  type="number"
+                  min={1}
+                  max={720}
+                  value={slaHours}
+                  onChange={(event) => setSlaHours(Number(event.target.value))}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {/*
+                    ⚠️ MUDDAT — MO'LJAL, MAJBURIYAT EMAS
+                    (`Issue.dueAt` qoidasi): tizim u o'tganda hech
+                    narsa qilmaydi.
+                  */}
+                  Fuqaroga ko&apos;rsatiladi. Mo&apos;ljal — tizim uni
+                  o&apos;tganda hech narsa qilmaydi.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="c-org">Mas&apos;ul tashkilot</Label>
+              <Input
+                id="c-org"
+                value={orgName}
+                onChange={(event) => setOrgName(event.target.value)}
+                placeholder="Obodonlashtirish va chiqindi xizmatlari"
+                maxLength={160}
+              />
+              <p className="text-xs text-muted-foreground">
+                Fuqaroga &laquo;murojaatingiz kimga ketdi&raquo; deb ko&apos;rsatiladi.
+              </p>
+            </div>
+          </div>
+
           {initial.id ? (
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-0.5">
@@ -686,6 +887,12 @@ const CategoryDialog = ({
                   color,
                   description: description.trim() || undefined,
                   isActive: initial.id ? isActive : undefined,
+                  icon,
+                  slaHours,
+                  // ⚠️ BO'SH SATR `null` GA AYLANTIRILADI: server
+                  // uni "ko'rsatilmagan" deb oladi va ilova
+                  // zahira matnni ("Viloyat shtabi") chiqaradi.
+                  orgName: orgName.trim() || null,
                 },
                 { onSuccess: onClose },
               )

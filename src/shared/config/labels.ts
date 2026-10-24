@@ -129,6 +129,17 @@ export const ISSUE_SOURCE: Record<IssueSource, LabelDef> = {
     label: "Qo'lda",
     className: "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300",
   },
+  /**
+   * ⚠️ "BOTDAN" DAN AJRATILGAN va bu MUHIM: botdan XODIM yozadi
+   * (`telegramId` bo'yicha topiladi), ilovadan esa FUQARO. Ikkisi
+   * bitta yorliqqa qo'shilsa, "aholi nechta murojaat yubordi" degan
+   * savolga javob yo'qolardi — va bu ilovaning foydasini
+   * o'lchashning yagona yo'li.
+   */
+  mobile: {
+    label: "Ilovadan",
+    className: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
+  },
 };
 
 export const USER_ROLE: Record<UserRole, string> = {
@@ -163,6 +174,14 @@ export const AUDIT_ACTION: Record<string, string> = {
   "signal.dismiss": "Signalni e'tiborsiz qoldirdi",
   "issue.create": "Muammo yaratdi",
   "issue.create_bot": "Botdan muammo yubordi",
+  "mobile.appeal_create": "Fuqaro ilovadan murojaat yubordi",
+  "citizen.block": "Fuqaroni chekladi",
+  "citizen.unblock": "Fuqaro cheklovini oldi",
+  "announcement.create": "Yangilik yaratdi",
+  "announcement.update": "Yangilikni tahrirladi",
+  "announcement.publish": "Yangilikni e'lon qildi",
+  "announcement.unpublish": "Yangilikni qoralamaga qaytardi",
+  "announcement.delete": "Yangilikni o'chirdi",
   "issue.assign": "Ijrochi belgiladi",
   "issue.resolve": "Muammoni hal qildi",
   "issue.reject": "Muammoni rad etdi",

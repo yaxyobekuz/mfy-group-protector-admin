@@ -15,7 +15,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { AlertTriangle, MessageSquare, MessageSquareWarning } from "lucide-react";
+import {
+  AlertTriangle,
+  ImageIcon,
+  MapPin,
+  MessageSquare,
+  MessageSquareWarning,
+  TriangleAlert,
+} from "lucide-react";
 
 import { useSession } from "@/entities/session/auth-provider";
 import {
@@ -266,6 +273,37 @@ export default function IssuesPage() {
                               <MessageSquare className="size-3" />
                               {issue.commentCount}
                             </span>
+                          ) : null}
+
+                          {/*
+                            ⚠️ SURAT VA JOY BELGISI RO'YXATDA:
+                            dalili bor murojaatni ochib ko'rishdan
+                            OLDIN ajratib olish kerak — operator
+                            navbatni shunga qarab tartiblaydi.
+                          */}
+                          {issue.attachmentCount > 0 ? (
+                            <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground">
+                              <ImageIcon className="size-3" />
+                              {issue.attachmentCount}
+                            </span>
+                          ) : null}
+
+                          {issue.hasLocation ? (
+                            <MapPin className="size-3 text-muted-foreground" />
+                          ) : null}
+
+                          {/*
+                            ⚠️ "FUQARO XAVFLI DEDI" — TAXMIN, tizim
+                            bahosi EMAS (`mobile.service.ts`
+                            izohi). Shuning uchun u USTUVORLIK
+                            yorlig'idan boshqa ko'rinishda —
+                            faqat belgi.
+                          */}
+                          {issue.isHazard ? (
+                            <TriangleAlert
+                              className="size-3 text-destructive"
+                              aria-label="Fuqaro xavfli deb belgilagan"
+                            />
                           ) : null}
                         </div>
 

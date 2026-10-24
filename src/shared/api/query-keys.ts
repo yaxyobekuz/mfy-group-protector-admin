@@ -63,6 +63,25 @@ export const queryKeys = {
     stats: () => ["issues", "stats"] as const,
     categories: (activeOnly?: boolean) =>
       ["issues", "categories", activeOnly ?? false] as const,
+    /**
+     * ⚠️ `["issues", ...]` ICHIDA: murojaat yopilganda xarita ham
+     * eskiradi (nuqta rangi holatga bog'liq) va `issues.all()`
+     * bilan bekor qilinganda u ham yangilanishi kerak.
+     */
+    map: (params?: QueryParams) => ["issues", "map", params ?? {}] as const,
+  },
+
+  citizens: {
+    all: () => ["citizens"] as const,
+    list: (params?: QueryParams) => ["citizens", "list", params ?? {}] as const,
+    detail: (id: string) => ["citizens", "detail", id] as const,
+    stats: () => ["citizens", "stats"] as const,
+  },
+
+  announcements: {
+    all: () => ["announcements"] as const,
+    list: (params?: QueryParams) =>
+      ["announcements", "list", params ?? {}] as const,
   },
 
   users: {

@@ -12,12 +12,15 @@ import type { LucideIcon } from "lucide-react";
 import {
   FileText,
   LayoutDashboard,
+  Map,
   MapPin,
   MessageSquareWarning,
+  Newspaper,
   Radio,
   ScrollText,
   Settings,
   ShieldAlert,
+  UsersRound,
   Users,
 } from "lucide-react";
 
@@ -46,6 +49,24 @@ export const NAV_ITEMS: NavItem[] = [
     icon: MessageSquareWarning,
     permission: "issues.view",
     badge: "issues",
+  },
+  /**
+   * ⚠️ XARITA MUROJAATLARDAN KEYIN: u o'sha ma'lumotning BOSHQA
+   * ko'rinishi, alohida bo'lim emas. Ro'yxatdan uzoqqa qo'yilsa,
+   * xodim ikkisi bir xil narsa ekanini anglamasdi.
+   */
+  { href: "/map", label: "Xarita", icon: Map, permission: "issues.view" },
+  {
+    href: "/citizens",
+    label: "Fuqarolar",
+    icon: UsersRound,
+    permission: "citizens.view",
+  },
+  {
+    href: "/announcements",
+    label: "Yangiliklar",
+    icon: Newspaper,
+    permission: "announcements.view",
   },
   { href: "/groups", label: "Telegram guruhlari", icon: Radio, permission: "groups.view" },
   {

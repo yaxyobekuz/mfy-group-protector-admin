@@ -28,7 +28,30 @@
  * foydalanuvchi har sahifa yangilashda tizimdan chiqib ketardi.
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+/**
+ * ⚠️ EKSPORT QILINADI: fayl yuklash (`FormData`) `send()` dan
+ * O'TMAYDI — u har so'rovga `Content-Type: application/json`
+ * qo'yadi va bu `FormData` ning `boundary` sini buzardi. Shuning
+ * uchun muqova yuklash o'z `fetch` ini yozadi va unga manzil kerak
+ * (`features/announcements/api.ts`).
+ */
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
+
+/**
+ * YUKLANGAN FAYLLAR ILDIZI.
+ *
+ * ⚠️ `/api` OLIB TASHLANADI: fayllar `api` prefiksidan TASHQARIDA
+ * turadi (`server/src/main.ts`) va server `/uploads/...`
+ * ko'rinishidagi NISBIY manzil qaytaradi.
+ */
+const FILE_ORIGIN = API_URL.replace(/\/api\/?$/, "");
+
+/** Serverdan kelgan nisbiy manzilni to'liq manzilga aylantiradi. */
+export const fileUrl = (path: string | null | undefined): string | null => {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${FILE_ORIGIN}${path}`;
+};
 
 const ACCESS_KEY = "vsh.access";
 const REFRESH_KEY = "vsh.refresh";

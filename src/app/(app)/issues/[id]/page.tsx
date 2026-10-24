@@ -46,6 +46,11 @@ import { formatDateTimeUz, formatDateUz, toInputDate } from "@/shared/lib/date";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
+import {
+  AppealAttachments,
+  AppealCitizen,
+  AppealLocation,
+} from "@/features/issues/appeal-blocks";
 import { Input, Label, Textarea } from "@/shared/ui/input";
 import {
   Select,
@@ -130,6 +135,14 @@ export default function IssueDetailPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         {/* ── Asosiy ustun ───────────────────────────────────── */}
         <div className="space-y-4 lg:col-span-2">
+          {/*
+            ⚠️ FAYLLAR MATNDAN OLDIN: fuqaro yuborgan surat
+            murojaatning DALILI va ko'pincha matndan ko'ra
+            ko'proq narsa aytadi ("chiqindi uyumi" degan uch
+            so'zdan ko'ra bitta surat).
+          */}
+          <AppealAttachments attachments={data.attachments} />
+
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">Murojaat mazmuni</CardTitle>
@@ -141,6 +154,8 @@ export default function IssueDetailPage() {
               <p className="whitespace-pre-wrap text-sm leading-relaxed">{data.body}</p>
             </CardContent>
           </Card>
+
+          <AppealLocation issue={data} />
 
           {/* ── Manba (signaldan kelgan bo'lsa) ─────────────── */}
           {data.signal || groupTitle ? (
@@ -218,9 +233,27 @@ export default function IssueDetailPage() {
                   {data.comments.map((comment) => (
                     <div key={comment.id} className="space-y-1 border-l-2 pl-3">
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        {/*
+                          ⚠️ MUALLIF IKKI XIL BO'LISHI MUMKIN —
+                          XODIM yoki FUQARO
+                          (`schema.prisma#IssueComment`). Faqat
+                          `comment.user` ni o'qish fuqaro yozgan
+                          qo'shimchani KO'RSATMAY qo'yardi va
+                          murojaat "javobsiz" ko'rinardi.
+                        */}
                         <span className="font-medium text-foreground">
-                          {comment.user.firstName} {comment.user.lastName}
+                          {comment.citizen
+                            ? `${comment.citizen.firstName} ${comment.citizen.lastName ?? ""}`.trim()
+                            : comment.user
+                              ? `${comment.user.firstName} ${comment.user.lastName}`
+                              : "—"}
                         </span>
+
+                        {comment.citizen ? (
+                          <Badge className="bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                            Fuqaro
+                          </Badge>
+                        ) : null}
                         <span>{formatDateTimeUz(comment.createdAt)}</span>
 
                         {/*
@@ -267,11 +300,17 @@ export default function IssueDetailPage() {
                         checked={isPublicComment}
                         onChange={(event) => setPublicComment(event.target.checked)}
                         className="size-4 rounded border-input"
-                        // ⚠️ MUALLIF CHATI YO'Q BO'LSA O'CHIRILGAN:
-                        // signaldan kelgan murojaatda javob MFY
-                        // guruhiga ketmasligi kerak (bot u yerda
-                        // kuzatuvchi) va server `authorChatId` ni
-                        // ataylab bo'sh qoldirgan.
+                        // ⚠️ FAQAT SIGNALDAN KELGANDA O'CHIRILGAN:
+                        // u yerda javob MFY GURUHIGA ketardi (bot
+                        // u yerda kuzatuvchi) va server
+                        // `authorChatId` ni ataylab bo'sh
+                        // qoldirgan.
+                        //
+                        // ⚠️ MOBIL MUROJAATDA ESA ISHLAYDI: javob
+                        // fuqaroning SHAXSIY chatiga boradi
+                        // (`citizen.telegramId`), guruhga emas —
+                        // ya'ni "bot guruhda yozmaydi" qoidasi
+                        // buzilmaydi.
                         disabled={data.source === "signal"}
                       />
                       <span
@@ -317,6 +356,16 @@ export default function IssueDetailPage() {
 
         {/* ── Yon ustun ──────────────────────────────────────── */}
         <div className="space-y-4">
+          {/*
+            ⚠️ FUQARO KARTASI ENG TEPADA: ilovadan kelgan
+            murojaatda birinchi savol — "kim yozdi va qanday
+            bog'lanaman". Xodim uchun bu `Ma'lumot` blokidagi
+            hududdan ham muhimroq.
+          */}
+          {data.citizen ? (
+            <AppealCitizen citizen={data.citizen} issue={data} />
+          ) : null}
+
           <Card>
             <CardHeader>
               <CardTitle className="text-sm">Ma&apos;lumot</CardTitle>
@@ -347,7 +396,9 @@ export default function IssueDetailPage() {
                 value={
                   data.author
                     ? `${data.author.firstName} ${data.author.lastName}`
-                    : "—"
+                    : data.citizen
+                      ? `${data.citizen.firstName} ${data.citizen.lastName ?? ""}`.trim()
+                      : "—"
                 }
               />
 

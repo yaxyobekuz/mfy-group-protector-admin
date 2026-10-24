@@ -200,3 +200,55 @@
     }
   }
 }
+
+/**
+ * LEAFLET — XARITA (murojaatlar xaritasi).
+ *
+ * ⚠️ `z-index: 0` MAJBURIY VA BU ENG MUHIM QATOR. Leaflet o'z
+ * qatlamlariga (`.leaflet-pane`) `z-index: 400` beradi va
+ * konteynerning O'ZIDA z-index bo'lmasa, o'sha 400 TASHQI
+ * joylashuv kontekstida hisoblanadi — natijada xarita ustiga
+ * qo'yilgan har qanday element (tanlangan nuqta kartasi, filtr)
+ * plitkalar OSTIDA qolib, KO'RINMAYDI. Bundan tashqari u paneldagi
+ * dialog oynasi (`z-50`) OSTIDAN o'tib ketardi.
+ *
+ * ⚠️ RANG TOKENLARGA MOSLANADI: Leaflet o'z oq fonini va qora
+ * matnini olib keladi va tungi rejimda boshqaruvlar oq quti bo'lib
+ * yonib turardi.
+ */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 0;
+  font: inherit;
+  background-color: hsl(var(--muted));
+}
+
+.leaflet-control-attribution {
+  background-color: hsl(var(--card) / 0.8);
+  color: hsl(var(--muted-foreground));
+  font-size: 10px;
+}
+
+.leaflet-control-attribution a {
+  color: hsl(var(--muted-foreground));
+}
+
+.leaflet-bar a,
+.leaflet-control-zoom a {
+  background-color: hsl(var(--card));
+  color: hsl(var(--foreground));
+  border-color: hsl(var(--border));
+}
+
+/* Xarita nuqtasi — rang yo'nalishdan keladi (inline `style`). */
+.pin {
+  display: flex;
+  height: 1.5rem;
+  width: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  border: 2px solid #fff;
+  box-shadow: var(--shadow-lift);
+}

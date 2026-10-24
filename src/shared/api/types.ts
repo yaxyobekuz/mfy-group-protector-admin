@@ -22,7 +22,7 @@ export type SignalKind = "complaint" | "suggestion" | "question";
 export type SignalSeverity = "low" | "normal" | "high";
 export type SignalStatus = "new" | "attached" | "dismissed";
 
-export type IssueSource = "signal" | "bot" | "manual";
+export type IssueSource = "signal" | "bot" | "manual" | "mobile";
 export type IssueStatus = "new" | "in_progress" | "resolved" | "rejected";
 export type IssuePriority = "low" | "normal" | "high" | "urgent";
 
@@ -305,6 +305,12 @@ export interface IssueCategory {
   name: string;
   color: string | null;
   description: string | null;
+  /** ⚠️ MOBIL ILOVA BELGISI — kalit, SVG emas (`schema.prisma`). */
+  icon: string | null;
+  /** Javob muddati (soat) — ilovada ko'rsatiladi, `dueAt` shundan. */
+  slaHours: number;
+  /** Mas'ul tashkilot nomi — matn, FK emas. */
+  orgName: string | null;
   sortOrder: number;
   isActive: boolean;
   issueCount: number;
@@ -321,6 +327,12 @@ export interface IssueListItem {
   mahalla: MahallaWithDistrict | null;
   assignee: PersonRef | null;
   author: PersonRef | null;
+  /** ⚠️ `author` DAN ALOHIDA: fuqaro xodim EMAS (`schema.prisma`). */
+  citizen: PersonRef | null;
+  hasLocation: boolean;
+  attachmentCount: number;
+  /** Fuqaro "xavfli" deb belgilagan — TAXMIN, ustuvorlik emas. */
+  isHazard: boolean;
   dueAt: string | null;
   /** ⚠️ MUDDAT — MO'LJAL, majburiyat emas. Faqat ajratib ko'rsatiladi. */
   isOverdue: boolean;
@@ -332,10 +344,44 @@ export interface IssueListItem {
 export interface IssueComment {
   id: string;
   body: string;
-  /** ⚠️ `true` bo'lsa izoh botdagi MUALLIFGA ham ketgan. */
+  /** ⚠️ `true` bo'lsa izoh botdagi/ilovadagi MUALLIFGA ham ketgan. */
   isPublic: boolean;
   createdAt: string;
-  user: PersonRef;
+  /**
+   * ⚠️ IKKALASI IXTIYORIY va AYNAN BITTASI to'ldirilgan: izohni
+   * XODIM yoki FUQARO yozgan bo'lishi mumkin
+   * (`schema.prisma#IssueComment`). Faqat `user` ni o'qiydigan kod
+   * fuqaro yozgan qo'shimchani KO'RSATMAY qo'yardi.
+   */
+  user: PersonRef | null;
+  citizen: PersonRef | null;
+}
+
+export interface IssueAttachment {
+  id: string;
+  kind: string;
+  /** Nisbiy manzil (`/uploads/...`) — server yig'adi. */
+  url: string;
+  mimeType: string;
+  size: number;
+  originalName: string | null;
+}
+
+/**
+ * MUROJAAT MUALLIFI — FUQARO.
+ *
+ * ⚠️ `StaffUser` EMAS: fuqaroda ruxsat ham, hududiy qamrov ham,
+ * panelga kirish ham yo'q (`schema.prisma#Citizen`).
+ */
+export interface IssueCitizen {
+  id: string;
+  firstName: string;
+  lastName: string | null;
+  username: string | null;
+  phone: string | null;
+  telegramId: string;
+  points: number;
+  isBlocked: boolean;
 }
 
 export interface IssueDetail {
@@ -367,6 +413,104 @@ export interface IssueDetail {
   reviewedAt: string | null;
   comments: IssueComment[];
   createdAt: string;
+
+  /** ── MOBIL ILOVADAN KELGAN MUROJAAT ──────────────────────────── */
+  citizen: IssueCitizen | null;
+  attachments: IssueAttachment[];
+  /** ⚠️ KOORDINATA MUHRLANGAN — fuqaro ko'rsatgan nuqta. */
+  lat: number | null;
+  lng: number | null;
+  address: string | null;
+  /** ⚠️ FUQARO BELGISI — TAXMIN, ustuvorlikni odam qo'yadi. */
+  isHazard: boolean;
+  isLongStanding: boolean;
+  isRepeatAppeal: boolean;
+  /** Muammo qachon sodir bo'lgan — `createdAt` dan BOSHQA. */
+  occurredAt: string | null;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  FUQAROLAR (mobil ilova)
+// ═══════════════════════════════════════════════════════════════════
+
+export interface Citizen {
+  id: string;
+  telegramId: string;
+  firstName: string;
+  lastName: string | null;
+  username: string | null;
+  phone: string | null;
+  photoUrl: string | null;
+  points: number;
+  isBlocked: boolean;
+  blockedReason: string | null;
+  lastSeenAt: string;
+  createdAt: string;
+  district: Ref | null;
+  mahalla: Ref | null;
+  appealCount: number;
+}
+
+export interface CitizenDetail extends Omit<Citizen, "appealCount"> {
+  languageCode: string;
+  blockedAt: string | null;
+  districtId: string | null;
+  stats: { total: number; open: number; resolved: number };
+  recentAppeals: {
+    id: string;
+    publicNo: string;
+    title: string;
+    status: IssueStatus;
+    createdAt: string;
+    category: { id: string; name: string; color: string | null };
+  }[];
+}
+
+export interface CitizenStats {
+  total: number;
+  blocked: number;
+  /** Oxirgi 30 kunda ilovani ochganlar. */
+  active30: number;
+  /** ⚠️ FAQAT VILOYAT DARAJASIDA MA'NOLI (serverda 0 qaytadi). */
+  noDistrict: number;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  YANGILIKLAR (mobil ilova)
+// ═══════════════════════════════════════════════════════════════════
+
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string;
+  coverUrl: string | null;
+  isPublished: boolean;
+  isPinned: boolean;
+  publishedAt: string | null;
+  viewCount: number;
+  createdAt: string;
+  /** ⚠️ `null` — BUTUN VILOYAT uchun. */
+  district: Ref | null;
+  author: PersonRef | null;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  XARITA
+// ═══════════════════════════════════════════════════════════════════
+
+export interface IssueMapPoint {
+  id: string;
+  publicNo: string;
+  title: string;
+  status: IssueStatus;
+  priority: IssuePriority;
+  lat: number | null;
+  lng: number | null;
+  address: string | null;
+  isHazard: boolean;
+  createdAt: string;
+  category: { id: string; name: string; color: string | null };
+  mahalla: { name: string } | null;
 }
 
 export interface IssueStats {
@@ -492,6 +636,14 @@ export interface Settings {
   guardBlockedHosts: string[];
   /** ⚠️ Qora ro'yxatdan USTUN turadi. */
   guardAllowedHosts: string[];
+
+  /** ── MOBIL ILOVA ────────────────────────────────────────────── */
+  mobileEnabled: boolean;
+  /** ⚠️ AI faqat TOIFALAYDI; taklifni fuqaroning o'zi tasdiqlaydi. */
+  mobileAiClassify: boolean;
+  mobileMaxAttachments: number;
+  /** ⚠️ 0 — CHEKSIZ. */
+  mobileDailyLimit: number;
 
   updatedAt: string;
   updatedBy: string | null;

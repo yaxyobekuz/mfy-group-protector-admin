@@ -13,6 +13,7 @@ import type {
   IssueListItem,
   IssuePriority,
   IssueSource,
+  IssueMapPoint,
   IssueStats,
   IssueStatus,
   Paginated,
@@ -43,6 +44,24 @@ export const useIssue = (id: string) =>
     queryKey: queryKeys.issues.detail(id),
     queryFn: () => api.get<IssueDetail>(`/issues/${id}`),
     enabled: Boolean(id),
+  });
+
+/**
+ * XARITA NUQTALARI.
+ *
+ * ⚠️ RO'YXAT SO'ROVIDAN ALOHIDA: ro'yxat sahifalanadi (200 tagacha)
+ * va xaritada "ikkinchi sahifadagi nuqtalar" degan tushuncha yo'q —
+ * ular jimgina ko'rinmay qolardi.
+ */
+export const useIssueMap = (filters: {
+  status?: IssueStatus;
+  categoryId?: string;
+  mahallaId?: string;
+}) =>
+  useQuery({
+    queryKey: queryKeys.issues.map(filters),
+    queryFn: () => api.get<IssueMapPoint[]>("/issues/map", { ...filters }),
+    staleTime: 60_000,
   });
 
 export const useIssueStats = () =>
@@ -208,6 +227,14 @@ export const useSaveCategory = () => {
       description?: string;
       sortOrder?: number;
       isActive?: boolean;
+
+      // ── MOBIL ILOVA ────────────────────────────────────────
+      /** `shared/config/category-icons.ts` dagi kalit. */
+      icon?: string;
+      /** ⚠️ MO'LJAL, majburiyat emas (`Issue.dueAt` qoidasi). */
+      slaHours?: number;
+      /** ⚠️ `null` — ko'rsatilmagan; ilova zahira matn chiqaradi. */
+      orgName?: string | null;
     }) => {
       const { id, ...body } = input;
       return id
