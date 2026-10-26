@@ -489,6 +489,7 @@ export interface CategoryReportRow {
   categoryId: string;
   name: string;
   color: string | null;
+  icon: string | null;
   count: number;
 }
 

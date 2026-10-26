@@ -70,6 +70,10 @@ export default function IssuesPage() {
   const [filters, setFilters] = useState<IssueFilters>(() => ({
     status: (searchParams.get("status") as IssueStatus | null) ?? undefined,
     overdue: searchParams.get("overdue") === "true" ? true : undefined,
+    // ⚠️ `categoryId` HAM O'QILADI: boshqaruv panelidagi
+    // "yo'nalishlar" diagrammasi shu havolani beradi va usiz
+    // bosilgan ustun to'liq ro'yxatni ochardi.
+    categoryId: searchParams.get("categoryId") ?? undefined,
     page: 1,
     limit: 50,
   }));

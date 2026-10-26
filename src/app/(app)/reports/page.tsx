@@ -41,6 +41,7 @@ import {
   type ReportFilters,
 } from "@/features/reports/api";
 import { useDistricts } from "@/features/territory/api";
+import { chartColors, chartTooltipStyle } from "@/shared/config/chart-colors";
 import { formatDateUz, daysAgoInput, toInputDate } from "@/shared/lib/date";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -67,50 +68,6 @@ import { StatTile } from "@/widgets/stat-tile/stat-tile";
 
 const ALL = "__all__";
 
-/**
- * Diagramma ranglari.
- *
- * ⚠️ `labels.ts` DAGI HOLAT RANGLARIDAN ALOHIDA va bu ataylab:
- * bu yerda ranglar KATEGORIYALARNI ajratadi (ma'no tashimaydi),
- * holat ranglari esa ma'noli (qizil — e'tibor kerak). Ikkisini
- * aralashtirish "yashil kategoriya yaxshi" degan noto'g'ri
- * o'qishni tug'dirardi.
- */
-/**
- * ⚠️ RANGLAR VALIDATORDAN O'TKAZILGAN, ko'z bilan tanlanmagan.
- * Har ikki rejim uchun tekshirildi: yorug'lik tasmasi, xroma
- * chegarasi, rang ko'rmaslikda (protan/deutan/tritan) ajralish va
- * fon bilan kontrast. Qiymatni O'ZGARTIRSANGIZ qayta tekshiring —
- * "chiroyliroq" ko'ringan rang ko'pincha daltonikda qo'shnisi
- * bilan qo'shilib ketadi.
- *
- * ⚠️ TUNGI RO'YXAT ALOHIDA TANLANGAN, yorug'ining "aylantirilgani"
- * EMAS: to'q fonda quyuq ranglar kontrast chegarasidan o'tmasdi.
- *
- * ⚠️ BIRINCHI SLOT — BREND YASHILI: diagrammada "hal qilingan"
- * chizig'i panelning qolgan qismidagi yashil bilan bir xil
- * ma'noni tashishi kerak.
- */
-const CHART_COLORS_LIGHT = [
-  "#1d7a4d",
-  "#eb6834",
-  "#2a78d6",
-  "#eda100",
-  "#c2185b",
-  "#6250d6",
-  "#00897b",
-];
-
-const CHART_COLORS_DARK = [
-  "#2f9a66",
-  "#d4653a",
-  "#4a8ad8",
-  "#e04f80",
-  "#7d6ce0",
-  "#b8881c",
-  "#179c90",
-];
-
 const VALID_TABS = ["dynamics", "territory", "categories", "ai", "mobile"];
 
 export default function ReportsPage() {
@@ -131,24 +88,11 @@ export default function ReportsPage() {
    */
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const chartColors = isDark ? CHART_COLORS_DARK : CHART_COLORS_LIGHT;
-
-  /**
-   * TOOLTIP USLUBI — BITTA JOYDA, uchala diagramma uchun.
-   *
-   * ⚠️ RECHARTS TOOLTIPNI `<body>` DAN TASHQARIDA emas, o'z inline
-   * uslubi bilan chizadi va u mavzuni BILMAYDI: standart holda
-   * oq fon qoladi. Tungi rejimda bu ko'zni qamashtirib, sarlavha
-   * matni (och kulrang) oq fonda deyarli o'qilmasdi.
-   */
-  const tooltipStyle = {
-    fontSize: 12,
-    borderRadius: 12,
-    backgroundColor: isDark ? "#1c1c1c" : "#ffffff",
-    border: `1px solid ${isDark ? "#2e2e2e" : "#e2e8e5"}`,
-    color: isDark ? "#f5f5f5" : "#0f1a15",
-    boxShadow: "0 8px 24px -8px rgb(0 0 0 / 0.25)",
-  } as const;
+  // ⚠️ RANG VA TOOLTIP — `shared/config/chart-colors.ts` DAN:
+  // boshqaruv paneli ham AYNI ro'yxatni ishlatadi va nusxa
+  // bo'lsa ikki sahifada bir toifa boshqa rangda chiqardi.
+  const palette = chartColors(isDark);
+  const tooltipStyle = chartTooltipStyle(isDark);
 
   const [filters, setFilters] = useState<ReportFilters>({
     // ⚠️ STANDART OYNA — 30 KUN: butun tarix bo'yicha hisobot
@@ -357,7 +301,7 @@ export default function ReportsPage() {
                       type="monotone"
                       dataKey="total"
                       name="Kelgan"
-                      stroke={chartColors[2]}
+                      stroke={palette[2]}
                       strokeWidth={2}
                       dot={false}
                     />
@@ -365,7 +309,7 @@ export default function ReportsPage() {
                       type="monotone"
                       dataKey="resolved"
                       name="Hal qilingan"
-                      stroke={chartColors[0]}
+                      stroke={palette[0]}
                       strokeWidth={2}
                       dot={false}
                     />
@@ -402,7 +346,7 @@ export default function ReportsPage() {
                         {territory.data?.districts.map((_, index) => (
                           <Cell
                             key={index}
-                            fill={chartColors[index % chartColors.length]}
+                            fill={palette[index % palette.length]}
                           />
                         ))}
                       </Bar>
@@ -495,7 +439,7 @@ export default function ReportsPage() {
                           // turadi: panelda u hamma joyda shu rang
                           // bilan ko'rinadi va diagramma boshqa
                           // rang bersa, bog'lash qiyin bo'lardi.
-                          fill={row.color ?? chartColors[index % chartColors.length]}
+                          fill={row.color ?? palette[index % palette.length]}
                         />
                       ))}
                     </Bar>
@@ -539,19 +483,19 @@ export default function ReportsPage() {
                   label="AI signalidan"
                   value={overview.data?.source.signal ?? 0}
                   total={overview.data?.total ?? 0}
-                  color={chartColors[3]!}
+                  color={palette[3]!}
                 />
                 <SourceRow
                   label="Botdan (xodim yubordi)"
                   value={overview.data?.source.bot ?? 0}
                   total={overview.data?.total ?? 0}
-                  color={chartColors[5]!}
+                  color={palette[5]!}
                 />
                 <SourceRow
                   label="Ilovadan (fuqaro)"
                   value={overview.data?.source.mobile ?? 0}
                   total={overview.data?.total ?? 0}
-                  color={chartColors[1]!}
+                  color={palette[1]!}
                 />
                 <SourceRow
                   label="Panelda qo'lda"
@@ -560,7 +504,7 @@ export default function ReportsPage() {
                   // ⚠️ SLOT 6 — oxirgi mavjud rang. Palitra 7 ta
                   // (0–6): kattaroq indeks `undefined` berib,
                   // chiziq KO'RINMAY qolardi.
-                  color={chartColors[6]!}
+                  color={palette[6]!}
                 />
               </CardContent>
             </Card>
@@ -602,7 +546,7 @@ export default function ReportsPage() {
                   label="Faol (murojaat yuborgan)"
                   value={mobile.data?.citizens.active ?? 0}
                   total={mobile.data?.citizens.total ?? 0}
-                  color={chartColors[0]!}
+                  color={palette[0]!}
                 />
                 <div className="flex items-center justify-between pt-1 text-sm">
                   <span className="text-muted-foreground">Ro&apos;yxatdan o&apos;tgan</span>
@@ -665,7 +609,7 @@ export default function ReportsPage() {
                       label={category.name}
                       value={category.count}
                       total={mobile.data?.total ?? 0}
-                      color={category.color ?? chartColors[index % 7]!}
+                      color={category.color ?? palette[index % 7]!}
                     />
                   ))
                 )}

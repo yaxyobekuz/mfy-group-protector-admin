@@ -8,6 +8,23 @@
  * turibdi": ko'rilmagan signallar, javobsiz murojaatlar,
  * biriktirilmagan guruhlar. Shuning uchun har plitka HAVOLA —
  * operator raqamni ko'rib, darhol ishga kirishishi kerak.
+ *
+ * ── BENTO TO'R ──────────────────────────────────────────────────
+ *
+ * ⚠️ KATAKCHALAR HAR XIL O'LCHAMDA, VA BU MA'NOLI: katakcha
+ * o'lchami uning MUHIMLIGINI bildiradi. Hammasi bir xil bo'lsa,
+ * operator qaysi biriga avval qarashni bilmasdi — bu esa
+ * panelning asosiy vazifasiga zid.
+ *
+ * ⚠️ TARTIB — SHOSHILINCHLIK BO'YICHA, go'zallik bo'yicha emas:
+ * (1) e'tibor talab qiladigan raqamlar, (2) dinamika va holat,
+ * (3) yo'nalish/hudud kesimi, (4) ilova va kuzatuv. Yuqoridagi
+ * qator — "bugun nima qilish kerak", pastdagilar — "ishlar
+ * qanday ketyapti".
+ *
+ * ⚠️ DIAGRAMMALARDA RANG YAKKA O'ZI MA'LUMOT TASHIMAYDI: har
+ * birida yorliq yoki legenda bor. Sabab `chart-colors.ts` da —
+ * ro'yxatning birinchi ikki rangi daltonikda yaqin.
  */
 
 import {
@@ -16,6 +33,9 @@ import {
   MapPinOff,
   MessageSquareWarning,
   Radio as RadioIcon,
+  Smartphone,
+  TrendingUp,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -23,12 +43,19 @@ import { useSession } from "@/entities/session/auth-provider";
 import { useGroupStats } from "@/features/groups/api";
 import { useIssueStats } from "@/features/issues/api";
 import { useSignalCounts, useSignalStatus } from "@/features/signals/api";
-import { useDailyReport, useMobileReport } from "@/features/reports/api";
+import {
+  useCategoryReport,
+  useDailyReport,
+  useMobileReport,
+} from "@/features/reports/api";
 import { formatRelativeUz } from "@/shared/lib/date";
 import { Button } from "@/shared/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { EmptyState } from "@/shared/ui/states";
 import { StatTile } from "@/widgets/stat-tile/stat-tile";
+import { CategoryBars } from "@/widgets/dashboard/category-bars";
+import { ChartFrame } from "@/widgets/dashboard/chart-frame";
+import { StatusDonut } from "@/widgets/dashboard/status-donut";
+import { TrendChart } from "@/widgets/dashboard/trend-chart";
 
 export default function DashboardPage() {
   const { can, user } = useSession();
@@ -38,9 +65,10 @@ export default function DashboardPage() {
   const issueStats = useIssueStats();
   const groupStats = useGroupStats();
   const daily = useDailyReport(14);
-  // ⚠️ `/reports/mobile` server'da `reports.view` TALAB QILADI: hook
+  // ⚠️ `/reports/*` server'da `reports.view` TALAB QILADI: hooklar
   // faqat shu ruxsat bo'lganda ishga tushadi, aks holda 403 bo'lardi.
   const mobile = useMobileReport({});
+  const categories = useCategoryReport({});
 
   /**
    * ⚠️ HECH QANDAY RUXSAT BO'LMASA — ANIQ XABAR. Bo'sh ekran
@@ -57,6 +85,14 @@ export default function DashboardPage() {
       />
     );
   }
+
+  const totals = daily.data?.reduce(
+    (acc, point) => ({
+      total: acc.total + point.total,
+      resolved: acc.resolved + point.resolved,
+    }),
+    { total: 0, resolved: 0 },
+  );
 
   return (
     <>
@@ -89,119 +125,173 @@ export default function DashboardPage() {
         ) : null}
       </div>
 
-      {/* ── E'TIBOR TALAB QILADIGANLAR ──────────────────────── */}
-      <div className="mb-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {/*
+        ── BENTO TO'R ────────────────────────────────────────
+
+        ⚠️ `auto-rows-min` + `items-start`: katakchalar O'Z
+        mazmuniga qarab balandlik oladi. Standart `stretch`
+        bilan kaltaroq katakcha uzunining balandligiga
+        cho'zilib, ichida katta bo'sh maydon qolardi.
+      */}
+      <div className="grid auto-rows-min items-start gap-4 lg:grid-cols-6">
+        {/* ── 1-QATOR: E'TIBOR TALAB QILADIGANLAR ──────────── */}
         {can("signals.view") ? (
-          <StatTile
-            label="Ko'rilmagan signallar"
-            value={signalCounts.data?.new ?? "—"}
-            icon={RadioIcon}
-            /*
-             * ⚠️ AYNAN SHU PLITKA TO'LDIRILGAN: panelning asosiy
-             * ishi — signalni ko'rib chiqish. Boshqasi to'ldirilsa
-             * operator e'tibori ikkinchi darajali raqamga ketardi.
-             */
-            featured
-            hint={
-              signalCounts.data?.highNew
-                ? `${signalCounts.data.highNew} tasi yuqori jiddiylikda`
-                : "Tekshirib chiqish kerak"
-            }
-            href="/signals"
-          />
+          <div className="lg:col-span-3 xl:col-span-2">
+            <StatTile
+              label="Ko'rilmagan signallar"
+              value={signalCounts.data?.new ?? "—"}
+              icon={RadioIcon}
+              /*
+               * ⚠️ AYNAN SHU PLITKA TO'LDIRILGAN: panelning asosiy
+               * ishi — signalni ko'rib chiqish. Boshqasi to'ldirilsa
+               * operator e'tibori ikkinchi darajali raqamga ketardi.
+               */
+              featured
+              hint={
+                signalCounts.data?.highNew
+                  ? `${signalCounts.data.highNew} tasi yuqori jiddiylikda`
+                  : "Tekshirib chiqish kerak"
+              }
+              href="/signals"
+            />
+          </div>
         ) : null}
 
         {can("issues.view") ? (
           <>
-            <StatTile
-              label="Ochiq murojaatlar"
-              value={issueStats.data?.open ?? "—"}
-              icon={MessageSquareWarning}
-              hint="Yangi va ko'rib chiqilmoqda"
-              href="/issues?status=new"
-            />
+            <div className="lg:col-span-3 xl:col-span-2">
+              <StatTile
+                label="Ochiq murojaatlar"
+                value={issueStats.data?.open ?? "—"}
+                icon={MessageSquareWarning}
+                hint="Yangi va ko'rib chiqilmoqda"
+                href="/issues?status=new"
+              />
+            </div>
 
-            <StatTile
-              label="Muddati o'tgan"
-              value={issueStats.data?.overdue ?? "—"}
-              icon={AlertTriangle}
-              tone={issueStats.data?.overdue ? "danger" : "default"}
-              hint={issueStats.data?.overdue ? "Kechikkan javob" : "Kechikish yo'q"}
-              href="/issues?overdue=true"
-            />
+            <div className="lg:col-span-3 xl:col-span-1">
+              <StatTile
+                label="Muddati o'tgan"
+                value={issueStats.data?.overdue ?? "—"}
+                icon={AlertTriangle}
+                tone={issueStats.data?.overdue ? "danger" : "default"}
+                hint={issueStats.data?.overdue ? "Kechikkan javob" : "Kechikish yo'q"}
+                href="/issues?overdue=true"
+              />
+            </div>
           </>
         ) : null}
 
         {can("groups.view") ? (
-          <StatTile
-            label="MFY biriktirilmagan"
-            value={groupStats.data?.unassigned ?? "—"}
-            icon={MapPinOff}
-            tone={groupStats.data?.unassigned ? "warning" : "default"}
-            // ⚠️ IZOH SABABNI AYTADI: biriktirilmagan guruh
-            // kuzatuvga ham qo'yilmaydi va bu "ish qoldi" degani.
-            hint="Biriktirilmasa kuzatuvga qo'yilmaydi"
-            href="/groups?unassigned=true"
-          />
+          <div className="lg:col-span-3 xl:col-span-1">
+            <StatTile
+              label="MFY biriktirilmagan"
+              value={groupStats.data?.unassigned ?? "—"}
+              icon={MapPinOff}
+              tone={groupStats.data?.unassigned ? "warning" : "default"}
+              // ⚠️ IZOH SABABNI AYTADI: biriktirilmagan guruh
+              // kuzatuvga ham qo'yilmaydi va bu "ish qoldi" degani.
+              hint="Biriktirilmasa kuzatuvga qo'yilmaydi"
+              href="/groups?unassigned=true"
+            />
+          </div>
         ) : null}
-      </div>
 
-      {/*
-        ⚠️ `items-start`: kartalar O'Z mazmuniga qarab balandlik
-        oladi. Standart `stretch` bilan kaltaroq karta uzunining
-        balandligiga cho'zilib, ichida katta bo'sh maydon
-        qolardi.
-      */}
-      <div className="grid items-start gap-4 lg:grid-cols-3">
-        {/* ── Oxirgi 14 kun — ENG KATTA, 2 ustun ─────────────── */}
+        {/* ── 2-QATOR: DINAMIKA (katta) + HOLAT HALQASI ────── */}
         {can("reports.view") ? (
-          <Card className="lg:col-span-2">
-            <CardHeader className="flex-row items-center justify-between gap-2">
-              <CardTitle>Oxirgi 14 kun</CardTitle>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/reports">
-                  Batafsil
-                  <ArrowRight className="size-3.5" />
-                </Link>
-              </Button>
-            </CardHeader>
+          <ChartFrame
+            title="Oxirgi 14 kun"
+            subtitle="Kunlik murojaat oqimi"
+            href="/reports"
+            className="lg:col-span-6 xl:col-span-4"
+          >
+            {/* ⚠️ IKKI YIRIK RAQAM DIAGRAMMA USTIDA: grafik
+                yo'nalishni ko'rsatadi, raqam esa aniq qiymatni —
+                operatorga ikkalasi ham kerak. */}
+            <div className="mb-4 flex flex-wrap gap-8">
+              <Metric label="Jami murojaat" value={totals?.total ?? "—"} />
+              <Metric
+                label="Hal qilingan"
+                value={totals?.resolved ?? "—"}
+                tone="primary"
+              />
+              <Metric
+                label="Hal qilish ulushi"
+                value={
+                  totals && totals.total > 0
+                    ? `${Math.round((totals.resolved / totals.total) * 100)}%`
+                    : "—"
+                }
+              />
+            </div>
 
-            <CardContent className="space-y-5">
-              <div className="flex flex-wrap gap-8">
-                <Metric
-                  label="Jami murojaat"
-                  value={daily.data?.reduce((sum, p) => sum + p.total, 0) ?? "—"}
-                />
-                <Metric
-                  label="Hal qilingan"
-                  value={daily.data?.reduce((sum, p) => sum + p.resolved, 0) ?? "—"}
-                  tone="primary"
-                />
-              </div>
-
-              {daily.data && daily.data.length > 0 ? (
-                <Sparkline points={daily.data.map((point) => point.total)} />
-              ) : (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  Hali ma&apos;lumot yo&apos;q
-                </p>
-              )}
-            </CardContent>
-          </Card>
+            {daily.data && daily.data.length > 0 ? (
+              <TrendChart data={daily.data} />
+            ) : (
+              <p className="py-12 text-center text-sm text-muted-foreground">
+                Hali ma&apos;lumot yo&apos;q
+              </p>
+            )}
+          </ChartFrame>
         ) : null}
 
-        {/* ── Kuzatuv holati ─────────────────────────────────── */}
+        {can("issues.view") ? (
+          <ChartFrame
+            title="Murojaatlar holati"
+            subtitle="Hozirgi taqsimot"
+            href="/issues"
+            hrefLabel="Ro'yxat"
+            className="lg:col-span-3 xl:col-span-2"
+          >
+            <StatusDonut counts={issueStats.data} />
+
+            {issueStats.data?.unassignedMahalla ? (
+              <Link
+                href="/issues"
+                className="mt-4 block rounded-xl bg-severity-normal/10 px-3.5 py-2.5 text-xs text-severity-normal transition-colors hover:bg-severity-normal/15"
+              >
+                {issueStats.data.unassignedMahalla} ta murojaatda hudud
+                belgilanmagan
+              </Link>
+            ) : null}
+          </ChartFrame>
+        ) : null}
+
+        {/* ── 3-QATOR: YO'NALISHLAR + KUZATUV ──────────────── */}
+        {can("reports.view") ? (
+          <ChartFrame
+            title="Eng ko'p yo'nalishlar"
+            subtitle="Murojaat soni bo'yicha"
+            href="/reports?tab=categories"
+            className="lg:col-span-3 xl:col-span-3"
+          >
+            <CategoryBars
+              rows={(categories.data ?? []).map((row) => ({
+                id: row.categoryId,
+                name: row.name,
+                color: row.color,
+                icon: row.icon,
+                count: row.count,
+              }))}
+            />
+          </ChartFrame>
+        ) : null}
+
         {can("groups.view") ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Kuzatuv holati</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
+          <ChartFrame
+            title="Kuzatuv holati"
+            subtitle="Telegram guruhlari"
+            href="/groups"
+            hrefLabel="Guruhlar"
+            className="lg:col-span-3 xl:col-span-3"
+          >
+            <div className="space-y-3">
               <Row label="Jami guruh" value={groupStats.data?.total ?? "—"} />
               <Row
                 label="Kuzatuvda (rasmiy)"
                 value={groupStats.data?.official ?? "—"}
               />
+              <Row label="Qalqon yoqilgan" value={groupStats.data?.guarded ?? "—"} />
               <Row
                 label="Navbatdagi xabar"
                 value={groupStats.data?.pendingMessages ?? "—"}
@@ -210,102 +300,58 @@ export default function DashboardPage() {
                 // o'ylab qolmasligi kerak.
                 hint="Keyingi tahlilda ko'riladi"
               />
-
-              <Button variant="outline" size="sm" className="w-full" asChild>
-                <Link href="/groups">Guruhlarni ko&apos;rish</Link>
-              </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </ChartFrame>
         ) : null}
 
-        {/* ── Murojaatlar holati ─────────────────────────────── */}
-        {can("issues.view") ? (
-          <Card className="lg:col-span-3">
-            <CardHeader>
-              <CardTitle>Murojaatlar</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {/*
-                ⚠️ TO'RT HOLAT YONMA-YON: ular bir-birining
-                MUQOBILI (murojaat bir vaqtda faqat bitta holatda)
-                va ustma-ust ro'yxatda bu ko'rinmasdi.
-              */}
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Metric label="Yangi" value={issueStats.data?.new ?? "—"} />
-                <Metric
-                  label="Ko'rib chiqilmoqda"
-                  value={issueStats.data?.in_progress ?? "—"}
-                />
-                <Metric
-                  label="Hal qilindi"
-                  value={issueStats.data?.resolved ?? "—"}
-                  tone="primary"
-                />
-                <Metric
-                  label="Rad etildi"
-                  value={issueStats.data?.rejected ?? "—"}
-                />
-              </div>
-
-              {issueStats.data?.unassignedMahalla ? (
-                <p className="mt-4 rounded-xl bg-severity-normal/10 px-3.5 py-2.5 text-xs text-severity-normal">
-                  {issueStats.data.unassignedMahalla} ta murojaatda hudud
-                  belgilanmagan
-                </p>
-              ) : null}
-
-              <Button variant="outline" size="sm" className="mt-4" asChild>
-                <Link href="/issues">Murojaatlarni ko&apos;rish</Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ) : null}
-
-        {/* ── Ilovadan (fuqaro murojaatlari) ─────────────────── */}
+        {/* ── 4-QATOR: ILOVADAN KELGAN MUROJAATLAR ─────────── */}
         {/* ⚠️ `reports.view` KERAK: kartadagi raqamlar
             `/reports/mobile` dan keladi va u shu ruxsatga ega. */}
         {can("citizens.view") && can("reports.view") ? (
-          <Card className="lg:col-span-3">
-            <CardHeader className="flex-row items-center justify-between gap-2">
-              <CardTitle>Ilovadan kelgan murojaatlar</CardTitle>
-              {can("reports.view") ? (
-                <Button variant="ghost" size="sm" asChild>
-                  <Link href="/reports?tab=mobile">
-                    Analitika
-                    <ArrowRight className="size-3.5" />
-                  </Link>
-                </Button>
-              ) : null}
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Metric label="Jami (ilova)" value={mobile.data?.total ?? "—"} />
-                <Metric label="Ochiq" value={mobile.data?.open ?? "—"} />
-                <Metric
-                  label="Faol fuqarolar"
-                  value={mobile.data?.citizens.active ?? "—"}
-                  tone="primary"
-                />
-                <Metric
-                  label="O'rtacha javob"
-                  value={
-                    mobile.data?.avgResponseHours != null
-                      ? `${mobile.data.avgResponseHours} soat`
-                      : "—"
-                  }
-                />
-              </div>
+          <ChartFrame
+            title="Ilovadan kelgan murojaatlar"
+            subtitle="Fuqaro Mini App"
+            href="/reports?tab=mobile"
+            hrefLabel="Analitika"
+            className="lg:col-span-6"
+          >
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <MiniStat
+                icon={Smartphone}
+                label="Jami (ilova)"
+                value={mobile.data?.total ?? "—"}
+              />
+              <MiniStat
+                icon={MessageSquareWarning}
+                label="Ochiq"
+                value={mobile.data?.open ?? "—"}
+              />
+              <MiniStat
+                icon={Users}
+                label="Faol fuqarolar"
+                value={mobile.data?.citizens.active ?? "—"}
+                tone="primary"
+              />
+              <MiniStat
+                icon={TrendingUp}
+                label="O'rtacha javob"
+                value={
+                  mobile.data?.avgResponseHours != null
+                    ? `${mobile.data.avgResponseHours} soat`
+                    : "—"
+                }
+              />
+            </div>
 
-              <div className="mt-4 flex gap-2">
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/citizens">Fuqarolar</Link>
-                </Button>
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/map">Xarita</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            <div className="mt-4 flex gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/citizens">Fuqarolar</Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/map">Xarita</Link>
+              </Button>
+            </div>
+          </ChartFrame>
         ) : null}
       </div>
     </>
@@ -339,6 +385,39 @@ const Metric = ({
   </div>
 );
 
+/**
+ * IXCHAM KO'RSATKICH — belgisi bilan.
+ *
+ * ⚠️ `Metric` DAN FARQI: bu TO'RTTALIK qatorda turadi va raqami
+ * kichikroq. Yirik `Metric` o'lchamida to'rttasi bir qatorga
+ * sig'masdi.
+ */
+const MiniStat = ({
+  icon: Icon,
+  label,
+  value,
+  tone = "default",
+}: {
+  icon: typeof Smartphone;
+  label: string;
+  value: number | string;
+  tone?: "default" | "primary";
+}) => (
+  <div className="rounded-xl bg-secondary/50 p-3.5">
+    <div className="mb-2 flex items-center gap-2">
+      <Icon className="size-3.5 shrink-0 text-muted-foreground" />
+      <p className="truncate text-xs text-muted-foreground">{label}</p>
+    </div>
+    <p
+      className={`metric text-2xl font-semibold ${
+        tone === "primary" ? "text-primary" : ""
+      }`}
+    >
+      {value}
+    </p>
+  </div>
+);
+
 const Row = ({
   label,
   value,
@@ -348,7 +427,7 @@ const Row = ({
   value: number | string;
   hint?: string;
 }) => (
-  <div className="flex items-start justify-between gap-2">
+  <div className="flex items-start justify-between gap-2 text-sm">
     <div>
       <p>{label}</p>
       {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
@@ -356,46 +435,3 @@ const Row = ({
     <p className="tabular font-semibold">{value}</p>
   </div>
 );
-
-/**
- * ODDIY USTUNLI DIAGRAMMA.
- *
- * ⚠️ `recharts` ISHLATILMAYDI: bu 14 ta ustun va kutubxona bu yerda
- * ~100 KB JS qo'shardi — faqat sarlavhada turgan kichik grafik
- * uchun. Hisobot sahifasida esa u o'rinli (o'qlar, tooltip,
- * bir nechta seriya).
- *
- * ⚠️ BO'SH MA'LUMOTDA 0 GA BO'LISH: `max` kamida 1 bo'ladi.
- */
-const Sparkline = ({ points }: { points: number[] }) => {
-  const max = Math.max(1, ...points);
-
-  return (
-    /*
-     * ⚠️ `max-w-[2.5rem]` HAR USTUNDA: kunlar kam bo'lganda
-     * `flex-1` ularni butun kenglikka cho'zib, bitta ustun
-     * "devor" bo'lib qolardi — grafik emas, bitta katta
-     * to'rtburchak ko'rinardi.
-     */
-    <div className="flex h-20 items-end gap-1.5 sm:h-24">
-      {points.map((value, index) => {
-        // ⚠️ OXIRGI USTUN TA'KIDLANGAN: u BUGUN va operator
-        // ko'pincha aynan shuni qidiradi.
-        const isLast = index === points.length - 1;
-
-        return (
-          <div
-            key={index}
-            className={`max-w-[2.5rem] flex-1 rounded-md transition-colors ${
-              isLast ? "bg-primary" : "bg-primary/25 hover:bg-primary/40"
-            }`}
-            // ⚠️ MINIMAL BALANDLIK 3px: nol qiymatli kun butunlay
-            // yo'qolib, grafikda teshik ko'rinardi.
-            style={{ height: `${Math.max(3, (value / max) * 100)}%` }}
-            title={`${value}`}
-          />
-        );
-      })}
-    </div>
-  );
-};
