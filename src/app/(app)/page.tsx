@@ -50,7 +50,7 @@ export default function DashboardPage() {
     return (
       <EmptyState
         title="Sizga hali hech qanday bo'lim ochilmagan"
-        hint="Ma'muriyatga murojaat qiling — ular ruxsatlarni xodimlar bo'limida beradi."
+        hint="Ma'muriyatga murojaat qiling — ular ruxsatlarni Adminlar bo'limida beradi."
       />
     );
   }

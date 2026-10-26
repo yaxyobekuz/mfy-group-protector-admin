@@ -84,12 +84,12 @@ export default function UsersPage() {
   return (
     <>
       <PageHeader
-        title="Xodimlar"
+        title="Adminlar"
         actions={
           canManage ? (
             <Button onClick={() => setForm({})}>
               <Plus className="size-4" />
-              Xodim qo&apos;shish
+              Admin qo&apos;shish
             </Button>
           ) : null
         }
@@ -179,12 +179,12 @@ export default function UsersPage() {
             onRetry={() => void users.refetch()}
           />
         ) : (users.data?.items.length ?? 0) === 0 ? (
-          <EmptyState title="Xodim topilmadi" />
+          <EmptyState title="Admin topilmadi" />
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Xodim</TableHead>
+                <TableHead>Admin</TableHead>
                 <TableHead>Rol</TableHead>
                 <TableHead>Qamrov</TableHead>
                 <TableHead className="text-right">Topshiriq</TableHead>
@@ -390,7 +390,7 @@ const UserDialog = ({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Xodimni tahrirlash" : "Xodim qo'shish"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Adminni tahrirlash" : "Admin qo'shish"}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5">
@@ -471,7 +471,7 @@ const UserDialog = ({
                 to'ldirilmasdi.
               */}
               <p className="text-xs text-muted-foreground">
-                Xodim botda /start bosganda raqam ko&apos;rinadi. Botdan muammo
+                Admin botda /start bosganda raqam ko&apos;rinadi. Botdan muammo
                 yuborishi uchun kerak.
               </p>
             </div>
@@ -507,7 +507,7 @@ const UserDialog = ({
             <div>
               <p className="text-sm font-medium">Hududiy qamrov</p>
               <p className="text-xs text-muted-foreground">
-                Xodim <strong>kimning</strong> ma&apos;lumotini ko&apos;radi. Bu
+                Admin <strong>kimning</strong> ma&apos;lumotini ko&apos;radi. Bu
                 ruxsatdan alohida: tuman operatori signalni biriktira oladi, lekin
                 faqat o&apos;z tumanidagini.
               </p>
@@ -547,7 +547,7 @@ const UserDialog = ({
                   </SelectContent>
                 </Select>
                 {!districtId ? (
-                  <FieldError message="Tuman tanlanmasa xodim hech narsa ko'rmaydi." />
+                  <FieldError message="Tuman tanlanmasa admin hech narsa ko'rmaydi." />
                 ) : null}
               </div>
             ) : null}
@@ -558,7 +558,7 @@ const UserDialog = ({
             <div>
               <p className="text-sm font-medium">Ruxsatlar</p>
               <p className="text-xs text-muted-foreground">
-                Xodim <strong>nimani</strong> qila oladi.
+                Admin <strong>nimani</strong> qila oladi.
               </p>
             </div>
 
@@ -697,7 +697,7 @@ const PasswordDialog = ({
             ish o'rtasida tizimdan chiqaradi.
           */}
           <p className="text-xs text-muted-foreground">
-            Kamida 6 belgi. Xodimning barcha sessiyalari yopiladi — u qaytadan
+            Kamida 6 belgi. Adminning barcha sessiyalari yopiladi — u qaytadan
             kirishi kerak bo&apos;ladi.
           </p>
         </div>

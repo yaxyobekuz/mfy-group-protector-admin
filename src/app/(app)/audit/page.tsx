@@ -57,7 +57,7 @@ const SECTIONS = [
   { value: "issue.", label: "Murojaatlar" },
   { value: "issue_category.", label: "Yo'nalishlar" },
   { value: "territory.", label: "Hudud" },
-  { value: "user.", label: "Xodimlar" },
+  { value: "user.", label: "Adminlar" },
   { value: "settings.", label: "Sozlamalar" },
 ];
 
@@ -114,7 +114,7 @@ export default function AuditPage() {
               <TableRow>
                 <TableHead className="w-8" />
                 <TableHead>Vaqt</TableHead>
-                <TableHead>Xodim</TableHead>
+                <TableHead>Admin</TableHead>
                 <TableHead>Amal</TableHead>
                 <TableHead>IP</TableHead>
               </TableRow>
@@ -169,7 +169,7 @@ export default function AuditPage() {
                           // QOLADI: audit append-only. Shuning uchun
                           // `userId` ko'rsatiladi.
                           <span className="text-xs text-muted-foreground">
-                            O&apos;chirilgan xodim
+                            O&apos;chirilgan admin
                           </span>
                         ) : (
                           <span className="text-muted-foreground">—</span>

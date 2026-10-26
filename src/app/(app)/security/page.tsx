@@ -72,7 +72,7 @@ export default function SecurityPage() {
     return (
       <EmptyState
         title="Sizda bu bo'limga ruxsat yo'q"
-        hint="Ma'muriyatga murojaat qiling — ular ruxsatlarni xodimlar bo'limida beradi."
+        hint="Ma'muriyatga murojaat qiling — ular ruxsatlarni Adminlar bo'limida beradi."
       />
     );
   }
