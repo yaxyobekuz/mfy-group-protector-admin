@@ -16,6 +16,7 @@
 
 import { useTheme } from "next-themes";
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Bar,
   BarChart,
@@ -33,6 +34,7 @@ import {
 import {
   useCategoryReport,
   useDailyReport,
+  useMobileReport,
   useReportOverview,
   useSignalReport,
   useTerritoryReport,
@@ -109,7 +111,16 @@ const CHART_COLORS_DARK = [
   "#179c90",
 ];
 
+const VALID_TABS = ["dynamics", "territory", "categories", "ai", "mobile"];
+
 export default function ReportsPage() {
+  // ⚠️ BOSHLANG'ICH TAB URL'DAN: dashboard "Analitika" havolasi
+  // `/reports?tab=mobile` beradi va foydalanuvchi o'sha tabni
+  // ko'rishi kerak.
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab");
+  const defaultTab = initialTab && VALID_TABS.includes(initialTab) ? initialTab : "dynamics";
+
   /**
    * ⚠️ `resolvedTheme`, `theme` EMAS: `theme` "system" bo'lishi
    * mumkin va o'shanda qaysi rang kerakligi noma'lum qolardi.
@@ -154,6 +165,7 @@ export default function ReportsPage() {
   const territory = useTerritoryReport(filters);
   const categories = useCategoryReport(filters);
   const signals = useSignalReport(filters);
+  const mobile = useMobileReport(filters);
   const daily = useDailyReport(days);
 
   const patch = (next: Partial<ReportFilters>) =>
@@ -269,12 +281,13 @@ export default function ReportsPage() {
         />
       </div>
 
-      <Tabs defaultValue="dynamics">
+      <Tabs defaultValue={defaultTab}>
         <TabsList>
           <TabsTrigger value="dynamics">Dinamika</TabsTrigger>
           <TabsTrigger value="territory">Hudud</TabsTrigger>
           <TabsTrigger value="categories">Yo&apos;nalishlar</TabsTrigger>
           <TabsTrigger value="ai">AI samarasi</TabsTrigger>
+          <TabsTrigger value="mobile">Ilova</TabsTrigger>
         </TabsList>
 
         {/* ══ DINAMIKA ═════════════════════════════════════════ */}
@@ -535,6 +548,12 @@ export default function ReportsPage() {
                   color={chartColors[5]!}
                 />
                 <SourceRow
+                  label="Ilovadan (fuqaro)"
+                  value={overview.data?.source.mobile ?? 0}
+                  total={overview.data?.total ?? 0}
+                  color={chartColors[1]!}
+                />
+                <SourceRow
                   label="Panelda qo'lda"
                   value={overview.data?.source.manual ?? 0}
                   total={overview.data?.total ?? 0}
@@ -543,6 +562,113 @@ export default function ReportsPage() {
                   // chiziq KO'RINMAY qolardi.
                   color={chartColors[6]!}
                 />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        {/* ══ ILOVA (FUQARO MUROJAATLARI) ══════════════════════ */}
+        <TabsContent value="mobile">
+          <div className="grid gap-4 lg:grid-cols-4">
+            <StatTile label="Jami (ilova)" value={mobile.data?.total ?? "—"} />
+            <StatTile
+              label="O'rtacha javob"
+              value={
+                mobile.data?.avgResponseHours != null
+                  ? `${mobile.data.avgResponseHours} soat`
+                  : "—"
+              }
+              hint="Fuqaroga javob berilgunicha"
+            />
+            <StatTile
+              label="Muddatida bajarildi"
+              value={mobile.data?.slaOnTimeRate != null ? `${mobile.data.slaOnTimeRate}%` : "—"}
+              hint="Hal qilinganlar orasida SLA ichida"
+              tone="success"
+            />
+            <StatTile
+              label="Muddati o'tgan"
+              value={mobile.data?.overdue ?? "—"}
+              tone={mobile.data?.overdue ? "danger" : "default"}
+            />
+
+            {/* ── FUQAROLAR ───────────────────────────────────── */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-sm">Fuqarolar</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                <SourceRow
+                  label="Faol (murojaat yuborgan)"
+                  value={mobile.data?.citizens.active ?? 0}
+                  total={mobile.data?.citizens.total ?? 0}
+                  color={chartColors[0]!}
+                />
+                <div className="flex items-center justify-between pt-1 text-sm">
+                  <span className="text-muted-foreground">Ro&apos;yxatdan o&apos;tgan</span>
+                  <span className="font-medium tabular-nums">
+                    {mobile.data?.citizens.total ?? "—"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Bloklangan</span>
+                  <span className="font-medium tabular-nums text-destructive">
+                    {mobile.data?.citizens.blocked ?? "—"}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* ── ENG FAOL FUQAROLAR ──────────────────────────── */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle className="text-sm">Eng faol fuqarolar</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(mobile.data?.topCitizens.length ?? 0) === 0 ? (
+                  <EmptyState title="Hali ma'lumot yo'q" />
+                ) : (
+                  <div className="space-y-2">
+                    {mobile.data?.topCitizens.map((citizen, index) => (
+                      <div
+                        key={citizen.id}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="flex items-center gap-2">
+                          <span className="flex size-6 items-center justify-center rounded-full bg-accent text-xs font-bold text-accent-foreground">
+                            {index + 1}
+                          </span>
+                          {citizen.name}
+                        </span>
+                        <span className="text-muted-foreground tabular-nums">
+                          {citizen.appeals} murojaat · {citizen.points} ball
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ── YO'NALISHLAR ────────────────────────────────── */}
+            <Card className="lg:col-span-4">
+              <CardHeader>
+                <CardTitle className="text-sm">Ilovadagi yo&apos;nalishlar</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-sm">
+                {(mobile.data?.categories.length ?? 0) === 0 ? (
+                  <EmptyState title="Hali ma'lumot yo'q" />
+                ) : (
+                  mobile.data?.categories.map((category, index) => (
+                    <SourceRow
+                      key={category.id}
+                      label={category.name}
+                      value={category.count}
+                      total={mobile.data?.total ?? 0}
+                      color={category.color ?? chartColors[index % 7]!}
+                    />
+                  ))
+                )}
               </CardContent>
             </Card>
           </div>

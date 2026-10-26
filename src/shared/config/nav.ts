@@ -12,6 +12,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   FileText,
   LayoutDashboard,
+  Map as MapIcon,
   MapPin,
   MessageSquareWarning,
   Megaphone,
@@ -69,6 +70,7 @@ export const NAV_ITEMS: NavItem[] = [
     permission: "announcements.manage",
   },
   { href: "/territory", label: "Hudud", icon: MapPin, permission: "territory.view" },
+  { href: "/map", label: "Xarita", icon: MapIcon, permission: "reports.view" },
   { href: "/reports", label: "Hisobotlar", icon: FileText, permission: "reports.view" },
   { href: "/users", label: "Adminlar", icon: Users, permission: "users.view" },
   { href: "/audit", label: "Audit jurnali", icon: ScrollText, permission: "audit.view" },

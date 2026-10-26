@@ -82,6 +82,9 @@ export const queryKeys = {
     signals: (params?: QueryParams) =>
       ["reports", "signals", params ?? {}] as const,
     daily: (days: number) => ["reports", "daily", days] as const,
+    mobile: (params?: QueryParams) =>
+      ["reports", "mobile", params ?? {}] as const,
+    map: (params?: QueryParams) => ["reports", "map", params ?? {}] as const,
   },
 
   settings: {

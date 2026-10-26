@@ -200,3 +200,14 @@
     }
   }
 }
+
+/* ── LEAFLET XARITASI ──────────────────────────────────────────────────
+   ⚠️ `isolation: isolate` + past `z-index`: Leaflet o'z panellariga
+   katta `z-index` (400–1000) beradi. Izolatsiyasiz ular sahifa ildiz
+   stacking kontekstida hisoblanib, ustidagi overlay'lar (dropdown,
+   popover) bilan urishadi. Izolatsiya bu z-index'larni xarita ICHIDA
+   ushlab turadi — tashqaridagi `z-[1200]` dropdown har doim yuqorida. */
+.leaflet-container {
+  isolation: isolate;
+  z-index: 0;
+}

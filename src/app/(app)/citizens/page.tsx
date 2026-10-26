@@ -10,7 +10,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ShieldBan, UserCircle } from "lucide-react";
+import { Send, ShieldBan, UserCircle } from "lucide-react";
 
 import { useSession } from "@/entities/session/auth-provider";
 import {
@@ -42,6 +42,7 @@ import {
 } from "@/shared/ui/table";
 import { PageHeader } from "@/widgets/page-header/page-header";
 import { BlockDialog } from "@/features/citizens/block-dialog";
+import { BroadcastDialog } from "@/features/citizens/broadcast-dialog";
 
 const ALL = "__all__";
 const BLOCKED = "blocked";
@@ -55,6 +56,7 @@ export default function CitizensPage() {
     name: string;
     blocked: boolean;
   } | null>(null);
+  const [broadcasting, setBroadcasting] = useState(false);
 
   const citizens = useCitizens(filters);
   const districts = useDistricts();
@@ -81,7 +83,17 @@ export default function CitizensPage() {
 
   return (
     <>
-      <PageHeader title="Fuqarolar" />
+      <PageHeader
+        title="Fuqarolar"
+        actions={
+          canManage ? (
+            <Button variant="outline" onClick={() => setBroadcasting(true)}>
+              <Send className="mr-1.5 size-4" />
+              Xabar yuborish
+            </Button>
+          ) : null
+        }
+      />
 
       <div className="mb-4 grid gap-2 sm:grid-cols-3">
         <Input
@@ -236,6 +248,9 @@ export default function CitizensPage() {
           </div>
         </div>
       ) : null}
+
+      {/* ── XABAR YUBORISH ───────────────────────────────────── */}
+      {broadcasting ? <BroadcastDialog onClose={() => setBroadcasting(false)} /> : null}
 
       {/* ── BLOK DIALOGI ─────────────────────────────────────── */}
       {blockTarget ? (

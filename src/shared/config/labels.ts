@@ -188,6 +188,7 @@ export const AUDIT_ACTION: Record<string, string> = {
   "settings.update": "Sozlamalarni o'zgartirdi",
   "citizen.block": "Fuqaroni bloklladi",
   "citizen.unblock": "Fuqaro blokini yechdi",
+  "citizen.broadcast": "Fuqarolarga xabar yubordi",
   "announcement.create": "Yangilik qo'shdi",
   "announcement.update": "Yangilikni tahrirladi",
   "announcement.delete": "Yangilikni o'chirdi",

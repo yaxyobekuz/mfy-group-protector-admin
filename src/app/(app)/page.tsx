@@ -23,7 +23,7 @@ import { useSession } from "@/entities/session/auth-provider";
 import { useGroupStats } from "@/features/groups/api";
 import { useIssueStats } from "@/features/issues/api";
 import { useSignalCounts, useSignalStatus } from "@/features/signals/api";
-import { useDailyReport } from "@/features/reports/api";
+import { useDailyReport, useMobileReport } from "@/features/reports/api";
 import { formatRelativeUz } from "@/shared/lib/date";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -38,6 +38,9 @@ export default function DashboardPage() {
   const issueStats = useIssueStats();
   const groupStats = useGroupStats();
   const daily = useDailyReport(14);
+  // ⚠️ `/reports/mobile` server'da `reports.view` TALAB QILADI: hook
+  // faqat shu ruxsat bo'lganda ishga tushadi, aks holda 403 bo'lardi.
+  const mobile = useMobileReport({});
 
   /**
    * ⚠️ HECH QANDAY RUXSAT BO'LMASA — ANIQ XABAR. Bo'sh ekran
@@ -254,6 +257,53 @@ export default function DashboardPage() {
               <Button variant="outline" size="sm" className="mt-4" asChild>
                 <Link href="/issues">Murojaatlarni ko&apos;rish</Link>
               </Button>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {/* ── Ilovadan (fuqaro murojaatlari) ─────────────────── */}
+        {/* ⚠️ `reports.view` KERAK: kartadagi raqamlar
+            `/reports/mobile` dan keladi va u shu ruxsatga ega. */}
+        {can("citizens.view") && can("reports.view") ? (
+          <Card className="lg:col-span-3">
+            <CardHeader className="flex-row items-center justify-between gap-2">
+              <CardTitle>Ilovadan kelgan murojaatlar</CardTitle>
+              {can("reports.view") ? (
+                <Button variant="ghost" size="sm" asChild>
+                  <Link href="/reports?tab=mobile">
+                    Analitika
+                    <ArrowRight className="size-3.5" />
+                  </Link>
+                </Button>
+              ) : null}
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Metric label="Jami (ilova)" value={mobile.data?.total ?? "—"} />
+                <Metric label="Ochiq" value={mobile.data?.open ?? "—"} />
+                <Metric
+                  label="Faol fuqarolar"
+                  value={mobile.data?.citizens.active ?? "—"}
+                  tone="primary"
+                />
+                <Metric
+                  label="O'rtacha javob"
+                  value={
+                    mobile.data?.avgResponseHours != null
+                      ? `${mobile.data.avgResponseHours} soat`
+                      : "—"
+                  }
+                />
+              </div>
+
+              <div className="mt-4 flex gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/citizens">Fuqarolar</Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/map">Xarita</Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ) : null}

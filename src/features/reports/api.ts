@@ -16,6 +16,8 @@ import type {
   AuditEntry,
   CategoryReportRow,
   DailyPoint,
+  MapIssue,
+  MobileReport,
   Paginated,
   ReportOverview,
   Settings,
@@ -64,6 +66,22 @@ export const useDailyReport = (days: number) =>
   useQuery({
     queryKey: queryKeys.reports.daily(days),
     queryFn: () => api.get<DailyPoint[]>("/reports/daily", { days }),
+    placeholderData: (previous) => previous,
+  });
+
+/** Mini App (fuqaro murojaatlari) analitikasi. */
+export const useMobileReport = (filters: ReportFilters) =>
+  useQuery({
+    queryKey: queryKeys.reports.mobile(filters),
+    queryFn: () => api.get<MobileReport>("/reports/mobile", { ...filters }),
+    placeholderData: (previous) => previous,
+  });
+
+/** Xarita nuqtalari (koordinatali murojaatlar). */
+export const useMapReport = (filters: ReportFilters & { status?: string }) =>
+  useQuery({
+    queryKey: queryKeys.reports.map(filters),
+    queryFn: () => api.get<MapIssue[]>("/reports/map", { ...filters }),
     placeholderData: (previous) => previous,
   });
 

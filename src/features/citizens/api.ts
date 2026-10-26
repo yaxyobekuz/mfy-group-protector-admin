@@ -34,6 +34,25 @@ export const useCitizen = (id: string) =>
     enabled: Boolean(id),
   });
 
+export interface BroadcastResult {
+  recipients: number;
+  sent: number;
+  failed: number;
+}
+
+export const useBroadcast = () => {
+  return useMutation({
+    mutationFn: (input: { message: string; districtId?: string }) =>
+      api.post<BroadcastResult>("/citizens/broadcast", input),
+    onSuccess: (result) => {
+      toast.success(`Xabar yuborildi: ${result.sent}/${result.recipients}`);
+    },
+    onError: (error) => {
+      toast.error(error instanceof ApiError ? error.message : "Yuborilmadi");
+    },
+  });
+};
+
 export const useBlockCitizen = () => {
   const queryClient = useQueryClient();
   return useMutation({

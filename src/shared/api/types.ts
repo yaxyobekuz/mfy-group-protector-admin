@@ -574,6 +574,39 @@ export interface CitizenDetail {
   stats: { total: number; open: number; resolved: number };
 }
 
+// ── MOBIL ANALITIKA VA XARITA ──────────────────────────────────────
+
+export interface MobileReport {
+  total: number;
+  status: Record<IssueStatus, number>;
+  open: number;
+  overdue: number;
+  resolutionRate: number | null;
+  avgResponseHours: number | null;
+  slaOnTimeRate: number | null;
+  citizens: { total: number; active: number; blocked: number };
+  categories: {
+    id: string;
+    name: string;
+    color: string | null;
+    icon: string | null;
+    count: number;
+  }[];
+  topCitizens: { id: string; name: string; points: number; appeals: number }[];
+}
+
+export interface MapIssue {
+  id: string;
+  publicNo: string;
+  title: string;
+  lat: number;
+  lng: number;
+  status: IssueStatus;
+  source: IssueSource;
+  createdAt: string;
+  category: { id: string; name: string; color: string | null; icon: string | null };
+}
+
 export interface Announcement {
   id: string;
   title: string;

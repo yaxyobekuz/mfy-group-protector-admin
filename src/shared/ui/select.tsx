@@ -42,7 +42,10 @@ export const SelectContent = React.forwardRef<
       ref={ref}
       position={position}
       className={cn(
-        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover bg-card text-card-foreground shadow-md",
+        // ⚠️ `z-[1200]` — Leaflet xaritasidan YUQORI. Leaflet
+        // boshqaruvlari `z-index: 1000` oladi va `z-50` portal ular
+        // ostida qolib, xarita sahifasida dropdown ko'rinmay qolardi.
+        "relative z-[1200] max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover bg-card text-card-foreground shadow-md",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         position === "popper" && "data-[side=bottom]:translate-y-1",
         className,
