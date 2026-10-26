@@ -34,7 +34,7 @@ import {
   useResolveIssue,
 } from "@/features/issues/api";
 import { useUsers } from "@/features/users/api";
-import { ApiError } from "@/shared/api/client";
+import { ApiError, fileUrl } from "@/shared/api/client";
 import {
   ISSUE_PRIORITY,
   ISSUE_SOURCE,
@@ -104,6 +104,17 @@ export default function IssueDetailPage() {
   const groupTitle = typeof meta.groupTitle === "string" ? meta.groupTitle : null;
   const senderName = typeof meta.senderName === "string" ? meta.senderName : null;
 
+  /**
+   * ⚠️ AI TAKLIFI IMZOLANGAN (`sourceMeta.ai`): server uni
+   * `signed-ref` bilan tekshirib yozgan — mijoz soxta foiz yoza
+   * olmaydi. Faqat `confidence`/`categoryId` ko'rsatiladi.
+   */
+  const aiRaw = meta.ai;
+  const ai =
+    aiRaw && typeof aiRaw === "object"
+      ? (aiRaw as { confidence?: number; priority?: string })
+      : null;
+
   return (
     <div className="mx-auto max-w-4xl space-y-4">
       <Button variant="ghost" size="sm" onClick={() => router.back()}>
@@ -141,6 +152,104 @@ export default function IssueDetailPage() {
               <p className="whitespace-pre-wrap text-sm leading-relaxed">{data.body}</p>
             </CardContent>
           </Card>
+
+          {/* ── Ilovadan kelgan dalil (surat/video) ─────────── */}
+          {data.attachments.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Biriktirilgan fayllar</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {data.attachments.map((file) => {
+                    const url = fileUrl(file.path);
+                    if (!url) return null;
+                    return file.kind === "video" ? (
+                      <video
+                        key={file.id}
+                        src={url}
+                        controls
+                        className="aspect-square w-full rounded-lg object-cover"
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <a key={file.id} href={url} target="_blank" rel="noreferrer">
+                        <img
+                          src={url}
+                          alt=""
+                          className="aspect-square w-full rounded-lg object-cover"
+                        />
+                      </a>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {/* ── Ilovadan kelgan murojaat tafsiloti ──────────── */}
+          {data.source === "mobile" ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Ilova ma&apos;lumotlari</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                {data.citizen ? (
+                  <Row
+                    label="Yuborgan fuqaro"
+                    value={`${data.citizen.firstName} ${data.citizen.lastName ?? ""}`.trim()}
+                  />
+                ) : null}
+                {data.citizen?.phone ? (
+                  <Row label="Telefon" value={data.citizen.phone} />
+                ) : null}
+                {data.address ? <Row label="Manzil" value={data.address} /> : null}
+                {data.lat !== null && data.lng !== null ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">Xaritada</span>
+                    <a
+                      className="font-medium text-primary hover:underline"
+                      href={`https://www.google.com/maps?q=${data.lat},${data.lng}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {data.lat.toFixed(5)}, {data.lng.toFixed(5)}
+                    </a>
+                  </div>
+                ) : null}
+                {data.occurredAt ? (
+                  <Row label="Sodir bo'lgan" value={formatDateTimeUz(data.occurredAt)} />
+                ) : null}
+
+                {/* ⚠️ FUQARO BAYROQLARI — TAXMIN: ustuvorlikni
+                    o'zgartirmaydi, faqat ko'rsatiladi (CLAUDE.md). */}
+                {data.isHazard || data.isLongStanding || data.isRepeatAppeal ? (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {data.isHazard ? (
+                      <Badge className="bg-destructive/10 text-destructive">Xavfli</Badge>
+                    ) : null}
+                    {data.isLongStanding ? (
+                      <Badge className="bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                        Uzoqdan davom etmoqda
+                      </Badge>
+                    ) : null}
+                    {data.isRepeatAppeal ? (
+                      <Badge className="bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300">
+                        Takroriy
+                      </Badge>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {ai && typeof ai.confidence === "number" ? (
+                  <p className="pt-1 text-xs text-muted-foreground">
+                    AI yo&apos;nalishni {ai.confidence}% ishonch bilan taklif qilgan
+                    {ai.priority ? ` (${ai.priority})` : ""}.
+                  </p>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
 
           {/* ── Manba (signaldan kelgan bo'lsa) ─────────────── */}
           {data.signal || groupTitle ? (
@@ -219,7 +328,12 @@ export default function IssueDetailPage() {
                     <div key={comment.id} className="space-y-1 border-l-2 pl-3">
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <span className="font-medium text-foreground">
-                          {comment.user.firstName} {comment.user.lastName}
+                          {/* ⚠️ FUQARO QO'SHIMCHASI bo'lsa `user` null. */}
+                          {comment.citizen
+                            ? `${comment.citizen.firstName} ${comment.citizen.lastName ?? ""} (fuqaro)`.trim()
+                            : comment.user
+                              ? `${comment.user.firstName} ${comment.user.lastName}`
+                              : "—"}
                         </span>
                         <span>{formatDateTimeUz(comment.createdAt)}</span>
 
@@ -345,9 +459,12 @@ export default function IssueDetailPage() {
               <Row
                 label={data.source === "signal" ? "Biriktirgan" : "Yuborgan"}
                 value={
-                  data.author
-                    ? `${data.author.firstName} ${data.author.lastName}`
-                    : "—"
+                  // ⚠️ MOBIL MUROJAATDA MUALLIF — FUQARO (`author` null).
+                  data.citizen
+                    ? `${data.citizen.firstName} ${data.citizen.lastName ?? ""}`.trim()
+                    : data.author
+                      ? `${data.author.firstName} ${data.author.lastName}`
+                      : "—"
                 }
               />
 

@@ -96,6 +96,8 @@ export const useSaveSettings = () => {
       guardDeleteUrls?: boolean;
       guardBlockedHosts?: string[];
       guardAllowedHosts?: string[];
+      mobileDailyLimit?: number;
+      mobileMaxAttachments?: number;
     }) => api.patch<Settings>("/settings", input),
     onSuccess: () => {
       toast.success("Sozlamalar saqlandi");

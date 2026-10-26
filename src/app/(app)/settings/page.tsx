@@ -91,6 +91,8 @@ export default function SettingsPage() {
     guardDeleteUrls: true,
     guardBlockedHosts: "",
     guardAllowedHosts: "",
+    mobileDailyLimit: 0,
+    mobileMaxAttachments: 5,
   });
 
   /**
@@ -116,6 +118,8 @@ export default function SettingsPage() {
       guardDeleteUrls: data.guardDeleteUrls,
       guardBlockedHosts: data.guardBlockedHosts.join("\n"),
       guardAllowedHosts: data.guardAllowedHosts.join("\n"),
+      mobileDailyLimit: data.mobileDailyLimit,
+      mobileMaxAttachments: data.mobileMaxAttachments,
     });
   }, [settings.data]);
 
@@ -143,6 +147,9 @@ export default function SettingsPage() {
       // domen tekshiruvida (`@Matches`) yiqilardi.
       guardBlockedHosts: toHostList(form.guardBlockedHosts),
       guardAllowedHosts: toHostList(form.guardAllowedHosts),
+
+      mobileDailyLimit: form.mobileDailyLimit,
+      mobileMaxAttachments: form.mobileMaxAttachments,
     });
   };
 
@@ -459,6 +466,62 @@ export default function SettingsPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* ── MINI APP (FUQARO MUROJAATLARI) ──────────────── */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Mini App (fuqaro murojaatlari)</CardTitle>
+                <CardDescription>
+                  Ilovadan kelgan murojaatlarga oid chegaralar.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="mobileDailyLimit">
+                    Bir kunda yuboriladigan murojaat chegarasi
+                  </Label>
+                  <Input
+                    id="mobileDailyLimit"
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={form.mobileDailyLimit}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        mobileDailyLimit: Number.parseInt(event.target.value, 10) || 0,
+                      }))
+                    }
+                  />
+                  {/* ⚠️ CHEGARA — BLOK EMAS: xato ishlatayotganni
+                      SEKINLATADI. Blok esa Fuqarolar bo'limida,
+                      sabab bilan — boshqa, qattiqroq chora. */}
+                  <p className="text-xs text-muted-foreground">
+                    <strong>0</strong> — cheksiz. Chegara fuqaroni butunlay yopmaydi,
+                    faqat kunlik sonini cheklaydi. Butunlay yopish — Fuqarolar bo&apos;limida.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="mobileMaxAttachments">
+                    Bitta murojaatga eng ko&apos;p fayl
+                  </Label>
+                  <Input
+                    id="mobileMaxAttachments"
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={form.mobileMaxAttachments}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        mobileMaxAttachments: Number.parseInt(event.target.value, 10) || 5,
+                      }))
+                    }
+                  />
                 </div>
               </CardContent>
             </Card>

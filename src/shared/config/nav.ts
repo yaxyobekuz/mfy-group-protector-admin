@@ -14,10 +14,12 @@ import {
   LayoutDashboard,
   MapPin,
   MessageSquareWarning,
+  Megaphone,
   Radio,
   ScrollText,
   Settings,
   ShieldAlert,
+  UserCircle,
   Users,
 } from "lucide-react";
 
@@ -53,6 +55,18 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Xavfsizlik",
     icon: ShieldAlert,
     permission: "security.view",
+  },
+  {
+    href: "/citizens",
+    label: "Fuqarolar",
+    icon: UserCircle,
+    permission: "citizens.view",
+  },
+  {
+    href: "/announcements",
+    label: "Yangiliklar",
+    icon: Megaphone,
+    permission: "announcements.manage",
   },
   { href: "/territory", label: "Hudud", icon: MapPin, permission: "territory.view" },
   { href: "/reports", label: "Hisobotlar", icon: FileText, permission: "reports.view" },

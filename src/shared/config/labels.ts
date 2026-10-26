@@ -129,6 +129,10 @@ export const ISSUE_SOURCE: Record<IssueSource, LabelDef> = {
     label: "Qo'lda",
     className: "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300",
   },
+  mobile: {
+    label: "Ilovadan",
+    className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+  },
 };
 
 export const USER_ROLE: Record<UserRole, string> = {
@@ -182,6 +186,11 @@ export const AUDIT_ACTION: Record<string, string> = {
   "user.restore": "Xodimni qaytardi",
   "user.reset_password": "Parolni tikladi",
   "settings.update": "Sozlamalarni o'zgartirdi",
+  "citizen.block": "Fuqaroni bloklladi",
+  "citizen.unblock": "Fuqaro blokini yechdi",
+  "announcement.create": "Yangilik qo'shdi",
+  "announcement.update": "Yangilikni tahrirladi",
+  "announcement.delete": "Yangilikni o'chirdi",
 };
 
 /** Sanoq so'zi — "12 ta murojaat". */

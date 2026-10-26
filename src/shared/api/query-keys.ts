@@ -91,4 +91,15 @@ export const queryKeys = {
   audit: {
     list: (params?: QueryParams) => ["audit", "list", params ?? {}] as const,
   },
+
+  citizens: {
+    all: () => ["citizens"] as const,
+    list: (params?: QueryParams) => ["citizens", "list", params ?? {}] as const,
+    detail: (id: string) => ["citizens", "detail", id] as const,
+  },
+
+  announcements: {
+    all: () => ["announcements"] as const,
+    list: (params?: QueryParams) => ["announcements", "list", params ?? {}] as const,
+  },
 } as const;

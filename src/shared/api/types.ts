@@ -22,7 +22,7 @@ export type SignalKind = "complaint" | "suggestion" | "question";
 export type SignalSeverity = "low" | "normal" | "high";
 export type SignalStatus = "new" | "attached" | "dismissed";
 
-export type IssueSource = "signal" | "bot" | "manual";
+export type IssueSource = "signal" | "bot" | "manual" | "mobile";
 export type IssueStatus = "new" | "in_progress" | "resolved" | "rejected";
 export type IssuePriority = "low" | "normal" | "high" | "urgent";
 
@@ -305,9 +305,19 @@ export interface IssueCategory {
   name: string;
   color: string | null;
   description: string | null;
+  /** Belgi KALITI (`category-icons.ts`) — ilovada ko'rinadi. */
+  icon: string | null;
+  slaHours: number;
+  orgName: string | null;
   sortOrder: number;
   isActive: boolean;
   issueCount: number;
+}
+
+/** Ilovadan kelgan murojaat muallifi — FUQARO (xodim emas). */
+export interface CitizenRef {
+  id: string;
+  name: string;
 }
 
 export interface IssueListItem {
@@ -321,6 +331,8 @@ export interface IssueListItem {
   mahalla: MahallaWithDistrict | null;
   assignee: PersonRef | null;
   author: PersonRef | null;
+  /** ⚠️ `source==="mobile"` da muallif shu (xodim emas). */
+  citizen: CitizenRef | null;
   dueAt: string | null;
   /** ⚠️ MUDDAT — MO'LJAL, majburiyat emas. Faqat ajratib ko'rsatiladi. */
   isOverdue: boolean;
@@ -332,10 +344,22 @@ export interface IssueListItem {
 export interface IssueComment {
   id: string;
   body: string;
-  /** ⚠️ `true` bo'lsa izoh botdagi MUALLIFGA ham ketgan. */
+  /** ⚠️ `true` bo'lsa izoh botdagi/fuqarodagi MUALLIFGA ham ketgan. */
   isPublic: boolean;
   createdAt: string;
-  user: PersonRef;
+  /** Xodim yozgan bo'lsa to'ladi. */
+  user: PersonRef | null;
+  /** Fuqaro yozgan "qo'shimcha" bo'lsa to'ladi. */
+  citizen: PersonRef | null;
+}
+
+export interface IssueAttachment {
+  id: string;
+  kind: "photo" | "video";
+  /** `/uploads/...` — to'liq manzilga `fileUrl()` orqali aylanadi. */
+  path: string;
+  mimeType: string;
+  size: number;
 }
 
 export interface IssueDetail {
@@ -352,8 +376,20 @@ export interface IssueDetail {
     | null;
   assignee: PersonRef | null;
   author: PersonRef | null;
+  /** ⚠️ `source==="mobile"` da muallif shu (telefon, username bilan). */
+  citizen: (PersonRef & { username: string | null; phone: string | null; telegramId: string }) | null;
   reviewer: PersonRef | null;
-  /** Manba haqida barcha ma'lumot — shakli manbaga qarab BOSHQA. */
+  /** Mobil murojaatda: xaritadagi nuqta, manzil, bayroqlar, dalil fayllari. */
+  lat: number | null;
+  lng: number | null;
+  address: string | null;
+  isHazard: boolean;
+  isLongStanding: boolean;
+  isRepeatAppeal: boolean;
+  occurredAt: string | null;
+  attachments: IssueAttachment[];
+  /** Manba haqida barcha ma'lumot — shakli manbaga qarab BOSHQA
+   * (`sourceMeta.ai` — imzolangan AI taklifi; `sourceMeta.flags`). */
   sourceMeta: Record<string, unknown> | null;
   signal: {
     id: string;
@@ -493,8 +529,62 @@ export interface Settings {
   /** ⚠️ Qora ro'yxatdan USTUN turadi. */
   guardAllowedHosts: string[];
 
+  /** ── MINI APP (FUQARO MUROJAATLARI) ─────────────────────────── */
+  /** ⚠️ `0` — cheksiz. Chegara — BLOK EMAS, sekinlatish. */
+  mobileDailyLimit: number;
+  mobileMaxAttachments: number;
+
   updatedAt: string;
   updatedBy: string | null;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+//  FUQARO VA YANGILIK (MINI APP)
+// ═══════════════════════════════════════════════════════════════════
+
+export interface CitizenListItem {
+  id: string;
+  telegramId: string;
+  name: string;
+  username: string | null;
+  phone: string | null;
+  photoUrl: string | null;
+  districtName: string | null;
+  points: number;
+  appeals: number;
+  isBlocked: boolean;
+  blockReason: string | null;
+  createdAt: string;
+}
+
+export interface CitizenDetail {
+  id: string;
+  telegramId: string;
+  name: string;
+  username: string | null;
+  phone: string | null;
+  photoUrl: string | null;
+  languageCode: string;
+  districtName: string | null;
+  mahallaName: string | null;
+  points: number;
+  isBlocked: boolean;
+  blockReason: string | null;
+  createdAt: string;
+  stats: { total: number; open: number; resolved: number };
+}
+
+export interface Announcement {
+  id: string;
+  title: string;
+  body: string;
+  coverUrl: string | null;
+  isPinned: boolean;
+  districtId: string | null;
+  districtName: string | null;
+  publishedAt: string | null;
+  viewCount: number;
+  createdAt: string;
 }
 
 export interface AuditEntry {

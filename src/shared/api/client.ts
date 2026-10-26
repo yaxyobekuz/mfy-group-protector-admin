@@ -30,6 +30,22 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
+/**
+ * YUKLANGAN FAYLLAR ILDIZI.
+ *
+ * ⚠️ `/api` OLIB TASHLANADI: fayllar `api` prefiksidan TASHQARIDA
+ * turadi (`server/src/main.ts#useStaticAssets`) va server `/uploads/...`
+ * nisbiy manzilini qaytaradi. Fuqaro yuborgan dalil suratlari panelda
+ * shu orqali ko'rsatiladi.
+ */
+const FILE_ORIGIN = API_URL.replace(/\/api\/?$/, "");
+
+export const fileUrl = (path: string | null | undefined): string | null => {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${FILE_ORIGIN}${path}`;
+};
+
 const ACCESS_KEY = "vsh.access";
 const REFRESH_KEY = "vsh.refresh";
 
