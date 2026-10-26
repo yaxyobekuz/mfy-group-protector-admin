@@ -370,7 +370,7 @@ export interface IssueDetail {
   status: IssueStatus;
   priority: IssuePriority;
   source: IssueSource;
-  category: { id: string; name: string; color: string | null };
+  category: { id: string; name: string; color: string | null; icon: string | null };
   mahalla:
     | (MahallaWithDistrict & { chairmanName: string | null; chairmanPhone: string | null })
     | null;

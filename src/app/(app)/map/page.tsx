@@ -42,15 +42,13 @@ import {
 } from "@/shared/ui/select";
 import { EmptyState } from "@/shared/ui/states";
 import { MapView } from "@/widgets/issue-map/map-view";
+import { MapDetailPanel } from "@/features/issues/map-detail-panel";
 
 const ALL = "__all__";
 
 /** Andijon viloyati markazi (mobil ilova bilan ayni). */
 const CENTER: [number, number] = [40.7821, 72.3442];
 const ZOOM = 11;
-
-const escapeHtml = (value: string) =>
-  value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 export default function MapPage() {
   const { can } = useSession();
@@ -60,8 +58,17 @@ export default function MapPage() {
   // emas, shuning uchun `null` boshlang'ich holat alohida.
   const [selected, setSelected] = useState<Set<string> | null>(null);
   const [mounted, setMounted] = useState(false);
+  /** Bosilgan markerning murojaat id'si — o'ng panel shundan ochiladi. */
+  const [openId, setOpenId] = useState<string | null>(null);
 
-  useEffect(() => setMounted(true), []);
+  // ⚠️ `map-page` KLASSI: `main` ni pointer-shaffof qiladi (globals.css)
+  // — shunda xaritani move/zoom qilib bo'ladi. Sahifadan chiqilganda
+  // olib tashlanadi, aks holda boshqa sahifalarda ham bosib bo'lmasdi.
+  useEffect(() => {
+    setMounted(true);
+    document.body.classList.add("map-page");
+    return () => document.body.classList.remove("map-page");
+  }, []);
 
   const points = useMapReport({ status });
 
@@ -90,11 +97,11 @@ export default function MapPage() {
           lat: issue.lat,
           lng: issue.lng,
           color: categoryColor(issue.category.color),
-          popupHtml: `<strong>${escapeHtml(issue.publicNo)}</strong><br/>${escapeHtml(
-            issue.title,
-          )}<br/><span style="color:#6b7280">${escapeHtml(issue.category.name)}</span>`,
+          active: openId === issue.id,
+          // ⚠️ POPUP O'RNIGA — O'NG PANEL ochiladi.
+          onClick: () => setOpenId(issue.id),
         })),
-    [points.data, selected],
+    [points.data, selected, openId],
   );
 
   if (!can("reports.view")) {
@@ -130,15 +137,22 @@ export default function MapPage() {
               center={CENTER}
               zoom={ZOOM}
               markers={markers}
-              className="fixed inset-0 -z-10 h-screen w-screen"
+              // ⚠️ `map-root`: globals.css xaritani pointer-auto qiladi
+              // (shell zanjiri pointer-shaffof bo'lganда ham). `z-0` —
+              // sidebar/panellar `z-1` bilan ustida turadi.
+              className="map-root fixed inset-0 z-0 h-screen w-screen"
             />,
             document.body,
           )
         : null}
 
-      {/* ── YUQORI PANEL: sarlavha + holat filtri ──────────────── */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex flex-wrap items-center gap-2 rounded-xl bg-card/95 px-3 py-2 shadow-lift backdrop-blur">
+      {/* ── CHAP USTUN: filtr paneli + legenda ─────────────────── */}
+      {/* ⚠️ `pe-auto`: `main` pointer-shaffof, panellar esa bosiladi.
+          ⚠️ `w-fit`: panel xarita ustida faqat KERAKLI kenglikni
+          egallaydi — aks holda butun qatorni qoplab, uning ostidagi
+          xaritani bosib bo'lmasdi. */}
+      <div className="flex w-fit flex-wrap items-center gap-2">
+        <div className="pe-auto pe-stack flex flex-wrap items-center gap-2 rounded-xl bg-card/95 px-3 py-2 shadow-lift backdrop-blur">
           <h1 className="mr-1 text-base font-semibold tracking-tight">Xarita</h1>
 
           <Select
@@ -168,7 +182,7 @@ export default function MapPage() {
 
       {/* ── INTERAKTIV LEGENDA — yo'nalish bo'yicha filtr ──────── */}
       {legend.length > 0 ? (
-        <div className="mt-3 max-w-[22rem] rounded-xl bg-card/95 p-2.5 shadow-lift backdrop-blur">
+        <div className="pe-auto pe-stack mt-3 max-w-[20rem] rounded-xl bg-card/95 p-2.5 shadow-lift backdrop-blur">
           <div className="mb-1.5 flex items-center justify-between px-1">
             <p className="text-xs font-semibold text-muted-foreground">
               Yo&apos;nalish bo&apos;yicha
@@ -219,6 +233,11 @@ export default function MapPage() {
             })}
           </div>
         </div>
+      ) : null}
+
+      {/* ── O'NG PANEL: bosilgan murojaat tafsiloti ────────────── */}
+      {openId ? (
+        <MapDetailPanel issueId={openId} onClose={() => setOpenId(null)} />
       ) : null}
 
       {!hasPoints && !points.isLoading ? (

@@ -211,3 +211,57 @@
   isolation: isolate;
   z-index: 0;
 }
+
+/* ── XARITA SAHIFASI: XARITA — FON VA INTERAKTIV ──────────────────────
+   Map sahifasi `body` ga `map-page` klassini qo'shadi.
+
+   ⚠️ MUAMMO: xarita `body` ga portal qilinib, butun ekranni egallaydi.
+   Uning ustida shell konteynerlari (ildiz div, kontent ustuni, `main`)
+   turadi va ular standart `pointer-events: auto` bo'lgani uchun
+   sichqoncha hodisalarini (drag/zoom) YUTIB QO'YARDI — faqat `main` ni
+   o'chirish YETARLI EMAS edi, chunki uning OTA konteynerlari ham
+   hodisani tutib qolardi.
+
+   ⚠️ YECHIM: `.map-page` da shell zanjiri butunlay pointer-shaffof
+   bo'ladi va faqat HAQIQIY UI (sidebar, `.pe-auto` panellar) o'zini
+   qaytaradi. Shunda bo'sh joyda bosish/surish/zoom XARITAGA o'tadi.
+
+   ⚠️ KO'RINISH uchun esa sidebar va panellar xaritadan YUQORI `z` da
+   bo'lishi kerak (`z-index: 1`), chunki xarita — pozitsiyalangan
+   element (`fixed`) va aks holda oqimdagi sidebarni qoplab qo'yardi. */
+body.map-page > div,
+body.map-page main {
+  pointer-events: none;
+}
+
+/* Sidebar: ko'rinadi (z) va bosiladi (pointer-events). */
+body.map-page aside {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* Map sahifasining suzuvchi panellari.
+
+   ⚠️ `position` BU YERDA QO'YILMAYDI: panel o'zi `fixed` bo'lishi
+   mumkin (tafsilot kartasi) va `relative` uni joyidan qo'zg'atib,
+   sidebar ostiga tushirib yuborardi. `z-index` esa pozitsiyalangan
+   elementga baribir qo'llanadi; `relative` kerak bo'lsa panel o'zi
+   klass bilan beradi. */
+body.map-page .pe-auto {
+  pointer-events: auto;
+  z-index: 1;
+}
+
+/* Oqimdagi (pozitsiyalanmagan) panellar uchun — `z-index` ishlashi
+   uchun `relative` kerak. Tafsilot kartasi bundan FOYDALANMAYDI. */
+body.map-page .pe-auto.pe-stack {
+  position: relative;
+}
+
+/* ⚠️ XARITA O'ZI pointer-auto bo'lishi SHART: ota `body` emas, lekin
+   portal konteyner `body.map-page > div` qoidasiga tushib qolmasligi
+   uchun uni alohida qaytaramiz. */
+body.map-page .map-root {
+  pointer-events: auto;
+}

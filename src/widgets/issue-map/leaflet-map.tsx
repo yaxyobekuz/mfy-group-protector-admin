@@ -21,8 +21,12 @@ export interface MapMarker {
   lat: number;
   lng: number;
   color: string;
-  /** Popup ichidagi HTML (allaqachon escape qilingan). */
+  /** Bosilganda — o'ng panelni ochish uchun. */
+  onClick?: () => void;
+  /** `onClick` bo'lmasa — oddiy popup (ixtiyoriy). */
   popupHtml?: string;
+  /** Tanlangan marker — kattaroq/belgili ko'rinadi. */
+  active?: boolean;
 }
 
 interface Props {
@@ -35,13 +39,20 @@ interface Props {
 const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 
 /** Rangli doira belgi — `divIcon` bilan (rasm fayli kerak emas). */
-const dot = (color: string) =>
-  L.divIcon({
+const dot = (color: string, active = false) => {
+  // Tanlangan marker kattaroq va qo'sh halqali — xaritada darhol
+  // ko'rinadi.
+  const size = active ? 22 : 16;
+  const ring = active
+    ? `0 0 0 4px ${color}55, 0 1px 6px rgba(0,0,0,.5)`
+    : "0 1px 4px rgba(0,0,0,.4)";
+  return L.divIcon({
     className: "",
-    html: `<span style="display:block;width:16px;height:16px;border-radius:9999px;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,.4)"></span>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
+    html: `<span style="display:block;width:${size}px;height:${size}px;border-radius:9999px;background:${color};border:2px solid white;box-shadow:${ring};cursor:pointer"></span>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   });
+};
 
 export default function LeafletMap({ center, zoom, markers, className }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -95,8 +106,12 @@ export default function LeafletMap({ center, zoom, markers, className }: Props) 
 
     layer.clearLayers();
     for (const marker of markers) {
-      const m = L.marker([marker.lat, marker.lng], { icon: dot(marker.color) });
-      if (marker.popupHtml) m.bindPopup(marker.popupHtml);
+      const m = L.marker([marker.lat, marker.lng], {
+        icon: dot(marker.color, marker.active),
+      });
+      // ⚠️ `onClick` — POPUP O'RNIGA: bosilganda o'ng panel ochiladi.
+      if (marker.onClick) m.on("click", marker.onClick);
+      else if (marker.popupHtml) m.bindPopup(marker.popupHtml);
       m.addTo(layer);
     }
   }, [markers]);
