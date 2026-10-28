@@ -99,6 +99,7 @@ export const queryKeys = {
     all: () => ["citizens"] as const,
     list: (params?: QueryParams) => ["citizens", "list", params ?? {}] as const,
     detail: (id: string) => ["citizens", "detail", id] as const,
+    rating: (params?: QueryParams) => ["citizens", "rating", params ?? {}] as const,
   },
 
   announcements: {

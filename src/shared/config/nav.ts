@@ -20,6 +20,7 @@ import {
   ScrollText,
   Settings,
   ShieldAlert,
+  Trophy,
   UserCircle,
   Users,
 } from "lucide-react";
@@ -61,6 +62,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/citizens",
     label: "Fuqarolar",
     icon: UserCircle,
+    permission: "citizens.view",
+  },
+  {
+    href: "/rating",
+    label: "Reyting",
+    icon: Trophy,
     permission: "citizens.view",
   },
   {

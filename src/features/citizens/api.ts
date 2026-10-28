@@ -10,7 +10,12 @@ import { toast } from "sonner";
 
 import { ApiError, api } from "@/shared/api/client";
 import { queryKeys } from "@/shared/api/query-keys";
-import type { CitizenDetail, CitizenListItem, Paginated } from "@/shared/api/types";
+import type {
+  CitizenDetail,
+  CitizenListItem,
+  Paginated,
+  RatingResponse,
+} from "@/shared/api/types";
 
 export interface CitizenFilters {
   districtId?: string;
@@ -32,6 +37,32 @@ export const useCitizen = (id: string) =>
     queryKey: queryKeys.citizens.detail(id),
     queryFn: () => api.get<CitizenDetail>(`/citizens/${id}`),
     enabled: Boolean(id),
+  });
+
+export interface RatingFilters {
+  districtId?: string;
+  limit?: number;
+}
+
+/**
+ * FAOL FUQAROLAR REYTINGI.
+ *
+ * ⚠️ ILOVADAGI REYTING BILAN AYNI RO'YXAT, lekin `/mobile/rating`
+ * EMAS: u fuqaro tokeni bilan ishlaydi va xodimning hududiy
+ * qamrovini bilmaydi. Panel uchun `/citizens/rating` — qamrov
+ * serverda qo'llanadi.
+ *
+ * ⚠️ `staleTime` UZUN: ball murojaat yuborilganda yoki hal
+ * qilinganda o'zgaradi, ya'ni daqiqa sayin emas. Qisqa bo'lsa,
+ * panel ochiq turgan ekranni bir xil ro'yxat uchun qayta-qayta
+ * so'rardi.
+ */
+export const useRating = (filters: RatingFilters) =>
+  useQuery({
+    queryKey: queryKeys.citizens.rating(filters),
+    queryFn: () => api.get<RatingResponse>("/citizens/rating", { ...filters }),
+    staleTime: 5 * 60_000,
+    placeholderData: (previous) => previous,
   });
 
 export interface BroadcastResult {

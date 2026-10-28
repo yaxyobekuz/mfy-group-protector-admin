@@ -558,6 +558,32 @@ export interface CitizenListItem {
   createdAt: string;
 }
 
+/**
+ * REYTING QATORI.
+ *
+ * ⚠️ `rank` SERVERDAN KELADI, ro'yxat indeksidan HISOBLANMAYDI:
+ * tartib `points desc` bo'yicha serverda chiqadi va mijozda qayta
+ * raqamlash filtr/saralash o'zgarganda yolg'on o'rin ko'rsatardi.
+ */
+export interface RatingRow {
+  rank: number;
+  id: string;
+  name: string;
+  username: string | null;
+  photoUrl: string | null;
+  points: number;
+  appeals: number;
+  districtName: string | null;
+  createdAt: string;
+}
+
+export interface RatingResponse {
+  items: RatingRow[];
+  /** Bali 0 dan katta, bloklanmagan fuqarolar soni (TOP emas, JAMI). */
+  totalActive: number;
+  totalPoints: number;
+}
+
 export interface CitizenDetail {
   id: string;
   telegramId: string;
