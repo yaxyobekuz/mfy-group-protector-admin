@@ -56,6 +56,7 @@ import { CategoryBars } from "@/widgets/dashboard/category-bars";
 import { ChartFrame } from "@/widgets/dashboard/chart-frame";
 import { StatusDonut } from "@/widgets/dashboard/status-donut";
 import { TrendChart } from "@/widgets/dashboard/trend-chart";
+import { DistrictMapPanel } from "@/widgets/district-map/district-map-panel";
 
 export default function DashboardPage() {
   const { can, user } = useSession();
@@ -354,6 +355,26 @@ export default function DashboardPage() {
           </ChartFrame>
         ) : null}
       </div>
+
+      {/*
+        ── TUMANLAR XARITASI ──────────────────────────────────
+
+        ⚠️ BENTO TO'RIDAN TASHQARIDA, TAGIDA: blokning o'z
+        ichki to'ri bor (xarita + yon ustun) va uni 6 ustunli
+        to'r ichiga tiqish ikki qavatli to'r hosil qilardi —
+        tor ekranda xarita siqilib, tumanlar o'qilmay qolardi.
+
+        ⚠️ ENG PASTDA: boshqaruv panelining yuqori qismi "hozir
+        nima qilish kerak" (raqamlar, havolalar), xarita esa
+        "qayerda nima bo'lyapti" — bu TAHLIL, shoshilinch ish
+        emas. Yuqoriga qo'yilsa, ko'rilmagan signallar
+        ekrandan pastga tushib ketardi.
+      */}
+      {can("reports.view") ? (
+        <div className="mt-4">
+          <DistrictMapPanel />
+        </div>
+      ) : null}
     </>
   );
 }

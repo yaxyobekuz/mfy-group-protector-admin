@@ -1,13 +1,26 @@
 "use client";
 
 /**
- * TUMANLAR XARITASI — "qaysi tumanda nima bo'lyapti" bir qarashda.
+ * TUMANLAR XARITASI — boshqaruv panelidagi blok.
  *
- * ── NEGA ALOHIDA SAHIFA (`/map` BOR-KU) ────────────────────────────
+ * ── NEGA WIDGET, ALOHIDA SAHIFA EMAS ───────────────────────────────
+ *
+ * ⚠️ BU BLOK BOSHQARUV PANELIDA TURADI. Avval u alohida sahifa edi
+ * (`/district-map`) va o'sha joyda "qaysi tumanda nima bo'lyapti"
+ * degan savol panelning o'zidan AJRALIB qolardi: operator avval
+ * panelni ko'rib, keyin yana bir sahifaga o'tishi kerak edi.
+ *
+ * ⚠️ O'Z HOLATI O'ZIDA (filtr, ko'rsatkich, tanlangan tuman):
+ * boshqaruv panelining qolgan kartalari BUTUN TARIX bo'yicha
+ * ishlaydi va xaritaning sana filtri ularga TEGMAYDI. Holat
+ * yuqoriga ko'tarilsa, xaritada "7 kun" tanlangani butun panelni
+ * o'zgartirib yuborardi — operator esa buni kutmaydi.
+ *
+ * ── NEGA `/map` DAN BOSHQA ─────────────────────────────────────────
  *
  * ⚠️ `/map` — NUQTALAR xaritasi (koordinatali murojaatlar, Leaflet).
  * U faqat fuqaro ilovada JOY BELGILAGAN murojaatlarni ko'rsatadi,
- * ya'ni botdan va signaldan kelganlar u yerda UMUMAN yo'q. Bu sahifa
+ * ya'ni botdan va signaldan kelganlar u yerda UMUMAN yo'q. Bu blok
  * esa HUDUD kesimi: har tuman bitta shakl va undagi BARCHA yozuvlar
  * sanaladi. Ikkisini birlashtirish "xaritada 12 ta nuqta, lekin
  * hisobotda 340 ta murojaat" degan tushunarsiz holatni berardi.
@@ -29,13 +42,11 @@ import {
   Filter,
   Info,
   Layers,
-  MapPinned,
   RotateCcw,
   Search,
   TrendingUp,
 } from "lucide-react";
 
-import { useSession } from "@/entities/session/auth-provider";
 import { useDistrictMap, type ReportFilters } from "@/features/reports/api";
 import { useAllCategories } from "@/features/issues/api";
 import { ApiError } from "@/shared/api/client";
@@ -58,8 +69,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { EmptyState, ErrorState } from "@/shared/ui/states";
-import { PageHeader } from "@/widgets/page-header/page-header";
+import { ErrorState } from "@/shared/ui/states";
 import {
   DistrictChoropleth,
   METRICS,
@@ -70,9 +80,7 @@ import { DistrictDetail } from "@/widgets/district-map/district-detail";
 
 const ALL = "__all__";
 
-export default function DistrictMapPage() {
-  const { can } = useSession();
-
+export const DistrictMapPanel = () => {
   const [filters, setFilters] = useState<ReportFilters>({});
   const [metricKey, setMetricKey] = useState<MapMetric>("issues");
   const [search, setSearch] = useState("");
@@ -132,16 +140,6 @@ export default function DistrictMapPage() {
     });
   }, [rows, report.data]);
 
-  if (!can("reports.view")) {
-    return (
-      <EmptyState
-        icon={MapPinned}
-        title="Sizda bu bo'limga ruxsat yo'q"
-        hint="Xarita hisobot ko'rish ruxsatini talab qiladi."
-      />
-    );
-  }
-
   const patch = (next: Partial<ReportFilters>) =>
     setFilters((prev) => ({ ...prev, ...next }));
 
@@ -150,21 +148,30 @@ export default function DistrictMapPage() {
   );
 
   return (
-    <>
-      <PageHeader
-        title="Tumanlar xaritasi"
-        actions={
-          <Button variant="outline" asChild>
-            <Link href="/map">
-              Nuqtalar xaritasi
-              <ArrowRight className="ml-1.5 size-4" />
-            </Link>
-          </Button>
-        }
-      />
+    <section className="space-y-4">
+      {/*
+        ⚠️ SARLAVHA `PageHeader` EMAS: u sahifa sarlavhasi (`h1`) va
+        boshqaruv panelida allaqachon bittasi bor ("Xush kelibsiz").
+        Ikkinchi `h1` sahifa tuzilmasini buzardi — bu yerda `h2`.
+      */}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">Tumanlar xaritasi</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Hudud kesimida murojaat, signal va xavfsizlik
+          </p>
+        </div>
+
+        <Button variant="outline" size="sm" asChild>
+          <Link href="/map">
+            Nuqtalar xaritasi
+            <ArrowRight className="ml-1.5 size-4" />
+          </Link>
+        </Button>
+      </div>
 
       {/* ══ FILTRLAR ═══════════════════════════════════════════ */}
-      <Card className="mb-4">
+      <Card>
         <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5 text-xs">
@@ -254,7 +261,7 @@ export default function DistrictMapPage() {
         Dropdown ichida yashirilsa, operator faqat standart
         ko'rsatkichni ko'rib yurardi.
       */}
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2">
         {METRICS.map((item) => {
           const active = item.key === metricKey;
           const value = totals[item.key];
@@ -294,7 +301,7 @@ export default function DistrictMapPage() {
       {/* ══ KATEGORIYA OGOHLANTIRISHI ══════════════════════════ */}
       {report.data?.categoryFiltered &&
       (metricKey === "signals" || metricKey === "signalsNew" || metricKey === "security") ? (
-        <div className="mb-4 flex items-start gap-2 rounded-xl border border-severity-normal/30 bg-severity-normal/10 px-3 py-2.5">
+        <div className="flex items-start gap-2 rounded-xl border border-severity-normal/30 bg-severity-normal/10 px-3 py-2.5">
           <Info className="mt-0.5 size-4 shrink-0 text-severity-normal" />
           <p className="text-sm">
             <strong>Yo&apos;nalish filtri yoqilgan.</strong> Signal va xavfsizlik
@@ -494,6 +501,6 @@ export default function DistrictMapPage() {
           </div>
         </div>
       )}
-    </>
+    </section>
   );
-}
+};
