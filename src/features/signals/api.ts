@@ -29,6 +29,7 @@ export interface SignalFilters {
   status?: SignalStatus;
   kind?: SignalKind;
   severity?: SignalSeverity;
+  districtId?: string;
   mahallaId?: string;
   chatId?: string;
   search?: string;

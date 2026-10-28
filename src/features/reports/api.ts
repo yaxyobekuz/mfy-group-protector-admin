@@ -16,6 +16,7 @@ import type {
   AuditEntry,
   CategoryReportRow,
   DailyPoint,
+  DistrictMapResponse,
   MapIssue,
   MobileReport,
   Paginated,
@@ -59,6 +60,21 @@ export const useSignalReport = (filters: ReportFilters) =>
   useQuery({
     queryKey: queryKeys.reports.signals(filters),
     queryFn: () => api.get<SignalReport>("/reports/signals", { ...filters }),
+    placeholderData: (previous) => previous,
+  });
+
+/**
+ * TUMANLAR XARITASI — uch oqim (muammo, signal, xavfsizlik) tuman
+ * kesimida, bitta so'rovda.
+ *
+ * ⚠️ `placeholderData`: filtr o'zgarganda xarita BO'SHAB KETMAYDI,
+ * eski ranglar yangisi kelguncha turadi. Usiz har bosishda butun
+ * viloyat oqarib, "ma'lumot yo'qoldi" degan taassurot berardi.
+ */
+export const useDistrictMap = (filters: ReportFilters) =>
+  useQuery({
+    queryKey: queryKeys.reports.districtMap(filters),
+    queryFn: () => api.get<DistrictMapResponse>("/reports/district-map", { ...filters }),
     placeholderData: (previous) => previous,
   });
 

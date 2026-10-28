@@ -58,6 +58,17 @@
     --severity-normal: 32 92% 46%;
     --severity-high: 0 72% 48%;
 
+    /*
+     * XARITADAGI "NOL" RANGI.
+     *
+     * ⚠️ NOL SHKALADAN TASHQARIDA: "murojaat yo'q" va "eng kam
+     * murojaat" ikki BOSHQA holat. Nolni shkalaning eng och
+     * pog'onasiga qo'ysak, hech narsa kelmagan tuman "kam
+     * muammoli" bo'lib ko'rinardi — xaritaga qarab xulosa
+     * chiqaradigan odam uchun bu xato bo'lardi.
+     */
+    --dm-zero: 150 10% 90%;
+
     /* ⚠️ YIRIK RADIUS — "suzuvchi karta" tilining asosi. */
     --radius: 1.25rem;
 
@@ -134,6 +145,12 @@
     --severity-low: 0 0% 62%;
     --severity-normal: 32 88% 58%;
     --severity-high: 0 72% 62%;
+
+    /* ⚠️ TUNDA NOL FONDAN OCHROQ: to'q bo'lsa, u "eng band tuman"
+       bilan adashtirilardi (tunda to'q = ko'p degan taassurot).
+       ⚠️ 24% EMAS, 34%: 24% da butun xarita fonga qo'shilib ketib,
+       bo'sh tumanlar "to'q = ko'p" bo'lib ko'rinardi. */
+    --dm-zero: 0 0% 34%;
 
     /* ⚠️ TUNDA SOYA KUCHLIROQ, lekin baribir ko'rinmaydi —
        kartani `--card` ning fondan farqi ajratadi. */

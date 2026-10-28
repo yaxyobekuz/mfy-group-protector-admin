@@ -85,6 +85,8 @@ export const queryKeys = {
     mobile: (params?: QueryParams) =>
       ["reports", "mobile", params ?? {}] as const,
     map: (params?: QueryParams) => ["reports", "map", params ?? {}] as const,
+    districtMap: (params?: QueryParams) =>
+      ["reports", "district-map", params ?? {}] as const,
   },
 
   settings: {

@@ -543,6 +543,50 @@ export interface Settings {
 //  FUQARO VA YANGILIK (MINI APP)
 // ═══════════════════════════════════════════════════════════════════
 
+/**
+ * TUMAN KESIMI — XARITA UCHUN.
+ *
+ * ⚠️ UCH OQIM ALOHIDA MAYDON: `issues`, `signals`, `security` bir
+ * songa QO'SHILMAYDI — muammo rasmiy fakt, signal AI taxmini,
+ * xavfsizlik hodisasi esa qat'iy qoida natijasi. Qo'shilsa,
+ * xaritadagi rang nimani bildirishini aytib bo'lmasdi.
+ */
+export interface DistrictMapRow {
+  id: string;
+  code: string;
+  name: string;
+  isArchived: boolean;
+
+  issues: number;
+  open: number;
+  inProgress: number;
+  resolved: number;
+  rejected: number;
+  overdue: number;
+
+  signals: number;
+  signalsNew: number;
+  signalsHigh: number;
+
+  security: number;
+
+  avgResolutionHours: number | null;
+  resolutionRate: number | null;
+}
+
+/** Tumansiz (MFY biriktirilmagan) yozuvlar — xaritada bo'yalmaydi. */
+export type DistrictMapTotals = Omit<
+  DistrictMapRow,
+  "id" | "code" | "name" | "isArchived"
+>;
+
+export interface DistrictMapResponse {
+  /** `true` — kategoriya filtri yoqilgan, signal/xavfsizlik 0 qaytgan. */
+  categoryFiltered: boolean;
+  districts: DistrictMapRow[];
+  unassigned: DistrictMapTotals;
+}
+
 export interface CitizenListItem {
   id: string;
   telegramId: string;

@@ -10,6 +10,7 @@
  */
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { RefreshCw, Radio } from "lucide-react";
 
 import { useSession } from "@/entities/session/auth-provider";
@@ -48,14 +49,19 @@ const ALL = "__all__";
 export default function SignalsPage() {
   const { can } = useSession();
 
-  const [filters, setFilters] = useState<SignalFilters>({
+  // ⚠️ TUMANLAR XARITASIDAN O'TISH: `?districtId=...` havolasi
+  // o'qilmasa, bosilgan tuman o'rniga butun ro'yxat ochilardi.
+  const searchParams = useSearchParams();
+
+  const [filters, setFilters] = useState<SignalFilters>(() => ({
     // ⚠️ STANDART HOLDA FAQAT `new`: e'tiborsiz qoldirilganlar
     // o'chirilmaydi (AI xatosini ko'rish uchun), lekin ular ishga
     // xalaqit bermasligi kerak.
     status: "new",
+    districtId: searchParams.get("districtId") ?? undefined,
     page: 1,
     limit: 25,
-  });
+  }));
 
   const [attachTarget, setAttachTarget] = useState<Signal | null>(null);
 

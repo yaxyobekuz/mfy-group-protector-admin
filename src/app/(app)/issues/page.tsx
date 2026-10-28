@@ -74,6 +74,9 @@ export default function IssuesPage() {
     // "yo'nalishlar" diagrammasi shu havolani beradi va usiz
     // bosilgan ustun to'liq ro'yxatni ochardi.
     categoryId: searchParams.get("categoryId") ?? undefined,
+    // ⚠️ `districtId` HAM: tumanlar xaritasidan "shu tumandagi
+    // murojaatlar" havolasi shu parametr bilan keladi.
+    districtId: searchParams.get("districtId") ?? undefined,
     page: 1,
     limit: 50,
   }));

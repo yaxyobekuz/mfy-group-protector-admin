@@ -16,6 +16,7 @@
  */
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { FileWarning, Link2, ShieldAlert, ShieldCheck } from "lucide-react";
 
 import { useSession } from "@/entities/session/auth-provider";
@@ -53,10 +54,14 @@ const ALL = "__all__";
 export default function SecurityPage() {
   const { can } = useSession();
 
-  const [filters, setFilters] = useState<SecurityFilters>({
+  // ⚠️ TUMANLAR XARITASIDAN O'TISH (`?districtId=...`).
+  const searchParams = useSearchParams();
+
+  const [filters, setFilters] = useState<SecurityFilters>(() => ({
+    districtId: searchParams.get("districtId") ?? undefined,
     page: 1,
     limit: 25,
-  });
+  }));
 
   const stats = useSecurityStats();
   const events = useSecurityEvents(filters);

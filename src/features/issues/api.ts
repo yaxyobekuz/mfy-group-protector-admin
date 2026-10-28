@@ -23,6 +23,7 @@ export interface IssueFilters {
   priority?: IssuePriority;
   source?: IssueSource;
   categoryId?: string;
+  districtId?: string;
   mahallaId?: string;
   assigneeId?: string;
   overdue?: boolean;
