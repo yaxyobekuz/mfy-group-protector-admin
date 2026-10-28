@@ -229,6 +229,26 @@
   z-index: 0;
 }
 
+/* ── KICHIK KARTADAGI XARITA: TUNDA SO'NDIRILADI ──────────────────────
+   OpenStreetMap plitkalari OQ. To'q panelda KICHIK xarita yorug' dog'
+   bo'lib, ko'zni qamashtiradi (butun ekranli `/map` sahifasida bu
+   sezilmaydi — u yerda xarita ekranning O'ZI, yonida to'q fon yo'q).
+
+   ⚠️ QOIDA SHU YERDA, Tailwind klassi bilan EMAS: Leaflet plitkaga
+   O'Z `filter` ini qo'yadi (ko'rinish effekti uchun) va utilit
+   klass undan ustun chiqa olmasdi — klass CSS da bor edi, lekin
+   ekranda hech narsa o'zgarmasdi.
+
+   ⚠️ RANG TESKARI AYLANTIRILMAYDI (`invert`): xarita 
+egativ   ko'rinib, ko'cha nomlari va suv havzalari o'qilmay qolardi.
+   Faqat yorqinlik pasaytiriladi.
+
+   ⚠️ FAQAT `.map-dim` ICHIDA: butun `.dark` ga qo'yilsa,
+   `/map` sahifasidagi butun ekranli xarita ham qorayib ketardi. */
+.dark .map-dim .leaflet-tile {
+  filter: brightness(0.72) contrast(1.08);
+}
+
 /* ── XARITA SAHIFASI: XARITA — FON VA INTERAKTIV ──────────────────────
    Map sahifasi `body` ga `map-page` klassini qo'shadi.
 
@@ -281,4 +301,149 @@ body.map-page .pe-auto.pe-stack {
    uchun uni alohida qaytaramiz. */
 body.map-page .map-root {
   pointer-events: auto;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CHOP ETISH — RASMIY HUJJAT
+
+   ⚠️ FAQAT `.print-sheet` CHIQADI: chop etishda sidebar, header,
+   tugmalar va boshqa kartalar KERAK EMAS — ular qog'ozda
+   ma'nosiz. Har bir elementni alohida `print:hidden` qilish
+   o'rniga, `body` ni butunlay yashirib, faqat hujjat varag'ini
+   qaytaramiz: shunda KELAJAKDA qo'shiladigan har qanday yangi
+   element ham qog'ozga o'z-o'zidan TUSHMAYDI (unutilgan
+   `print:hidden` sababli chiqib qolmaydi).
+
+   ⚠️ `visibility`, `display:none` EMAS: `display:none` qilingan
+   otaning ichidagi bola ham chiqmaydi — ya'ni varaqning o'zi ham
+   yo'qolardi. `visibility` esa bolada qayta yoqiladi.
+   ══════════════════════════════════════════════════════════════════ */
+@media print {
+  /* A4, rasmiy hujjat chekkalari (GOST'ga yaqin: chap kengroq —
+     tikish/papka uchun joy). */
+  @page {
+    size: A4;
+    margin: 18mm 15mm 18mm 25mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    /* ⚠️ Balandlik CHEKLANMAYDI: panel `h-screen`/`overflow-hidden`
+       bilan ishlaydi va o'sha holat qog'ozga o'tsa, hujjat BIR
+       betga qirqilib, qolgani umuman chop etilmasdi. */
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print-sheet,
+  .print-sheet * {
+    visibility: visible;
+  }
+
+  /* Varaq qog'ozning chap yuqori burchagidan boshlanadi — ekrandagi
+     markazlash va sidebar surilishi qog'ozda kerak emas. */
+  .print-sheet {
+    position: absolute !important;
+    left: 0;
+    top: 0;
+    /* ⚠️ `max-width` HAM KERAK: ekranda varaqni `mx-auto max-w-4xl`
+       ushlab turardi, chop etishda esa `position:absolute` uni
+       oqimdan chiqarib, KENGLIGI qog'oz bo'ylab cho'zilib ketardi —
+       o'ng chetdagi sana (`justify-between`) betdan tashqariga
+       chiqib, qirqilib qolardi. */
+    width: 100%;
+    max-width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /*
+    ⚠️ BUTUN MATN QORA: panel mavzusi och-kulrang ohanglardan
+    tuzilgan (`--muted-foreground`) va ular EKRANDA to'g'ri
+    ko'rinadi, QOG'OZDA esa deyarli o'qilmaydi — ayniqsa lazer
+    printerda. Maydon nomlari butunlay yo'qolib, hujjat
+    tushunarsiz bo'lib qolardi.
+
+    ⚠️ MAYDON NOMLARI BIR OZ OCHROQ (`#444`): ular bilan
+    QIYMATLAR o'rtasidagi farq saqlanishi kerak, aks holda
+    hammasi bir xil qora bo'lib, tuzilma ko'rinmay qolardi.
+  */
+  .print-sheet,
+  .print-sheet p,
+  .print-sheet span,
+  .print-sheet h1,
+  .print-sheet h2,
+  .print-sheet dd,
+  .print-sheet li,
+  .print-sheet code {
+    color: #000 !important;
+  }
+
+  .print-sheet dt,
+  .print-sheet .text-muted-foreground {
+    color: #444 !important;
+  }
+
+  /* Ajratgich chiziqlar qog'ozda ko'rinadigan bo'lsin. */
+  .print-sheet * {
+    border-color: #999 !important;
+  }
+
+  /*
+    ⚠️ GERB QORA CHIZIQ BILAN: SVG `currentColor` dan rang oladi va
+    chop etishda u och-kulrang bo'lib qolardi — gerb qog'ozda
+    arang ko'rinib, blankaning eng ko'zga tashlanadigan qismi
+    yo'qolardi.
+  */
+  .print-sheet svg {
+    color: #000 !important;
+    stroke: #000 !important;
+  }
+
+  /* ⚠️ BLANKA OSTIDAGI QALIN CHIZIQ QORA QOLADI: u sarlavhani
+     hujjat tanasidan AJRATADI va och-kulrang bo'lsa, gerbli
+     qism oddiy matnga qo'shilib ketardi. */
+  .print-sheet > header {
+    border-color: #000 !important;
+  }
+
+  /* ⚠️ Ekranda tugma/havola bo'lgan narsalar qog'ozda chiqmaydi. */
+  .print-hide,
+  .print-sheet .print-hide {
+    display: none !important;
+  }
+
+  /*
+    ⚠️ RANG MAJBURAN CHOP ETILADI: brauzer standart holda fon
+    ranglarini TASHLAB KETADI (qog'oz tejash). Hujjatdagi jadval
+    sarlavhalari va holat belgisi rangsiz qolsa, ular oddiy matnga
+    aylanib, tuzilma ko'rinmay qolardi.
+  */
+  .print-sheet * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Bo'limlar o'rtasidan betga bo'linib ketmasin. */
+  .print-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Imzo joyi — har doim oxirgi betning pastida emas, oqim bo'yicha,
+     lekin bo'linmaydi. */
+  .print-sign {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
 }

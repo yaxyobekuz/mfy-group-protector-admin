@@ -19,6 +19,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   ExternalLink,
+  FileText,
   Lock,
   RotateCcw,
   Send,
@@ -55,6 +56,8 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { CardSkeleton, ErrorState, Spinner } from "@/shared/ui/states";
+import { IssueDocument } from "@/widgets/issue-document/issue-document";
+import { IssueLocationCard } from "@/widgets/issue-document/issue-location-card";
 
 const NONE = "__none__";
 const CLOSED = ["resolved", "rejected"];
@@ -79,6 +82,16 @@ export default function IssueDetailPage() {
   const [commentBody, setCommentBody] = useState("");
   const [isPublicComment, setPublicComment] = useState(false);
 
+  /**
+   * KO'RINISH: ish kartasi yoki rasmiy hujjat.
+   *
+   * ⚠️ URL'GA YOZILMAYDI (`?view=document` emas): hujjat — VAQTINCHA
+   * ko'rinish (ochdi, chop etdi, yopdi), holat emas. URL'da qolsa,
+   * operator keyin o'sha havolani ochib, nega amal tugmalari
+   * yo'qligini tushunmasdi.
+   */
+  const [isDocument, setDocument] = useState(false);
+
   if (issue.isLoading) return <CardSkeleton count={3} />;
 
   if (issue.isError) {
@@ -92,6 +105,16 @@ export default function IssueDetailPage() {
 
   const data = issue.data;
   if (!data) return null;
+
+  /*
+   * ⚠️ HUJJAT — ALMASHTIRADI, YONIGA QO'SHMAYDI: ikkisi birga
+   * ko'rsatilsa, AYNI ma'lumot sahifada ikki marta turardi va
+   * operator qaysi biri "haqiqiy" ekanini o'ylab qolardi. Chop
+   * etishda esa ikkalasi ham qog'ozga tushardi.
+   */
+  if (isDocument) {
+    return <IssueDocument data={data} onClose={() => setDocument(false)} />;
+  }
 
   const status = ISSUE_STATUS[data.status];
   const priority = ISSUE_PRIORITY[data.priority];
@@ -117,10 +140,24 @@ export default function IssueDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
-      <Button variant="ghost" size="sm" onClick={() => router.back()}>
-        <ArrowLeft className="size-4" />
-        Orqaga
-      </Button>
+      {/*
+        ⚠️ "HUJJAT" TUGMASI YUQORIDA, O'NG CHETDA: u sahifaning
+        KO'RINISHINI almashtiradi, murojaatga amal qilmaydi — ya'ni
+        pastdagi "Hal qilindi" / "Rad etish" tugmalari bilan bir
+        joyda turishi mumkin emas. Aks holda operator hujjat
+        chiqarmoqchi bo'lib, murojaatni yopib qo'yardi.
+      */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+          <ArrowLeft className="size-4" />
+          Orqaga
+        </Button>
+
+        <Button variant="outline" size="sm" onClick={() => setDocument(true)}>
+          <FileText className="size-4" />
+          Hujjat
+        </Button>
+      </div>
 
       {/* ── Sarlavha ─────────────────────────────────────────── */}
       <div className="space-y-2">
@@ -187,6 +224,17 @@ export default function IssueDetailPage() {
             </Card>
           ) : null}
 
+          {/*
+            ── Joylashuv (xarita) ──────────────────────────────
+
+            ⚠️ MANBAGA BOG'LIQ EMAS, KOORDINATAGA BOG'LIQ: karta
+            `lat`/`lng` bo'lsa ko'rinadi (tekshiruv kartaning
+            O'ZIDA). `source === "mobile"` sharti qo'yilsa, kelajakda
+            boshqa yo'l bilan joy biriktirilganda xarita jim
+            yo'qolardi.
+          */}
+          <IssueLocationCard data={data} />
+
           {/* ── Ilovadan kelgan murojaat tafsiloti ──────────── */}
           {data.source === "mobile" ? (
             <Card>
@@ -203,20 +251,12 @@ export default function IssueDetailPage() {
                 {data.citizen?.phone ? (
                   <Row label="Telefon" value={data.citizen.phone} />
                 ) : null}
-                {data.address ? <Row label="Manzil" value={data.address} /> : null}
-                {data.lat !== null && data.lng !== null ? (
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-muted-foreground">Xaritada</span>
-                    <a
-                      className="font-medium text-primary hover:underline"
-                      href={`https://www.google.com/maps?q=${data.lat},${data.lng}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {data.lat.toFixed(5)}, {data.lng.toFixed(5)}
-                    </a>
-                  </div>
-                ) : null}
+                {/*
+                  ⚠️ MANZIL VA KOORDINATA BU YERDAN OLIB TASHLANDI —
+                  ular endi "Joylashuv" kartasida, XARITA bilan
+                  birga. Ikki joyda turganda, operator qaysi birini
+                  o'qishini bilmasdi va bittasi yangilanmay qolardi.
+                */}
                 {data.occurredAt ? (
                   <Row label="Sodir bo'lgan" value={formatDateTimeUz(data.occurredAt)} />
                 ) : null}
