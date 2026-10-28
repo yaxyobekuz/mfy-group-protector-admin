@@ -131,9 +131,10 @@ export const IssueDocument = ({
       <article className="print-sheet rounded-2xl border border-border bg-card px-6 py-8 shadow-sm sm:px-10 sm:py-10">
         {/* ── Blanka sarlavhasi ──────────────────────────────────── */}
         <header className="print-block flex flex-col items-center gap-3 border-b-2 border-foreground/70 pb-5 text-center">
-          {/* ⚠️ 80px: 64px da chizma detallari (nurlar, tog'lar,
-              lenta) bir-biriga qo'shilib, dog'ga aylanardi. */}
-          <Emblem className="h-20 w-auto text-foreground" />
+          {/* ⚠️ 80px: kichikroq o'lchamda gerbning ichki tafsiloti
+              (Humo qushi, boshoq, paxta) bir-biriga qo'shilib
+              ketadi — chop etilganda ayniqsa. */}
+          <Emblem className="h-20 w-auto" />
 
           <div className="space-y-0.5">
             <p className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">

@@ -1,49 +1,41 @@
+/* eslint-disable @next/next/no-img-element */
+
 /**
- * HUJJAT GERBI — soddalashtirilgan ramziy chizma (SVG).
+ * O'ZBEKISTON RESPUBLIKASI DAVLAT GERBI — hujjat blankasi uchun.
  *
- * ⚠️ RASM FAYLI EMAS, INLINE SVG: hujjat CHOP ETILADI va tashqi
- * rasm chop etish oynasi ochilgan paytda hali yuklanmagan bo'lishi
- * mumkin — qog'ozda gerb o'rnida bo'sh joy chiqardi. Inline SVG esa
- * sahifaning O'ZI bilan birga keladi.
+ * ⚠️ HAQIQIY GERB, CHIZMA EMAS: avval bu yerda qo'lda chizilgan
+ * soddalashtirilgan ramz turardi va u rasmiy hujjatga YARAMASDI —
+ * blankadagi gerb davlat ramzining O'ZI bo'lishi kerak, unga
+ * o'xshatilgan rasm emas. Fayl Wikimedia Commons'dan olingan
+ * (`PD-UZ-exempt`: rasmiy ramzlar mualliflik huquqi obyekti emas) —
+ * batafsil: `public/gerb.svg.README.md`.
  *
- * ⚠️ RASMIY DAVLAT GERBINING NUSXASI EMAS va bo'lishi ham shart
- * emas: bu panel ichidagi ichki hujjat (ro'yxatga olingan murojaat
- * bayonnomasi), davlat blankasi emas. Rasmiy gerb kerak bo'lsa, u
- * alohida vektor fayl sifatida qo'yiladi — lekin u holda huquqiy
- * tomoni ham hal qilinishi lozim.
+ * ⚠️ `<img>`, INLINE `<svg>` EMAS: gerb — 138 KB vektor ma'lumot va
+ * komponent ichiga yozilsa, u JS TO'PLAMIGA tushib, gerb kerak
+ * bo'lmagan har bir sahifada ham yuklanardi. `public/` dagi fayl
+ * esa brauzerda KESHLANADI va faqat hujjat ochilganda so'raladi.
  *
- * ⚠️ CHIZMA ATAYLAB SODDA: avvalgi variantda quyosh nurlari,
- * tog'lar, boshoq va lenta bor edi va 64–80 piksel o'lchamda
- * ularning chiziqlari bir-biriga qo'shilib, GERB O'RNIGA DOG'
- * ko'rinardi — ayniqsa chop etilganda. Qog'ozda o'qiladigan
- * narsa — kam sonli, qalin chiziq.
+ * ⚠️ `next/image` ISHLATILMAYDI: u SVG ni optimallashtirmaydi
+ * (standart holda `unoptimized` talab qiladi) va faqat ortiqcha
+ * o'ram qo'shardi — bu yerda o'lchamlar qat'iy va javob beruvchi
+ * rasm kerak emas.
  *
- * ⚠️ `currentColor`: chop etishda qora, ekranda esa mavzu rangi.
+ * ⚠️ CHOP ETISHDA RANGLI QOLADI: gerb `globals.css` dagi "hamma
+ * narsa qora" qoidasidan CHIQARILGAN (`.print-sheet svg` qoidasi
+ * endi faqat `<svg>` ga tegadi, `<img>` ga emas). Oq-qora
+ * printerda u o'zi kulrang bosiladi va shaklini saqlaydi —
+ * tekshirilgan.
  */
 export const Emblem = ({ className }: { className?: string }) => (
-  <svg
-    viewBox="0 0 64 70"
+  <img
+    src="/gerb.svg"
+    alt="O'zbekiston Respublikasi Davlat gerbi"
     className={className}
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-  >
-    {/* Yulduz — tepada */}
-    <path
-      d="M32 3 L34.1 9.4 L40.8 9.4 L35.4 13.4 L37.4 19.8 L32 15.8 L26.6 19.8 L28.6 13.4 L23.2 9.4 L29.9 9.4 Z"
-      strokeWidth={1.8}
-    />
-
-    {/* Qalqon — davlat ramzi emas, HUJJAT belgisi */}
-    <path d="M32 22 L51 28 V42 Q51 55 32 63 Q13 55 13 42 V28 Z" strokeWidth={2.2} />
-
-    {/* Quyosh — qalqon ichida */}
-    <circle cx="32" cy="36" r="6.5" strokeWidth={1.8} />
-
-    {/* Tog' cho'qqilari — quyosh ostida */}
-    <path d="M20 50 L27 42 L32 47 L38 40 L45 50" strokeWidth={1.8} />
-  </svg>
+    /* ⚠️ O'LCHAM ATRIBUTLARI: ularsiz rasm yuklanguncha balandlik
+       0 bo'lib, blanka sarlavhasi SAKRAB tushardi (layout shift) —
+       bu ayniqsa chop etish oynasi ochilayotganda ko'zga tashlanadi.
+       Nisbat SVG `viewBox` idan: 191.453 × 201.48. */
+    width={191}
+    height={201}
+  />
 );

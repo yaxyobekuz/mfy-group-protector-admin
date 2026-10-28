@@ -410,6 +410,20 @@ body.map-page .map-root {
     stroke: #000 !important;
   }
 
+  /*
+    ⚠️ GERB RANGLI QOLADI va qora qilinmaydi: u `<img>` (tashqi
+    SVG fayl) va yuqoridagi `svg` qoidasi unga TEGMAYDI — bu
+    ataylab. Davlat gerbi o'z ranglarida bo'lishi kerak; oq-qora
+    printerda esa printerning O'ZI uni kulrangga aylantiradi va
+    shakli saqlanadi.
+
+    ⚠️ `print-color-adjust` YUQORIDA butun varaq uchun qo'yilgan,
+    ya'ni brauzer gerb ranglarini tashlab ketmaydi.
+  */
+  .print-sheet img {
+    filter: none !important;
+  }
+
   /* ⚠️ BLANKA OSTIDAGI QALIN CHIZIQ QORA QOLADI: u sarlavhani
      hujjat tanasidan AJRATADI va och-kulrang bo'lsa, gerbli
      qism oddiy matnga qo'shilib ketardi. */
