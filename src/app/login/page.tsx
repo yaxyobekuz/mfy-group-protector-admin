@@ -83,7 +83,7 @@ export default function LoginPage() {
           <span className="mb-3 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground">
             <ShieldCheck className="size-7" />
           </span>
-          <CardTitle className="text-xl">Viloyat shtabi</CardTitle>
+          <CardTitle className="text-xl">E Murojaat</CardTitle>
           <CardDescription>
             MFY guruhlaridagi muammolarni aniqlash tizimi
           </CardDescription>

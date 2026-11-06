@@ -141,7 +141,7 @@ export const IssueDocument = ({
               O&apos;zbekiston Respublikasi
             </p>
             <p className="text-base font-bold uppercase tracking-wide">
-              Viloyat shtabi
+              E Murojaat
             </p>
             <p className="text-[11px] text-muted-foreground">
               Mahalla muammolarini hal qilish tizimi
@@ -432,7 +432,7 @@ export const IssueDocument = ({
           topish mumkin bo'lishi kerak.
         */}
         <footer className="mt-8 border-t border-border pt-3 text-center text-[10px] leading-relaxed text-muted-foreground">
-          Hujjat &laquo;Viloyat shtabi&raquo; axborot tizimidan avtomatik
+          Hujjat &laquo;E Murojaat&raquo; axborot tizimidan avtomatik
           shakllantirilgan. Asl nusxa tizimda {data.publicNo} raqami bilan
           saqlanadi.
         </footer>

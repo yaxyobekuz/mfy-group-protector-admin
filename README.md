@@ -1,4 +1,4 @@
-# Viloyat shtabi — Admin panel
+# E Murojaat — Admin panel
 
 MFY guruhlaridagi muammolarni aniqlash tizimining boshqaruv paneli.
 

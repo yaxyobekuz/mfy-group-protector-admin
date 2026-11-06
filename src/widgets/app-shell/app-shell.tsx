@@ -109,7 +109,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
             <ShieldCheck className="size-5" />
           </span>
           <div className="min-w-0 leading-tight">
-            <p className="truncate text-sm font-semibold">Viloyat shtabi</p>
+            <p className="truncate text-sm font-semibold">E Murojaat</p>
             <p className="truncate text-xs text-muted-foreground">
               MFY muammolari
             </p>
@@ -265,7 +265,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
           >
             <Menu className="size-5" />
           </Button>
-          <span className="text-sm font-semibold">Viloyat shtabi</span>
+          <span className="text-sm font-semibold">E Murojaat</span>
         </div>
 
         {/*
