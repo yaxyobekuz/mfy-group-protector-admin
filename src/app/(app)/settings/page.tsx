@@ -208,7 +208,7 @@ export default function SettingsPage() {
                 */}
                 {status.data && !status.data.aiEnabled && form.aiEnabled ? (
                   <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs dark:border-amber-900 dark:bg-amber-950/30">
-                    Serverda <code>OPENAI_API_KEY</code> qo&apos;yilmagan — bu
+                    Serverda <code>AI_API_KEY</code> qo&apos;yilmagan — bu
                     bayroqni yoqish yetarli emas.
                   </div>
                 ) : null}

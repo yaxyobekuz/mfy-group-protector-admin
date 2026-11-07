@@ -72,7 +72,9 @@ export const useSignalStatus = () =>
 /**
  * TAHLILNI QO'LDA ISHGA TUSHIRADI.
  *
- * ⚠️ HAR BOSISHDA AI SO'ROVI KETADI, ya'ni PUL sarflanadi. Shuning
+ * ⚠️ HAR BOSISHDA AI SO'ROVI KETADI. Pul sarflanmaydi (model
+ * o'zimizning shlyuzda), lekin shlyuz bir dona va navbat umumiy —
+ * qayta-qayta bosish boshqalarni kuttiradi. Shuning
  * uchun serverda alohida ruxsat (`signals.run`) va bu yerda —
  * natijani ANIQ aytadigan xabar: "0 xabar ko'rildi" ham javob va
  * uni jim o'tkazib yuborish operatorni yana bosishga majbur
@@ -86,7 +88,7 @@ export const useRunAnalysis = () => {
     onSuccess: (result) => {
       if (result.skipped) {
         toast.warning("AI tahlili o'chirilgan", {
-          description: "Sozlamalarda yoqing yoki serverda OPENAI_API_KEY ni qo'ying.",
+          description: "Sozlamalarda yoqing yoki serverda AI_API_KEY ni qo'ying.",
         });
         return;
       }

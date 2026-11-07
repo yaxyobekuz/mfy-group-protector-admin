@@ -158,7 +158,7 @@ export default function SignalsPage() {
           <p className="font-medium">AI tahlili ishlamayapti</p>
           <p className="text-muted-foreground">
             Guruh xabarlari to&apos;planib turadi, lekin tahlil qilinmaydi.
-            Serverda <code className="text-xs">OPENAI_API_KEY</code> qo&apos;yilmagan
+            Serverda <code className="text-xs">AI_API_KEY</code> qo&apos;yilmagan
             yoki sozlamalarda o&apos;chirilgan.
           </p>
         </div>
