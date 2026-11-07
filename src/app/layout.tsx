@@ -26,7 +26,7 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Viloyat shtabi",
+  title: "E Murojaat",
   description: "MFY guruhlaridagi muammolarni aniqlash tizimi",
 };
 
