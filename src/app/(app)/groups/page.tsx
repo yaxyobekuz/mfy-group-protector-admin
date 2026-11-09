@@ -15,7 +15,7 @@
  * hech kim ko'rmasdi.
  */
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MapPinOff, Radio, Users } from "lucide-react";
 
 import { useSession } from "@/entities/session/auth-provider";
@@ -26,6 +26,7 @@ import {
   useSetOfficial,
   type GroupFilters,
 } from "@/features/groups/api";
+import { GroupBulkActions } from "@/features/groups/bulk-actions";
 import { useSetGuard } from "@/features/security/api";
 import { useMahallas } from "@/features/territory/api";
 import { ApiError } from "@/shared/api/client";
@@ -40,6 +41,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
+import {
+  SearchableSelect,
+  type SearchableOption,
+} from "@/shared/ui/searchable-select";
 import { Switch } from "@/shared/ui/switch";
 import { EmptyState, ErrorState, TableSkeleton } from "@/shared/ui/states";
 import {
@@ -54,8 +59,6 @@ import { PageHeader } from "@/widgets/page-header/page-header";
 import { StatTile } from "@/widgets/stat-tile/stat-tile";
 
 const ALL = "__all__";
-/** "Biriktirishni yechish" varianti. */
-const NONE = "__none__";
 
 export default function GroupsPage() {
   const { can } = useSession();
@@ -72,6 +75,25 @@ export default function GroupsPage() {
 
   const patch = (next: Partial<GroupFilters>) =>
     setFilters((prev) => ({ ...prev, ...next, page: 1 }));
+
+  /**
+   * MFY RO'YXATI — qidiruvli tanlov uchun.
+   *
+   * ⚠️ TUMAN NOMI `hint` SIFATIDA: viloyatda bir xil nomli MFY
+   * bo'lishi mumkin ("Yangiobod" bir necha tumanda bor) va faqat
+   * nom ko'rsatilsa, operator qaysi birini tanlayotganini
+   * bilmasdi. Qidiruv ham shu matn bo'yicha ishlaydi — tuman
+   * nomini yozib ham topish mumkin.
+   */
+  const mahallaOptions: SearchableOption[] = useMemo(
+    () =>
+      (mahallas.data ?? []).map((mahalla) => ({
+        value: mahalla.id,
+        label: mahalla.name,
+        hint: mahalla.district.name,
+      })),
+    [mahallas.data],
+  );
 
   return (
     <>
@@ -126,24 +148,22 @@ export default function GroupsPage() {
           </SelectContent>
         </Select>
 
-        <Select
-          value={filters.mahallaId ?? ALL}
+        {/*
+          ⚠️ QIDIRUVLI TANLOV: viloyatda yuzlab MFY bor va oddiy
+          ro'yxatdan kerakligini topish o'nlab marta aylantirishni
+          talab qilardi.
+        */}
+        <SearchableSelect
+          value={filters.mahallaId ?? null}
           onValueChange={(value) =>
-            patch({ mahallaId: value === ALL ? undefined : value, unassigned: undefined })
+            patch({ mahallaId: value ?? undefined, unassigned: undefined })
           }
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="MFY" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={ALL}>Barcha MFY</SelectItem>
-            {mahallas.data?.map((mahalla) => (
-              <SelectItem key={mahalla.id} value={mahalla.id}>
-                {mahalla.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          options={mahallaOptions}
+          placeholder="Barcha MFY"
+          clearLabel="Barcha MFY"
+          searchPlaceholder="MFY yoki tuman nomi..."
+          emptyLabel="MFY topilmadi"
+        />
 
         <Button
           variant={filters.unassigned ? "default" : "outline"}
@@ -158,6 +178,15 @@ export default function GroupsPage() {
           Biriktirilmaganlar
         </Button>
       </div>
+
+      {/*
+        ── Ommaviy amallar ──────────────────────────────────────
+        ⚠️ FILTRDAN KEYIN TURADI va bu ataylab: amalning qamrovi —
+        ekrandagi filtr natijasi. Filtrlar tepada ko'rinib
+        turganda, operator "nimaga nisbatan" degan savolga
+        javobni yonidagi maydonlardan o'qiydi.
+      */}
+      <GroupBulkActions filters={filters} total={groups.data?.total ?? 0} />
 
       {/* ── Jadval ───────────────────────────────────────────── */}
       <div className="rounded-lg border bg-card">
@@ -222,28 +251,22 @@ export default function GroupsPage() {
                   {/* ── MFY biriktirish ─────────────────────── */}
                   <TableCell>
                     {can("groups.assign") ? (
-                      <Select
-                        value={group.mahalla?.id ?? NONE}
+                      <SearchableSelect
+                        value={group.mahalla?.id ?? null}
                         onValueChange={(value) =>
                           assignMahalla.mutate({
                             chatId: group.chatId,
-                            mahallaId: value === NONE ? null : value,
+                            mahallaId: value,
                           })
                         }
+                        options={mahallaOptions}
+                        placeholder="— Biriktirilmagan —"
+                        clearLabel="— Biriktirilmagan —"
+                        searchPlaceholder="MFY yoki tuman nomi..."
+                        emptyLabel="MFY topilmadi"
                         disabled={assignMahalla.isPending}
-                      >
-                        <SelectTrigger className="w-44">
-                          <SelectValue placeholder="Tanlanmagan" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={NONE}>— Biriktirilmagan —</SelectItem>
-                          {mahallas.data?.map((mahalla) => (
-                            <SelectItem key={mahalla.id} value={mahalla.id}>
-                              {mahalla.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        className="w-52"
+                      />
                     ) : group.mahalla ? (
                       <div className="text-sm">
                         <p>{group.mahalla.name}</p>

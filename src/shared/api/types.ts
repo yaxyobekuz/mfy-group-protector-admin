@@ -164,6 +164,46 @@ export interface GroupStats {
   guarded: number;
 }
 
+/**
+ * OMMAVIY AMALNING QAMROVI — ekrandagi FILTR.
+ *
+ * ⚠️ `page`/`limit` YO'Q va bu ataylab: amal butun filtr
+ * natijasiga tegishli, ko'rinib turgan sahifaga emas. Sahifa
+ * yuborilsa, "hammasiga" degan va'da buzilardi.
+ *
+ * ⚠️ `chatId` RO'YXATI HAM YO'Q: ro'yxat sahifalangan va panel
+ * faqat 50 tasini biladi. Id ro'yxati yuborilsa, "hammasiga
+ * yoqdim" degan odam aslida birinchi sahifani yoqqan bo'lardi va
+ * buni HECH NARSA ko'rsatmasdi.
+ *
+ * ⚠️ NIMA UCHUN `shared` DA: bu shakl IKKI feature'da ishlatiladi —
+ * `groups` (kuzatuv) va `security` (qalqon). Ikkisi panelning AYNI
+ * ro'yxati ustida ishlaydi, lekin feature'lar bir-birini import
+ * QILMAYDI (FSD qatlam qoidasi: import faqat pastga).
+ */
+export interface BulkGroupInput {
+  filterIsOfficial?: boolean;
+  filterMahallaId?: string;
+  filterUnassigned?: boolean;
+  filterSearch?: string;
+  /** Tasdiqlash oynasida ko'rsatilgan guruhlar soni. */
+  expectedCount: number;
+}
+
+/**
+ * ⚠️ `skippedNoMahalla` va `purgedMessages` IXTIYORIY: ular faqat
+ * KUZATUV amalida bo'ladi. Qalqon MFY dan mustaqil (hududsiz
+ * guruhdagi odamni ham himoya qilish mumkin) va navbat tozalash
+ * ham unga tegishli emas.
+ */
+export interface BulkResult {
+  changed: number;
+  unchanged: number;
+  matched: number;
+  skippedNoMahalla?: number;
+  purgedMessages?: number;
+}
+
 // ═══════════════════════════════════════════════════════════════════
 //  XAVFSIZLIK
 // ═══════════════════════════════════════════════════════════════════
