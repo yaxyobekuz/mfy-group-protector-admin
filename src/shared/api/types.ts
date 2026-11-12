@@ -99,6 +99,16 @@ export interface District {
   sortOrder: number;
   isArchived: boolean;
   mahallaCount: number;
+  /**
+   * ⚠️ TUMANNING O'Z AHOLISI — rasmiy statistikadan.
+   * `mahallaPopulation` dan ALOHIDA: MFY larning bir qismida
+   * aholi to'ldirilmagan bo'lishi mumkin va yig'indi haqiqiy
+   * aholidan kam chiqadi. "1000 kishiga" ko'rsatkichi esa
+   * sun'iy ravishda KATTA bo'lib, tuman eng yomon ko'rinardi.
+   */
+  population: number | null;
+  /** MFY lardagi aholi YIG'INDISI — to'liqligini tekshirish uchun. */
+  mahallaPopulation: number;
   createdAt: string;
 }
 
@@ -146,6 +156,19 @@ export interface TelegramGroup {
    */
   guardEnabled: boolean;
   guardAt: string | null;
+  /**
+   * ⚠️ QALQONNING HAQIQIY SHARTI. `guardEnabled` — ma'muriyat
+   * XOHISHI, bu esa Telegram RUXSATI: bot guruhda administrator
+   * bo'lmasa yoki unga "Xabarlarni o'chirish" huquqi berilmagan
+   * bo'lsa, qalqon yoqilgan bo'lsa ham HECH NARSA o'chira olmaydi.
+   * Telegram o'shanda `400: message can't be deleted` deb
+   * qaytaradi va bot guruhga ogohlantirish YOZMAYDI — ya'ni buni
+   * faqat shu maydon ko'rsatadi.
+   */
+  canDeleteMessages: boolean;
+  /** ⚠️ `null` — "hali o'qilmagan", `0` dan BOSHQA narsa. */
+  memberCount: number | null;
+  memberCountAt: string | null;
   /** ⚠️ `null` = hali biriktirilmagan. Bu NORMAL holat. */
   mahalla: MahallaWithDistrict | null;
   joinedAt: string;
@@ -162,6 +185,19 @@ export interface GroupStats {
   pendingMessages: number;
   /** Qalqon yoqilgan guruhlar soni. */
   guarded: number;
+  /**
+   * ⚠️ QALQON YOQILGAN, LEKIN BOT O'CHIRA OLMAYDI — eng xavfli
+   * holat: ma'muriyat himoya bor deb o'ylaydi, amalda esa yo'q.
+   */
+  guardBlind: number;
+  /**
+   * GURUHLARDAGI A'ZOLAR YIG'INDISI.
+   *
+   * ⚠️ BOTDAGI FUQAROLAR SONI BILAN QO'SHILMAYDI: guruhdagi odam
+   * botga yozmagan bo'lishi mumkin va teskarisi ham — qo'shilsa,
+   * bir odam ikki marta sanalardi.
+   */
+  members: number;
 }
 
 /**
@@ -183,6 +219,12 @@ export interface GroupStats {
  */
 export interface BulkGroupInput {
   filterIsOfficial?: boolean;
+  /**
+   * ⚠️ TUMAN FILTRI HAM UZATILADI: ommaviy amalning qamrovi —
+   * EKRANDAGI filtr natijasi. Bu maydon tushib qolsa, operator bitta
+   * tumanni ko'rib turib, amalni BUTUN VILOYATGA bajarardi.
+   */
+  filterDistrictId?: string;
   filterMahallaId?: string;
   filterUnassigned?: boolean;
   filterSearch?: string;
@@ -253,6 +295,18 @@ export interface SecurityEvent {
   sentAt: string | null;
   createdAt: string;
 
+  /**
+   * XODIM "NOTO'G'RI O'CHIRILDI" DEB BELGILAGAN.
+   *
+   * ⚠️ YOZUV O'CHIRILMAYDI, BELGILANADI: `security_events` —
+   * append-only (doktrina) va noto'g'ri o'chirishlar ro'yxati
+   * qoidani tuzatish uchun YAGONA manba. Tozalansa, o'sha dalil
+   * yo'q bo'lardi.
+   */
+  isFalsePositive: boolean;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+
   group: {
     chatId: string;
     title: string;
@@ -271,6 +325,21 @@ export interface SecurityStats {
   byKind: Partial<Record<ThreatKind, number>>;
   guardedGroups: number;
   totalGroups: number;
+  /**
+   * ⚠️ QALQON YOQILGAN, LEKIN BOT O'CHIRA OLMAYDI — eng xavfli
+   * holat: panelda "yoqilgan" bo'lib ko'rinadi, amalda esa hech
+   * narsa o'chirilmaydi va bot guruhga ogohlantirish ham yozmaydi.
+   */
+  blindGroups: number;
+  /**
+   * NOTO'G'RI O'CHIRISHLAR — QOIDA SIFATINING YAGONA O'LCHOVI.
+   *
+   * ⚠️ O'SMAYOTGAN BO'LSA qoida aniq ishlayapti; o'syotgan
+   * bo'lsa ro'yxatni ko'rib chiqish kerak. Usiz "oddiy
+   * havolalar ham bloklanyapti" degan shikoyatni raqam bilan
+   * tekshirib bo'lmasdi.
+   */
+  falsePositives: number;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -352,6 +421,18 @@ export interface IssueCategory {
   sortOrder: number;
   isActive: boolean;
   issueCount: number;
+  /**
+   * ── KICHIK YO'NALISH (ota-bola) ───────────────────────
+   *
+   * ⚠️ `null` — bu ASOSIY yo'nalish. Daraxt ATIGI IKKI DARAJA:
+   * bolaning bolasi bo'lmaydi (server tekshiradi).
+   *
+   * ⚠️ ICHIDA BOLALARI BOR YO'NALISH TANLANMAYDI: fuqaro
+   * "Kommunal xizmatlar" ni tanlab qo'ysa, bo'linishning ma'nosi
+   * yo'qolardi — hisobotda yana bitta katta uyum paydo bo'lardi.
+   */
+  parentId: string | null;
+  childCount: number;
 }
 
 /** Ilovadan kelgan murojaat muallifi — FUQARO (xodim emas). */
@@ -377,6 +458,28 @@ export interface IssueListItem {
   /** ⚠️ MUDDAT — MO'LJAL, majburiyat emas. Faqat ajratib ko'rsatiladi. */
   isOverdue: boolean;
   commentCount: number;
+  /**
+   * SHU MUROJAATGA ULANGAN TAKRORIYLAR SONI.
+   *
+   * ⚠️ OMMAVIY HODISA BELGISI: transformator o'chganda 20 kishi
+   * "svet yo'q" deb yozadi va ularning hammasi ALOHIDA murojaat
+   * bo'lib navbatga tushardi. Bu son "bu bitta hodisa" deb
+   * aytadi.
+   */
+  duplicateCount: number;
+  /** ⚠️ `true` — bu murojaatning O'ZI boshqasiga ulangan. */
+  isDuplicate: boolean;
+  duplicateOfId: string | null;
+  /**
+   * TIZIM "BU MUROJAATMI?" DEB SHUBHA QILGAN.
+   *
+   * ⚠️ FAQAT BELGI, RAD ETISH EMAS: murojaat baribir
+   * yaratilgan va fuqaro "qabul qilindi" degan javobni olgan.
+   * Avtomatik rad etish xato bo'lsa, HAQIQIY muammo jimgina
+   * yo'qolardi.
+   */
+  isSuspicious: boolean;
+  suspicionReason: string | null;
   createdAt: string;
   resolvedAt: string | null;
 }
@@ -439,9 +542,36 @@ export interface IssueDetail {
     sentAt: string | null;
   } | null;
   dueAt: string | null;
+  /**
+   * MUDDAT QAYERDAN KELDI — `category` | `rule` | `manual` | `ai`.
+   *
+   * ⚠️ "Muddat qanday belgilanyapti?" degan savolga javob. Avval
+   * panelda faqat sana turardi va xodim uni "tizim o'ylab topgan" deb
+   * qabul qilardi — kech qolganda ham sababini izlamasdi.
+   *
+   * ⚠️ TANILMAGAN QIYMAT KALIT KO'RINISHIDA chiqadi: server yangi
+   * manba qo'shsa, panel yiqilmasligi kerak.
+   */
+  dueSource: string | null;
   resolution: string | null;
   reviewedAt: string | null;
   comments: IssueComment[];
+  /**
+   * ⚠️ SHU MUROJAATGA ULANGAN TAKRORIYLAR: ular bilan BIRGA
+   * yopiladi (`issues.service.ts#closeDuplicates`) va har biriga
+   * javob ALOHIDA yetadi — ya'ni 20 kishiga 20 marta qo'lda
+   * javob yozish kerak emas.
+   */
+  duplicates: Array<{
+    id: string;
+    publicNo: string;
+    createdAt: string;
+    citizen: { firstName: string; lastName: string | null } | null;
+  }>;
+  /** ⚠️ `null` emas bo'lsa — bu murojaat ASOSIY emas, takroriy. */
+  duplicateOf: { id: string; publicNo: string; title: string } | null;
+  isSuspicious: boolean;
+  suspicionReason: string | null;
   createdAt: string;
 }
 
@@ -520,17 +650,81 @@ export interface TerritoryReportRow {
   per1000: number | null;
 }
 
+export interface TerritoryReportDistrict {
+  id: string;
+  name: string;
+  count: number;
+  /** ⚠️ `null` — aholi soni kiritilmagan (nol emas). */
+  population: number | null;
+  /** 1000 aholiga — `population` bo'lsa. */
+  per1000: number | null;
+  /**
+   * AHOLI QAYERDAN OLINDI.
+   *
+   * ⚠️ MANBA KO'RSATILADI: "MFY lardan" yig'ilgan son to'liq
+   * bo'lmasligi mumkin (bir qismi to'ldirilmagan) va o'shanda
+   * "1000 kishiga" ko'rsatkichi sun'iy ravishda KATTA chiqadi.
+   * Manba yozilmasa, xodim g'alati raqamning sababini topa
+   * olmasdi.
+   */
+  populationSource: "district" | "mahallas" | null;
+}
+
 export interface TerritoryReport {
   mahallas: TerritoryReportRow[];
-  districts: Array<{ id: string; name: string; count: number }>;
+  districts: TerritoryReportDistrict[];
+}
+
+/**
+ * TIZIMLI MUAMMO — AYNI MFY, AYNI YO'NALISHDA QAYTA-QAYTA.
+ *
+ * ⚠️ "Kommunal xizmatlar — 400 ta" degan qator hech narsa
+ * aytmaydi: ichimlik suvi bilan issiqlik ta'minoti IKKI BOSHQA
+ * tashkilot. Shuning uchun kesim ENG ANIQ yo'nalish bo'yicha.
+ */
+export interface RecurringRow {
+  mahallaId: string;
+  mahallaName: string;
+  district: Ref | null;
+  categoryId: string;
+  categoryName: string;
+  /** Ota yo'nalish nomi — "Kommunal xizmatlar → Ichimlik suvi". */
+  parentName: string | null;
+  total: number;
+  /**
+   * ⚠️ HODISA SONI — TAKRORIYLARNI HISOBGA OLMAGANDA: bitta
+   * transformator uzilishi 20 ta murojaat bo'lishi mumkin va
+   * "20 marta muammo bo'ldi" degan xulosa XATO bo'lardi.
+   */
+  incidents: number;
+  duplicates: number;
+  firstAt: string | null;
+  lastAt: string | null;
+  spanDays: number;
+  /** Oyiga o'rtacha hodisa — davrga nisbatan. */
+  perMonth: number;
+}
+
+export interface RecurringReport {
+  items: RecurringRow[];
 }
 
 export interface CategoryReportRow {
   categoryId: string;
   name: string;
+  /** Ota yo'nalish nomi — "Kommunal xizmatlar → Ichimlik suvi". */
+  parentName: string | null;
   color: string | null;
   icon: string | null;
   count: number;
+  /**
+   * MUDDATI O'TGAN VA HALI YOPILMAGANLARI.
+   *
+   * ⚠️ JAMI BILAN BIRGA KERAK: "400 ta murojaat" degan son
+   * yo'nalish yomon ishlayotganini aytmaydi — "400 tadan 120
+   * tasi muddatdan o'tgan" esa aytadi.
+   */
+  overdue: number;
 }
 
 export interface SignalReport {
@@ -574,6 +768,15 @@ export interface Settings {
   /** ⚠️ `0` — cheksiz. Chegara — BLOK EMAS, sekinlatish. */
   mobileDailyLimit: number;
   mobileMaxAttachments: number;
+  /**
+   * TELEFON RAQAMI MAJBURIYMI (murojaat yuborishda).
+   *
+   * ⚠️ O'CHIRISH — JIDDIY QADAM: telefonsiz murojaatda xodim
+   * odamga bog'lana olmaydi (Telegram ismi ixtiyoriy, hudud esa
+   * ko'rsatilmagan bo'lishi mumkin) va murojaat navbatda turib
+   * qoladi.
+   */
+  requirePhone: boolean;
 
   updatedAt: string;
   updatedBy: string | null;
@@ -695,7 +898,22 @@ export interface MobileReport {
   resolutionRate: number | null;
   avgResponseHours: number | null;
   slaOnTimeRate: number | null;
-  citizens: { total: number; active: number; blocked: number };
+  /**
+   * ⚠️ "OBUNACHI" DEGAN BITTA SON YO'Q — uchta alohida sanoq:
+   *   total    — ro'yxatdan o'tganlar (bot + ilova)
+   *   telegram — Telegram orqali XABAR YUBORSA BO'LADIGANLAR
+   *   recent   — oxirgi 30 kunda ishlatganlar
+   *
+   * ⚠️ `telegram` ≠ `total`: Google bilan kirgan fuqaroda `telegramId`
+   * yo'q va unga tarqatma bormaydi.
+   */
+  citizens: {
+    total: number;
+    active: number;
+    blocked: number;
+    telegram: number;
+    recent: number;
+  };
   categories: {
     id: string;
     name: string;
@@ -718,6 +936,21 @@ export interface MapIssue {
   category: { id: string; name: string; color: string | null; icon: string | null };
 }
 
+/**
+ * E'LONGA QO'SHILGAN FAYL.
+ *
+ * ⚠️ `coverUrl` NING O'RNINI BOSMAYDI: muqova — ro'yxatdagi BITTA
+ * surat, media esa e'lon ICHIDAGI galereya. Bittasini ikkinchisiga
+ * aylantirsak, eski e'lonlarning ro'yxatdagi ko'rinishi buzilardi.
+ */
+export interface AnnouncementMedia {
+  id: string;
+  kind: "photo" | "video";
+  url: string;
+  mimeType: string;
+  size: number;
+}
+
 export interface Announcement {
   id: string;
   title: string;
@@ -727,8 +960,15 @@ export interface Announcement {
   districtId: string | null;
   districtName: string | null;
   publishedAt: string | null;
+  /**
+   * ⚠️ `publishedAt` DAN ALOHIDA: biri O'TMISH ("qachon chiqdi"),
+   * ikkinchisi KELAJAK ("qachon chiqadi"). Nashr etilgandan keyin
+   * server uni TOZALAYDI, ya'ni ikkisi bir vaqtda to'la bo'lmaydi.
+   */
+  scheduledAt: string | null;
   viewCount: number;
   createdAt: string;
+  media: AnnouncementMedia[];
 }
 
 export interface AuditEntry {
@@ -741,4 +981,120 @@ export interface AuditEntry {
   createdAt: string;
   userId: string | null;
   user: (PersonRef & { username: string }) | null;
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  IJROCHI QOIDALARI — MFY × YO'NALISH → XODIM
+// ════════════════════════════════════════════════════════════════════
+
+export interface AssignmentRule {
+  id: string;
+  categoryId: string;
+  category: { id: string; name: string; icon: string | null; slaHours: number };
+  /** ⚠️ `null` — yo'nalishning umumiy SLA'si ishlatiladi. */
+  slaHours: number | null;
+  user: PersonRef & { isActive: boolean; isArchived: boolean };
+  /**
+   * ⚠️ QOIDA BOR, LEKIN ISHLAMAYDI: xodim arxivlangan yoki
+   * o'chirilgan. Yashirilsa, ma'muriyat "ijrochi belgilangan" deb
+   * o'ylab yuraverardi.
+   */
+  isBroken: boolean;
+}
+
+export interface MahallaRules {
+  id: string;
+  name: string;
+  district: { id: string; name: string };
+  rules: AssignmentRule[];
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  TARQATMA
+// ════════════════════════════════════════════════════════════════════
+
+export type BroadcastAudience = "citizens" | "groups" | "both";
+export type BroadcastMode = "text" | "forward" | "copy";
+export type BroadcastStatus = "pending" | "sending" | "done" | "failed";
+
+export interface Broadcast {
+  id: string;
+  audience: BroadcastAudience;
+  mode: BroadcastMode;
+  /** ⚠️ `null` — uzatilgan xabar (matn serverda saqlanmagan). */
+  text: string | null;
+  status: BroadcastStatus;
+  total: number;
+  sent: number;
+  failed: number;
+  error: string | null;
+  /** `panel` yoki `bot` — qaysi yo'ldan yuborilgani. */
+  via: string;
+  createdAt: string;
+  finishedAt: string | null;
+  district: { id: string; name: string } | null;
+  mahalla: { id: string; name: string } | null;
+  author: PersonRef | null;
+}
+
+/** Yuborishdan OLDIN hisoblangan auditoriya hajmi. */
+export interface AudienceSize {
+  citizens: number;
+  groups: number;
+  total: number;
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  TASHQI TAHDID RO'YXATLARI
+// ════════════════════════════════════════════════════════════════════
+
+export type ThreatFeedFormat = "hosts" | "domains" | "adguard" | "urlhaus";
+
+/**
+ * O'ZI YANGILANADIGAN FISHING / ZARARLI DOMEN RO'YXATI.
+ *
+ * ⚠️ QO'LDAGI QORA RO'YXAT O'RNINI BOSMAYDI, QO'SHIMCHA: mahalliy
+ * firibgar domenlar tashqi ro'yxatlarga umuman tushmaydi.
+ *
+ * ⚠️ `lastError` KO'RSATILISHI SHART: ro'yxat bir hafta
+ * yuklanmay turgan bo'lsa, himoya eskirib ketganini faqat shu
+ * maydon aytadi.
+ */
+export interface ThreatFeed {
+  id: string;
+  name: string;
+  url: string;
+  format: ThreatFeedFormat;
+  isEnabled: boolean;
+  lastFetchedAt: string | null;
+  lastCount: number;
+  lastError: string | null;
+}
+
+/**
+ * MFY KESIMI — XARITADAGI ISSIQLIK VA POLIGONLAR UCHUN.
+ *
+ * ⚠️ `MapIssue` DAN FARQI: u bitta murojaatning NUQTASI, bu esa
+ * butun MFY ning SANOG'I — koordinatasiz murojaatlar bilan birga.
+ * "Qaysi MFY da muammo ko'p" degan savolga faqat shu javob beradi.
+ */
+export interface MahallaMapItem {
+  id: string;
+  name: string;
+  district: { id: string; name: string };
+  /** ⚠️ `null` — markaz hali qo'yilmagan (chegara ham bo'lmasligi mumkin). */
+  lat: number | null;
+  lng: number | null;
+  /** GeoJSON `Polygon`/`MultiPolygon` geometriyasi yoki `null`. */
+  geoJson: unknown;
+  /**
+   * ⚠️ MARKAZ TAXMINIY: MFY chegarasi hali import qilinmagan va
+   * nuqta o'sha MFY dagi murojaatlarning O'RTACHA koordinatasidan
+   * olingan. Aniq chegara bilan taxminiy nuqtani bir xil ko'rsatish
+   * xaritaga ortiqcha ishonch berardi.
+   */
+  isApproximate: boolean;
+  total: number;
+  /** ⚠️ Yo'nalish bo'yicha kesim — filtr mijozda, so'rovsiz ishlashi uchun. */
+  byCategory: Record<string, number>;
 }

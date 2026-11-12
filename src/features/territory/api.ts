@@ -46,7 +46,14 @@ export const useSaveDistrict = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: { id?: string; code: string; name: string; sortOrder?: number }) => {
+    mutationFn: (input: {
+      id?: string;
+      code: string;
+      name: string;
+      /** ⚠️ Hisobotdagi "1000 kishiga" kesimi uchun — ixtiyoriy. */
+      population?: number;
+      sortOrder?: number;
+    }) => {
       const { id, ...body } = input;
       return id
         ? api.patch<District>(`/territory/districts/${id}`, body)

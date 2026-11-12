@@ -32,7 +32,9 @@ import {
   ArrowRight,
   MapPinOff,
   MessageSquareWarning,
+  MessagesSquare,
   Radio as RadioIcon,
+  Send,
   Smartphone,
   TrendingUp,
   Users,
@@ -293,6 +295,23 @@ export default function DashboardPage() {
                 value={groupStats.data?.official ?? "—"}
               />
               <Row label="Qalqon yoqilgan" value={groupStats.data?.guarded ?? "—"} />
+              {/*
+                ⚠️ "YOQILGAN, LEKIN ISHLAMAYDI" — ENG XAVFLI HOLAT:
+                ma'muriyat himoya bor deb o'ylaydi, bot esa Telegram
+                ruxsati yo'qligi uchun hech narsa o'chira olmaydi va
+                guruhga ogohlantirish ham YOZMAYDI.
+
+                ⚠️ NOL BO'LSA KO'RSATILMAYDI: panelni doimiy "0"
+                turadigan qizil qator bilan bezash ogohlantirishning
+                ma'nosini yo'qotardi.
+              */}
+              {groupStats.data?.guardBlind ? (
+                <Row
+                  label="Qalqon ishlamayapti"
+                  value={groupStats.data.guardBlind}
+                  hint="Bot admin emas yoki o'chirish huquqi yo'q"
+                />
+              ) : null}
               <Row
                 label="Navbatdagi xabar"
                 value={groupStats.data?.pendingMessages ?? "—"}
@@ -305,7 +324,69 @@ export default function DashboardPage() {
           </ChartFrame>
         ) : null}
 
-        {/* ── 4-QATOR: ILOVADAN KELGAN MUROJAATLAR ─────────── */}
+        {/*
+          ── 4-QATOR: OBUNACHILAR ───────────────────────────
+
+          ⚠️ IKKI SON QO'SHILMAYDI va bu ataylab: guruhdagi odam
+          botga yozmagan bo'lishi mumkin, botga yozgan odam esa
+          hech qaysi MFY guruhida bo'lmasligi mumkin. Qo'shilsa,
+          bir odam IKKI MARTA sanalardi — va bu son hisobotga
+          chiqardi.
+
+          ⚠️ "RO'YXATDAN O'TGAN" VA "FAOL" HAM ALOHIDA: botni bir
+          marta ochib tashlab ketgan odam ro'yxatda abadiy qoladi,
+          ya'ni jami son yildan-yilga o'sib, ma'nosini yo'qotadi.
+        */}
+        {can("groups.view") || can("citizens.view") ? (
+          <ChartFrame
+            title="Obunachilar"
+            subtitle="Guruh a'zolari va bot foydalanuvchilari — alohida"
+            className="lg:col-span-6"
+          >
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {can("groups.view") ? (
+                <>
+                  <MiniStat
+                    icon={MessagesSquare}
+                    label="Guruhlardagi a'zolar"
+                    value={groupStats.data?.members ?? "—"}
+                    tone="primary"
+                  />
+                  <MiniStat
+                    icon={RadioIcon}
+                    label="Kuzatuvdagi guruh"
+                    value={groupStats.data?.official ?? "—"}
+                  />
+                </>
+              ) : null}
+
+              {can("citizens.view") && can("reports.view") ? (
+                <>
+                  <MiniStat
+                    icon={Send}
+                    label="Botda (xabar boradi)"
+                    value={mobile.data?.citizens.telegram ?? "—"}
+                  />
+                  <MiniStat
+                    icon={Users}
+                    label="30 kunda faol"
+                    value={mobile.data?.citizens.recent ?? "—"}
+                  />
+                </>
+              ) : null}
+            </div>
+
+            {can("broadcast.send") ? (
+              <div className="mt-4">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/broadcasts">Xabar yuborish</Link>
+                </Button>
+              </div>
+            ) : null}
+          </ChartFrame>
+        ) : null}
+
+        {/* ── 5-QATOR: ILOVADAN KELGAN MUROJAATLAR ─────────── */}
         {/* ⚠️ `reports.view` KERAK: kartadagi raqamlar
             `/reports/mobile` dan keladi va u shu ruxsatga ega. */}
         {can("citizens.view") && can("reports.view") ? (

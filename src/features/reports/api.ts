@@ -10,16 +10,18 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { ApiError, api } from "@/shared/api/client";
+import { ApiError, api, saveBlob } from "@/shared/api/client";
 import { queryKeys } from "@/shared/api/query-keys";
 import type {
   AuditEntry,
   CategoryReportRow,
   DailyPoint,
   DistrictMapResponse,
+  MahallaMapItem,
   MapIssue,
   MobileReport,
   Paginated,
+  RecurringReport,
   ReportOverview,
   Settings,
   SignalReport,
@@ -101,6 +103,71 @@ export const useMapReport = (filters: ReportFilters & { status?: string }) =>
     placeholderData: (previous) => previous,
   });
 
+/**
+ * TIZIMLI MUAMMOLAR — AYNI MFY, AYNI YO'NALISHDA QAYTA-QAYTA.
+ *
+ * ⚠️ AYNI FILTRNI OLADI (fayl boshidagi qoida): kesim ekrandagi
+ * davrga tegishli bo'lishi kerak.
+ */
+export const useRecurringReport = (filters: ReportFilters) =>
+  useQuery({
+    queryKey: queryKeys.reports.recurring(filters),
+    queryFn: () => api.get<RecurringReport>("/reports/recurring", { ...filters }),
+    placeholderData: (previous) => previous,
+  });
+
+/**
+ * HISOBOTNI CSV QILIB YUKLAB OLISH.
+ *
+ * ⚠️ `useQuery` EMAS, `useMutation`: bu SO'ROV emas, AMAL —
+ * natijasi ekranda ko'rsatilmaydi, faylga tushadi. `useQuery`
+ * bo'lsa, kesh uni saqlab, ikkinchi bosishda eski faylni
+ * qaytarardi.
+ *
+ * ⚠️ FILTR O'SHA EKRANDAGISI: eksport ekranda ko'rinayotgan
+ * raqamlardan BOSHQA narsa bermasligi kerak — aks holda
+ * rahbariyat ikkisini solishtirib, qaysi biriga ishonishni
+ * bilmasdi.
+ */
+export const useExportReport = () =>
+  useMutation({
+    mutationFn: async (input: { kind: string; filters: ReportFilters }) => {
+      const { blob, filename } = await api.download(
+        `/reports/export/${input.kind}`,
+        { ...input.filters },
+      );
+
+      saveBlob(blob, filename);
+    },
+    onSuccess: () => {
+      toast.success("Hisobot yuklab olindi");
+    },
+    onError: (error) => {
+      toast.error(error instanceof ApiError ? error.message : "Yuklab olinmadi");
+    },
+  });
+
+/**
+ * HISOBOT YORDAMCHISI — KO'RSATKICH BO'YICHA SAVOL.
+ *
+ * ⚠️ JAVOB KESHLANMAYDI: u ekranda, savol bergan odamga, bir
+ * marta ko'rsatiladi. Keshga qo'yilsa, filtr o'zgargandan keyin
+ * ham eski javob turib, BOSHQA davrga tegishli xulosani
+ * ko'rsatardi.
+ *
+ * ⚠️ XATO TOAST QILINMAYDI: javob oynaning ICHIDA ko'rsatiladi
+ * (`mutation.error`) — xodim savolini o'sha yerda tuzatib,
+ * qaytadan so'raydi. Toast esa yo'qolib ketardi.
+ */
+export const useReportAssistant = () =>
+  useMutation({
+    mutationFn: (input: { question: string; filters: ReportFilters }) =>
+      api.post<{ answer: string; context: Record<string, unknown> }>(
+        "/reports/assistant",
+        { question: input.question, ...input.filters },
+      ),
+  });
+
 // ═══════════════════════════════════════════════════════════════════
 //  SOZLAMALAR
 // ═══════════════════════════════════════════════════════════════════
@@ -111,6 +178,27 @@ export const useSettings = () =>
     queryFn: () => api.get<Settings>("/settings"),
     // ⚠️ `orgName` sarlavhada ishlatiladi — har navigatsiyada
     // so'ralmasligi kerak.
+    staleTime: 5 * 60_000,
+  });
+
+/**
+ * MFY KESIMI — ISSIQLIK XARITASI VA POLIGONLAR UCHUN.
+ *
+ * ⚠️ `useMapReport` DAN ALOHIDA: u faqat KOORDINATALI
+ * murojaatlarni beradi (2000 ta bilan cheklangan), bu esa HAMMA
+ * murojaatni MFY bo'yicha sanaydi — koordinatasizlarini ham.
+ *
+ * ⚠️ YO'NALISH BO'YICHA KESIM BIRGA KELADI (`byCategory`): filtr
+ * mijozda, SO'ROVSIZ ishlaydi — har chip bosilganda serverga borish
+ * xaritani sekinlashtirardi.
+ */
+export const useMahallaMap = (filters: ReportFilters & { status?: string }) =>
+  useQuery({
+    queryKey: queryKeys.reports.mahallaMap(filters),
+    queryFn: () => api.get<MahallaMapItem[]>("/reports/mahalla-map", { ...filters }),
+    placeholderData: (previous) => previous,
+    // ⚠️ UZUN: MFY chegaralari deyarli o'zgarmaydi va javob
+    // og'ir (poligonlar bilan).
     staleTime: 5 * 60_000,
   });
 
@@ -132,6 +220,8 @@ export const useSaveSettings = () => {
       guardAllowedHosts?: string[];
       mobileDailyLimit?: number;
       mobileMaxAttachments?: number;
+      /** ⚠️ Standart `true` — telefonsiz murojaat qabul qilinmaydi. */
+      requirePhone?: boolean;
     }) => api.patch<Settings>("/settings", input),
     onSuccess: () => {
       toast.success("Sozlamalar saqlandi");

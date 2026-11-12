@@ -15,7 +15,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { AlertTriangle, MessageSquare, MessageSquareWarning } from "lucide-react";
+import { AlertTriangle, Copy, MessageSquare, MessageSquareWarning } from "lucide-react";
 
 import { useSession } from "@/entities/session/auth-provider";
 import {
@@ -70,6 +70,13 @@ export default function IssuesPage() {
   const [filters, setFilters] = useState<IssueFilters>(() => ({
     status: (searchParams.get("status") as IssueStatus | null) ?? undefined,
     overdue: searchParams.get("overdue") === "true" ? true : undefined,
+    /**
+     * ⚠️ URL DAN O'QILADI: boshqaruv panelidagi "Shubhali"
+     * sanog'i `/issues?suspicious=true` havolasini beradi va
+     * xodim o'sha ro'yxatni ko'rishi kerak (`overdue` bilan
+     * AYNI yo'l).
+     */
+    suspicious: searchParams.get("suspicious") === "true" ? true : undefined,
     // ⚠️ `categoryId` HAM O'QILADI: boshqaruv panelidagi
     // "yo'nalishlar" diagrammasi shu havolani beradi va usiz
     // bosilgan ustun to'liq ro'yxatni ochardi.
@@ -216,6 +223,53 @@ export default function IssuesPage() {
         </div>
       ) : null}
 
+      {/*
+        ⚠️ SHUBHALI RO'YXATI UCHUN IZOH HAM BERILADI: xodim
+        "tizim nega bularni ajratdi" degan savolga javob
+        topishi kerak — aks holda u yorliqqa ishonmasdi va
+        ro'yxatni e'tiborsiz qoldirardi.
+
+        ⚠️ "RAD ETILGAN" EMAS, "TEKSHIRISH KERAK": murojaat
+        baribir navbatda turadi va fuqaro javob kutadi.
+      */}
+      {filters.suspicious ? (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200">
+            Shubhali — tekshirish kerak
+          </Badge>
+          <p className="text-xs text-muted-foreground">
+            Matni mazmunsiz ko&apos;ringan murojaatlar. Rad etilmagan —
+            faqat ajratilgan.
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => patch({ suspicious: undefined })}
+          >
+            Filtrni olib tashlash
+          </Button>
+        </div>
+      ) : null}
+
+      {filters.duplicates === false ? (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <Badge className="bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-200">
+            Takroriylar yashirilgan
+          </Badge>
+          <p className="text-xs text-muted-foreground">
+            Bitta hodisa bo&apos;yicha kelgan murojaatlardan faqat
+            ASOSIYSI ko&apos;rsatilyapti.
+          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => patch({ duplicates: undefined })}
+          >
+            Hammasini ko&apos;rsatish
+          </Button>
+        </div>
+      ) : null}
+
       {/* ── Jadval ───────────────────────────────────────────── */}
       <div className="rounded-lg border bg-card">
         {issues.isLoading ? (
@@ -273,6 +327,55 @@ export default function IssuesPage() {
                               <MessageSquare className="size-3" />
                               {issue.commentCount}
                             </span>
+                          ) : null}
+
+                          {/*
+                            ⚠️ SHUBHA SABABI YORLIQDA KO'RSATILADI
+                            (`title`): "Shubhali" degan yakka so'z
+                            xodimga nima qilishni aytmasdi — u
+                            murojaatni ochib, o'zi taxmin qilishi
+                            kerak bo'lardi.
+                          */}
+                          {issue.isSuspicious ? (
+                            <Badge
+                              className="bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200"
+                              title={issue.suspicionReason ?? undefined}
+                            >
+                              <AlertTriangle className="mr-0.5 size-3" />
+                              Shubhali
+                            </Badge>
+                          ) : null}
+
+                          {/*
+                            ⚠️ TAKRORIYLAR SONI ASOSIY MUROJAATDA
+                            KO'RSATILADI: "+19" degan belgi xodimga
+                            bu BITTA hodisa ekanini aytadi va u
+                            javobni bir marta yozib, hammasiga
+                            yetkazadi.
+                          */}
+                          {issue.duplicateCount > 0 ? (
+                            <Badge
+                              className="bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-200"
+                              title="Shu hodisa bo'yicha kelgan boshqa murojaatlar"
+                            >
+                              <Copy className="mr-0.5 size-3" />+
+                              {issue.duplicateCount}
+                            </Badge>
+                          ) : null}
+
+                          {/*
+                            ⚠️ TAKRORIYNING O'ZI HAM BELGILANADI:
+                            aks holda xodim unga ALOHIDA javob
+                            yozib, asosiy murojaat yopilganda
+                            fuqaro IKKI javob olardi.
+                          */}
+                          {issue.isDuplicate ? (
+                            <Badge
+                              className="bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300"
+                              title="Boshqa murojaatga ulangan — u bilan birga yopiladi"
+                            >
+                              Takroriy
+                            </Badge>
                           ) : null}
                         </div>
 

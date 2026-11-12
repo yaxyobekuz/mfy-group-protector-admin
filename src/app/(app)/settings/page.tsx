@@ -11,7 +11,7 @@
  * tahlil jim buzilishi mumkin edi.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import {
@@ -23,6 +23,7 @@ import { useSaveSettings, useSettings } from "@/features/reports/api";
 import { useSignalStatus } from "@/features/signals/api";
 import type { IssueCategory, SignalSeverity } from "@/shared/api/types";
 import { SIGNAL_SEVERITY } from "@/shared/config/labels";
+import { cn } from "@/shared/lib/cn";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -93,6 +94,7 @@ export default function SettingsPage() {
     guardAllowedHosts: "",
     mobileDailyLimit: 0,
     mobileMaxAttachments: 5,
+    requirePhone: true,
   });
 
   /**
@@ -120,6 +122,7 @@ export default function SettingsPage() {
       guardAllowedHosts: data.guardAllowedHosts.join("\n"),
       mobileDailyLimit: data.mobileDailyLimit,
       mobileMaxAttachments: data.mobileMaxAttachments,
+      requirePhone: data.requirePhone,
     });
   }, [settings.data]);
 
@@ -150,6 +153,7 @@ export default function SettingsPage() {
 
       mobileDailyLimit: form.mobileDailyLimit,
       mobileMaxAttachments: form.mobileMaxAttachments,
+      requirePhone: form.requirePhone,
     });
   };
 
@@ -479,6 +483,39 @@ export default function SettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/*
+                  ── TELEFON MAJBURIYMI ───────────────────────
+
+                  ⚠️ BIRINCHI O'RINDA, CHEGARALARDAN OLDIN: bu
+                  chegaralardan ko'ra jiddiyroq sozlama — u
+                  murojaatni QABUL QILISH shartini o'zgartiradi.
+
+                  ⚠️ O'CHIRISH JIDDIY QADAM: telefonsiz murojaatda
+                  xodim odamga bog'lana olmaydi (Telegram ismi
+                  "ALHAMDULILLAX" bo'lishi mumkin, hudud esa
+                  ko'rsatilmagan) va murojaat navbatda turib
+                  qoladi — aniq shu holat kuzatilgan.
+                */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="require-phone">
+                      Telefon raqami majburiy
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Murojaat yuborishdan oldin fuqarodan raqam so&apos;raladi —
+                      botda ham, ilovada ham. O&apos;chirilsa, xodim murojaat
+                      egasiga bog&apos;lana olmasligi mumkin.
+                    </p>
+                  </div>
+                  <Switch
+                    id="require-phone"
+                    checked={form.requirePhone}
+                    onCheckedChange={(checked) =>
+                      setForm((prev) => ({ ...prev, requirePhone: checked }))
+                    }
+                  />
+                </div>
+
                 <div className="space-y-1.5">
                   <Label htmlFor="mobileDailyLimit">
                     Bir kunda yuboriladigan murojaat chegarasi
@@ -553,6 +590,52 @@ const CategoriesTab = () => {
   const deactivate = useDeactivateCategory();
   const [form, setForm] = useState<Partial<IssueCategory> | null>(null);
 
+  /**
+   * DARAXT TARTIBI — ASOSIY, KEYIN UNING KICHIKLARI.
+   *
+   * ⚠️ ALIFBO YOKI `sortOrder` BO'YICHA TEKIS RO'YXAT YARAMAYDI:
+   * kichik yo'nalish o'z otasidan uzoqda turib qolardi va
+   * "Ichimlik suvi" qaysi bo'limga tegishli ekani ko'rinmasdi.
+   *
+   * ⚠️ OTASI O'CHIRILGAN BOLA HAM CHIQADI (oxirida): aks holda u
+   * ro'yxatdan JIMGINA yo'qolardi va uni tuzatib ham bo'lmasdi.
+   */
+  const ordered = useMemo(() => {
+    const all = categories.data ?? [];
+    const roots = all.filter((item) => !item.parentId);
+    const byParent = new Map<string, IssueCategory[]>();
+
+    for (const item of all) {
+      if (!item.parentId) continue;
+      const list = byParent.get(item.parentId) ?? [];
+      list.push(item);
+      byParent.set(item.parentId, list);
+    }
+
+    const result: { category: IssueCategory; depth: number }[] = [];
+
+    for (const root of roots) {
+      result.push({ category: root, depth: 0 });
+      for (const child of byParent.get(root.id) ?? []) {
+        result.push({ category: child, depth: 1 });
+      }
+      byParent.delete(root.id);
+    }
+
+    // Otasi ro'yxatda yo'q bolalar — yuqoridagi izoh.
+    for (const orphans of byParent.values()) {
+      for (const orphan of orphans) result.push({ category: orphan, depth: 1 });
+    }
+
+    return result;
+  }, [categories.data]);
+
+  /** Dialogdagi "asosiy yo'nalish" tanlovi uchun — faqat ildizlar. */
+  const parentOptions = useMemo(
+    () => (categories.data ?? []).filter((item) => !item.parentId && item.isActive),
+    [categories.data],
+  );
+
   return (
     <>
       <div className="mb-3 flex items-center justify-between">
@@ -561,9 +644,17 @@ const CategoriesTab = () => {
           klaviaturada tugma bo'lib ko'rinadi va ularning soni
           ko'payib ketsa, bot menyusi o'qilmaydigan bo'lib qoladi.
         */}
+        {/*
+          ⚠️ IZOH O'ZGARDI: yo'nalishlar endi IKKI DARAJALI va
+          botda ikki qadamli tanlov bo'lib ko'rinadi. "Kam saqlang"
+          degan eski maslahat o'z kuchini yo'qotdi — aksincha,
+          kichik yo'nalish qancha aniq bo'lsa, hisobot shuncha
+          foydali.
+        */}
         <p className="text-sm text-muted-foreground">
-          Yo&apos;nalishlar botda tugma sifatida ko&apos;rinadi — ularni kam va
-          aniq saqlang.
+          Asosiy yo&apos;nalish ichida kichik yo&apos;nalishlar bo&apos;ladi.
+          Fuqaro botda avval asosiysini, keyin kichigini tanlaydi — murojaat
+          esa ENG ANIQ yo&apos;nalishga yoziladi.
         </p>
 
         <Button onClick={() => setForm({})}>
@@ -594,17 +685,42 @@ const CategoriesTab = () => {
             </TableHeader>
 
             <TableBody>
-              {categories.data?.map((category) => (
+              {ordered.map(({ category, depth }) => (
                 <TableRow key={category.id}>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    {/*
+                      ⚠️ CHEKINISH + CHIZIQ: kichik yo'nalish o'z
+                      otasiga tegishli ekani BIR QARASHDA ko'rinishi
+                      kerak. Faqat chekinish bilan (chiziqsiz) u
+                      "biroz suriladigan qator"dek ko'rinardi.
+                    */}
+                    <div
+                      className={cn(
+                        "flex items-center gap-2",
+                        depth > 0 && "ml-5 border-l pl-3",
+                      )}
+                    >
                       {category.color ? (
                         <span
                           className="size-3 shrink-0 rounded-full"
                           style={{ backgroundColor: category.color }}
                         />
                       ) : null}
-                      <span className="font-medium">{category.name}</span>
+                      <span className={depth > 0 ? "" : "font-medium"}>
+                        {category.name}
+                      </span>
+                      {/*
+                        ⚠️ "TANLANMAYDI" YORLIG'I: ichida kichik
+                        yo'nalishlari bor yo'nalish fuqaroga YAKUNIY
+                        tanlov sifatida berilmaydi (server ham rad
+                        etadi). Bu yozuvsiz ma'muriyat uni oddiy
+                        yo'nalish deb o'ylardi.
+                      */}
+                      {category.childCount > 0 ? (
+                        <Badge className="bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300">
+                          {category.childCount} ta kichik
+                        </Badge>
+                      ) : null}
                       {!category.isActive ? (
                         <Badge className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                           O&apos;chirilgan
@@ -652,20 +768,33 @@ const CategoriesTab = () => {
         )}
       </div>
 
-      {form ? <CategoryDialog initial={form} onClose={() => setForm(null)} /> : null}
+      {form ? (
+        <CategoryDialog
+          initial={form}
+          parents={parentOptions}
+          onClose={() => setForm(null)}
+        />
+      ) : null}
     </>
   );
 };
 
+/** Radix `Select` bo'sh satrni qabul qilmaydi — shuning uchun belgi. */
+const NO_PARENT = "__root__";
+
 const CategoryDialog = ({
   initial,
+  parents,
   onClose,
 }: {
   initial: Partial<IssueCategory>;
+  /** Tanlanishi mumkin bo'lgan ASOSIY yo'nalishlar (faqat ildizlar). */
+  parents: IssueCategory[];
   onClose: () => void;
 }) => {
   const save = useSaveCategory();
 
+  const [parentId, setParentId] = useState(initial.parentId ?? "");
   const [name, setName] = useState(initial.name ?? "");
   const [color, setColor] = useState(initial.color ?? "#2563eb");
   const [description, setDescription] = useState(initial.description ?? "");
@@ -681,6 +810,49 @@ const CategoryDialog = ({
         </DialogHeader>
 
         <div className="space-y-4">
+          {/*
+            ── ASOSIY YO'NALISH ─────────────────────────────
+
+            ⚠️ ENG BIRINCHI MAYDON: u yozuvning MA'NOSINI belgilaydi
+            — bu mustaqil bo'limmi yoki kichik yo'nalishmi. Nomdan
+            keyin qo'yilsa, odam nomni yozib bo'lib, keyin fikrini
+            o'zgartirardi.
+
+            ⚠️ ICHIDA BOLALARI BOR YO'NALISHNI BOSHQASIGA BIRIKTIRIB
+            BO'LMAYDI (server rad etadi): u o'z bolalarini uchinchi
+            darajaga tushirardi.
+          */}
+          <div className="space-y-1.5">
+            <Label>Asosiy yo&apos;nalish</Label>
+            <Select
+              value={parentId || NO_PARENT}
+              onValueChange={(value) => setParentId(value === NO_PARENT ? "" : value)}
+              disabled={(initial.childCount ?? 0) > 0}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_PARENT}>
+                  — Mustaqil (asosiy yo&apos;nalish) —
+                </SelectItem>
+                {parents
+                  .filter((item) => item.id !== initial.id)
+                  .map((item) => (
+                    <SelectItem key={item.id} value={item.id}>
+                      {item.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            {(initial.childCount ?? 0) > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Ichida {initial.childCount} ta kichik yo&apos;nalish bor — avval
+                ularni ko&apos;chiring.
+              </p>
+            ) : null}
+          </div>
+
           <div className="space-y-1.5">
             <Label htmlFor="c-name">Nomi *</Label>
             <Input
@@ -748,6 +920,9 @@ const CategoryDialog = ({
                   name: name.trim(),
                   color,
                   description: description.trim() || undefined,
+                  // ⚠️ BO'SH SATR — "ASOSIY YO'NALISHGA CHIQAR":
+                  // server uni `null` deb tushunadi (DTO izohi).
+                  parentId,
                   isActive: initial.id ? isActive : undefined,
                 },
                 { onSuccess: onClose },

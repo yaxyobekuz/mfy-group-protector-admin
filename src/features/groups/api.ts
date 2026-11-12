@@ -17,6 +17,12 @@ import type {
 
 export interface GroupFilters {
   isOfficial?: boolean;
+  /**
+   * ⚠️ SHAHAR/TUMAN KESIMI: viloyatda BIR XIL NOMLI MFY lar bor
+   * (har tumanda "Turon", "Birlik") va tumansiz ro'yxatda ular
+   * farqlanmasdi.
+   */
+  districtId?: string;
   mahallaId?: string;
   unassigned?: boolean;
   search?: string;
@@ -30,6 +36,10 @@ export const toBulkFilter = (
   expectedCount: number,
 ): BulkGroupInput => ({
   filterIsOfficial: filters.isOfficial,
+  // ⚠️ TUMAN HAM UZATILADI: ommaviy amalning qamrovi — EKRANDAGI
+  // filtr natijasi. Tushib qolsa, operator bitta tumanni ko'rib
+  // turib, amalni butun viloyatga bajarardi.
+  filterDistrictId: filters.districtId,
   filterMahallaId: filters.mahallaId,
   filterUnassigned: filters.unassigned,
   filterSearch: filters.search,

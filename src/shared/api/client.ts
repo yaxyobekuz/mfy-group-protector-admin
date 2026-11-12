@@ -167,6 +167,15 @@ interface RequestOptions {
   params?: Record<string, string | number | boolean | undefined | null>;
   /** Tokensiz so'rov (login, refresh). */
   skipAuth?: boolean;
+  /**
+   * FAYL YUKLASH — TANA `FormData`.
+   *
+   * ⚠️ `Content-Type` QO'YILMAYDI: `multipart/form-data` ga
+   * BOUNDARY kerak va uni brauzer o'zi yozadi. Qo'lda yozilsa
+   * boundary tushib qolib, server "Fayl bo'sh" deb rad etardi —
+   * sababini topish esa uzoq davom etardi.
+   */
+  form?: FormData;
 }
 
 /**
@@ -188,7 +197,10 @@ const buildUrl = (path: string, params?: RequestOptions["params"]): string => {
 };
 
 async function send<T>(path: string, options: RequestOptions, retried: boolean): Promise<T> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  // ⚠️ `FormData` DA SARLAVHA BO'SH — yuqoridagi izoh.
+  const headers: Record<string, string> = options.form
+    ? {}
+    : { "Content-Type": "application/json" };
 
   if (!options.skipAuth) {
     const token = tokens.access();
@@ -198,7 +210,7 @@ async function send<T>(path: string, options: RequestOptions, retried: boolean):
   const response = await fetch(buildUrl(path, options.params), {
     method: options.method ?? "GET",
     headers,
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    body: options.form ?? (options.body === undefined ? undefined : JSON.stringify(options.body)),
   });
 
   // ── 401: tokenni yangilab, BIR MARTA qayta urinish ──────────────
@@ -246,4 +258,83 @@ export const api = {
     send<T>(path, { method: "PATCH", body }, false),
 
   delete: <T>(path: string): Promise<T> => send<T>(path, { method: "DELETE" }, false),
+
+  /**
+   * FAYL YUKLASH — `multipart/form-data`.
+   *
+   * ⚠️ AYNI `send` ORQALI O'TADI, alohida `fetch` emas: 401 da
+   * tokenni yangilab qayta urinish mantig'i shu yerda va uni
+   * ikkinchi joyda takrorlash kerak emas. Nusxa yozilsa, sessiya
+   * tugaganda fayl yuklash JIM muvaffaqiyatsiz bo'lardi.
+   */
+  upload: <T>(path: string, form: FormData): Promise<T> =>
+    send<T>(path, { method: "POST", form }, false),
+
+  /**
+   * FAYLNI YUKLAB OLISH (CSV hisobot).
+   *
+   * ⚠️ `send` DAN ALOHIDA: u javobni `JSON.parse` qiladi va CSV
+   * o'sha yerda yiqilardi. Shuning uchun bu yerda javob `Blob`
+   * sifatida olinadi.
+   *
+   * ⚠️ FAYL NOMI SERVERDAN OLINADI (`Content-Disposition`): panelda
+   * qo'lda yasalsa, server kesim nomini o'zgartirganda ikki joyda
+   * tuzatish kerak bo'lardi.
+   *
+   * ⚠️ TOKEN SARLAVHADA, URL DA EMAS: `<a href>` bilan yuklab olish
+   * tokenni query satriga chiqarishga majbur qilardi — u esa
+   * brauzer tarixida va server logida qolardi.
+   */
+  download: async (
+    path: string,
+    params?: RequestOptions["params"],
+  ): Promise<{ blob: Blob; filename: string }> => {
+    const token = tokens.access();
+
+    const response = await fetch(buildUrl(path, params), {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+
+    if (response.status === 401) {
+      const refreshed = await refreshOnce();
+
+      if (!refreshed) {
+        tokens.clear();
+        onSessionEnd?.();
+        throw new ApiError(401, "Sessiya tugadi — qaytadan kiring");
+      }
+
+      return api.download(path, params);
+    }
+
+    if (!response.ok) {
+      throw new ApiError(response.status, `Yuklab olinmadi (${response.status})`);
+    }
+
+    const disposition = response.headers.get("Content-Disposition") ?? "";
+    const match = /filename="?([^";]+)"?/.exec(disposition);
+
+    return {
+      blob: await response.blob(),
+      filename: match?.[1] ?? "hisobot.csv",
+    };
+  },
+};
+
+/**
+ * BLOB NI FAYL QILIB SAQLAYDI.
+ *
+ * ⚠️ `URL.revokeObjectURL` MAJBURIY: har yuklab olishda brauzer
+ * xotirasida blob qoladi va rahbariyat o'n marta bosganda u
+ * yig'ilib boradi (CSV 5000 qatorli bo'lishi mumkin).
+ */
+export const saveBlob = (blob: Blob, filename: string): void => {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  link.href = url;
+  link.download = filename;
+  link.click();
+
+  URL.revokeObjectURL(url);
 };

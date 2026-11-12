@@ -16,6 +16,8 @@ import {
   MapPin,
   MessageSquareWarning,
   Megaphone,
+  Send,
+  UserCog,
   Radio,
   ScrollText,
   Settings,
@@ -70,11 +72,34 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Trophy,
     permission: "citizens.view",
   },
+  /**
+   * ⚠️ "IJROCHILAR" MUROJAATLAR YONIDA, "ADMINLAR" YONIDA EMAS:
+   * bu sahifa XODIM boshqarish emas, murojaat TAQSIMOTI haqida.
+   * Adminlar bo'limiga qo'yilsa, operator uni "menga tegishli emas"
+   * deb o'tkazib yuborardi.
+   */
+  {
+    href: "/assignees",
+    label: "Ijrochilar",
+    icon: UserCog,
+    permission: "issues.assign",
+  },
   {
     href: "/announcements",
     label: "Yangiliklar",
     icon: Megaphone,
     permission: "announcements.manage",
+  },
+  /**
+   * ⚠️ TARQATMA — ALOHIDA SAHIFA, "Fuqarolar" ichidagi oyna EMAS.
+   * Sabab: u endi guruhlarga ham boradi va tarixi bor (kim, qachon,
+   * kimga nima yuborgan). Oynada tarix ko'rsatib bo'lmasdi.
+   */
+  {
+    href: "/broadcasts",
+    label: "Tarqatma",
+    icon: Send,
+    permission: "broadcast.send",
   },
   { href: "/territory", label: "Hudud", icon: MapPin, permission: "territory.view" },
   { href: "/map", label: "Xarita", icon: MapIcon, permission: "reports.view" },

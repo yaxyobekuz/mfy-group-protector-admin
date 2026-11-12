@@ -42,7 +42,6 @@ import {
 } from "@/shared/ui/table";
 import { PageHeader } from "@/widgets/page-header/page-header";
 import { BlockDialog } from "@/features/citizens/block-dialog";
-import { BroadcastDialog } from "@/features/citizens/broadcast-dialog";
 
 const ALL = "__all__";
 const BLOCKED = "blocked";
@@ -56,7 +55,6 @@ export default function CitizensPage() {
     name: string;
     blocked: boolean;
   } | null>(null);
-  const [broadcasting, setBroadcasting] = useState(false);
 
   const citizens = useCitizens(filters);
   const districts = useDistricts();
@@ -86,10 +84,21 @@ export default function CitizensPage() {
       <PageHeader
         title="Fuqarolar"
         actions={
-          canManage ? (
-            <Button variant="outline" onClick={() => setBroadcasting(true)}>
-              <Send className="mr-1.5 size-4" />
-              Xabar yuborish
+          /*
+            ⚠️ TARQATMA OYNASI OLIB TASHLANDI, o'rnida alohida SAHIFA
+            (`/broadcasts`). Sabab: xabar endi MFY guruhlariga ham
+            boradi, MFY kesimi bor va tarixi saqlanadi (kim, qachon,
+            kimga, nima yuborgan). Oynada tarix ko'rsatib bo'lmasdi.
+
+            ⚠️ RUXSAT HAM O'ZGARDI: `citizens.manage` emas,
+            `broadcast.send` — bloklash va tarqatma boshqa-boshqa amal.
+          */
+          can("broadcast.send") ? (
+            <Button variant="outline" asChild>
+              <Link href="/broadcasts">
+                <Send className="mr-1.5 size-4" />
+                Xabar yuborish
+              </Link>
             </Button>
           ) : null
         }
@@ -248,9 +257,6 @@ export default function CitizensPage() {
           </div>
         </div>
       ) : null}
-
-      {/* ── XABAR YUBORISH ───────────────────────────────────── */}
-      {broadcasting ? <BroadcastDialog onClose={() => setBroadcasting(false)} /> : null}
 
       {/* ── BLOK DIALOGI ─────────────────────────────────────── */}
       {blockTarget ? (

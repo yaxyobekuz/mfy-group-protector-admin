@@ -65,24 +65,12 @@ export const useRating = (filters: RatingFilters) =>
     placeholderData: (previous) => previous,
   });
 
-export interface BroadcastResult {
-  recipients: number;
-  sent: number;
-  failed: number;
-}
-
-export const useBroadcast = () => {
-  return useMutation({
-    mutationFn: (input: { message: string; districtId?: string }) =>
-      api.post<BroadcastResult>("/citizens/broadcast", input),
-    onSuccess: (result) => {
-      toast.success(`Xabar yuborildi: ${result.sent}/${result.recipients}`);
-    },
-    onError: (error) => {
-      toast.error(error instanceof ApiError ? error.message : "Yuborilmadi");
-    },
-  });
-};
+/**
+ * ⚠️ `useBroadcast` BU YERDAN OLIB TASHLANDI — o'rnida
+ * `features/broadcasts/api.ts`. Tarqatma endi fuqarolar bo'limining
+ * ishi emas: u MFY guruhlariga ham boradi, hudud kesimi va tarixi bor
+ * (`POST /broadcasts`).
+ */
 
 export const useBlockCitizen = () => {
   const queryClient = useQueryClient();

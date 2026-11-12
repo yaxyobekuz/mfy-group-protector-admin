@@ -17,6 +17,7 @@
 import { useTheme } from "next-themes";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Download, FileSpreadsheet, Repeat } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -35,6 +36,8 @@ import {
   useCategoryReport,
   useDailyReport,
   useMobileReport,
+  useExportReport,
+  useRecurringReport,
   useReportOverview,
   useSignalReport,
   useTerritoryReport,
@@ -42,7 +45,8 @@ import {
 } from "@/features/reports/api";
 import { useDistricts } from "@/features/territory/api";
 import { chartColors, chartTooltipStyle } from "@/shared/config/chart-colors";
-import { formatDateUz, daysAgoInput, toInputDate } from "@/shared/lib/date";
+import { formatDateUz, formatDateTimeUz, daysAgoInput, toInputDate } from "@/shared/lib/date";
+import { formatPeople } from "@/shared/config/labels";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
 import { Input, Label } from "@/shared/ui/input";
@@ -53,7 +57,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/shared/ui/select";
-import { CardSkeleton, EmptyState } from "@/shared/ui/states";
+import { CardSkeleton, EmptyState, Spinner } from "@/shared/ui/states";
 import {
   Table,
   TableBody,
@@ -63,12 +67,41 @@ import {
   TableRow,
 } from "@/shared/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { ReportAssistant } from "@/features/reports/assistant";
 import { PageHeader } from "@/widgets/page-header/page-header";
 import { StatTile } from "@/widgets/stat-tile/stat-tile";
 
 const ALL = "__all__";
 
-const VALID_TABS = ["dynamics", "territory", "categories", "ai", "mobile"];
+const VALID_TABS = [
+  "dynamics",
+  "territory",
+  "recurring",
+  "categories",
+  "ai",
+  "mobile",
+];
+
+/**
+ * EKSPORT KESIMLARI — TAB BILAN MOS.
+ *
+ * ⚠️ FAOL TAB BO'YICHA TANLANADI: rahbariyat ekranda
+ * ko'rayotgan kesimni yuklab olishni kutadi. Bitta umumiy
+ * "Yuklab olish" tugmasi har doim bir xil fayl berib,
+ * "men hudud kesimini so'ragandim" degan savolga olib
+ * kelardi.
+ *
+ * ⚠️ TABDA MOS KESIM BO'LMASA — UMUMIY: "AI samarasi" va
+ * "Ilova" tablari uchun alohida CSV yozilmadi, chunki
+ * ularning raqamlari bir nechta (jami, foiz) va jadval
+ * shakliga tushmaydi.
+ */
+const EXPORT_KIND: Record<string, string> = {
+  dynamics: "overview",
+  territory: "territory",
+  recurring: "recurring",
+  categories: "categories",
+};
 
 export default function ReportsPage() {
   // ⚠️ BOSHLANG'ICH TAB URL'DAN: dashboard "Analitika" havolasi
@@ -104,6 +137,13 @@ export default function ReportsPage() {
 
   const [days, setDays] = useState(30);
 
+  /**
+   * ⚠️ FAOL TAB HOLATDA SAQLANADI: `Tabs` o'zi boshqaradi, lekin
+   * EKSPORT tugmasi tabdan TASHQARIDA (sarlavhada) turadi va
+   * qaysi kesim ko'rinayotganini bilishi kerak.
+   */
+  const [tab, setTab] = useState(defaultTab);
+
   const districts = useDistricts();
   const overview = useReportOverview(filters);
   const territory = useTerritoryReport(filters);
@@ -111,6 +151,8 @@ export default function ReportsPage() {
   const signals = useSignalReport(filters);
   const mobile = useMobileReport(filters);
   const daily = useDailyReport(days);
+  const recurring = useRecurringReport(filters);
+  const exportReport = useExportReport();
 
   const patch = (next: Partial<ReportFilters>) =>
     setFilters((prev) => ({ ...prev, ...next }));
@@ -119,6 +161,43 @@ export default function ReportsPage() {
     <>
       <PageHeader
         title="Hisobotlar"
+        actions={
+          <div className="flex gap-2">
+            <ReportAssistant filters={filters} />
+
+            {EXPORT_KIND[tab] ? (
+              <Button
+                variant="outline"
+                disabled={exportReport.isPending}
+                onClick={() =>
+                  exportReport.mutate({ kind: EXPORT_KIND[tab] as string, filters })
+                }
+              >
+                {exportReport.isPending ? (
+                  <Spinner className="mr-1.5 size-4" />
+                ) : (
+                  <Download className="mr-1.5 size-4" />
+                )}
+                Yuklab olish
+              </Button>
+            ) : null}
+
+            {/*
+              ⚠️ XOM MA'LUMOT ALOHIDA TUGMA: kesim — xulosa uchun,
+              xom ro'yxat esa TEKSHIRISH uchun ("bu 450 ta
+              murojaat qaysilar?"). Ikkisini bitta tugmaga
+              sig'dirib bo'lmaydi.
+            */}
+            <Button
+              variant="outline"
+              disabled={exportReport.isPending}
+              onClick={() => exportReport.mutate({ kind: "issues", filters })}
+            >
+              <FileSpreadsheet className="mr-1.5 size-4" />
+              Murojaatlar (CSV)
+            </Button>
+          </div>
+        }
       />
 
       {/* ── Filtrlar ─────────────────────────────────────────── */}
@@ -225,10 +304,11 @@ export default function ReportsPage() {
         />
       </div>
 
-      <Tabs defaultValue={defaultTab}>
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
           <TabsTrigger value="dynamics">Dinamika</TabsTrigger>
           <TabsTrigger value="territory">Hudud</TabsTrigger>
+          <TabsTrigger value="recurring">Tizimli muammolar</TabsTrigger>
           <TabsTrigger value="categories">Yo&apos;nalishlar</TabsTrigger>
           <TabsTrigger value="ai">AI samarasi</TabsTrigger>
           <TabsTrigger value="mobile">Ilova</TabsTrigger>
@@ -353,6 +433,101 @@ export default function ReportsPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 )}
+
+                {/*
+                  ⚠️ MUTLAQ SON TUMANLARNI SOLISHTIRISHGA YARAMAYDI:
+                  "Asakada 450, Ulug'norda 50" degan diagramma
+                  Asakani eng yomon ko'rsatadi — holbuki unda
+                  aholi ham o'n barobar ko'p. Shuning uchun
+                  diagramma OSTIDA nisbiy ko'rsatkich turadi.
+
+                  ⚠️ DIAGRAMMAGA QO'SHILMADI: ikki o'lchov bitta
+                  o'qda chizilsa (450 va 18), nisbiy ustunlar
+                  ko'rinmas chiziqqa aylanardi.
+                */}
+                {(territory.data?.districts.length ?? 0) > 0 ? (
+                  <Table className="mt-4">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Tuman</TableHead>
+                        <TableHead className="text-right">Murojaat</TableHead>
+                        <TableHead className="text-right">Aholi</TableHead>
+                        <TableHead className="text-right">1000 kishiga</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {[...(territory.data?.districts ?? [])]
+                        /*
+                          ⚠️ NISBIY KO'RSATKICH BO'YICHA TARTIBLANADI,
+                          mutlaq son bo'yicha emas: jadvalning
+                          ma'nosi aynan shunda — "kimda haqiqatdan
+                          yomon".
+
+                          ⚠️ NUSXA OLINADI (`[...]`): `sort` massivni
+                          JOYIDA o'zgartiradi va u TanStack Query
+                          keshidagi obyekt — diagramma tartibi ham
+                          o'zgarib ketardi.
+                        */
+                        .sort((a, b) => (b.per1000 ?? -1) - (a.per1000 ?? -1))
+                        .map((row) => (
+                          <TableRow key={row.id}>
+                            <TableCell className="text-sm">{row.name}</TableCell>
+                            <TableCell className="tabular text-right text-sm">
+                              {row.count}
+                            </TableCell>
+                            <TableCell className="tabular text-right text-sm text-muted-foreground">
+                              {row.population ? (
+                                <>
+                                  {formatPeople(row.population)}
+                                  {/*
+                                    ⚠️ MANBA KO'RSATILADI: MFY lardan
+                                    yig'ilgan son to'liq bo'lmasligi
+                                    mumkin va o'shanda nisbiy
+                                    ko'rsatkich sun'iy ravishda KATTA
+                                    chiqadi.
+                                  */}
+                                  {row.populationSource === "mahallas" ? (
+                                    <span
+                                      className="ml-1 text-amber-600 dark:text-amber-500"
+                                      title="MFY lardan yig'ilgan — to'liq bo'lmasligi mumkin"
+                                    >
+                                      *
+                                    </span>
+                                  ) : null}
+                                </>
+                              ) : (
+                                "—"
+                              )}
+                            </TableCell>
+                            <TableCell className="tabular text-right text-sm font-medium">
+                              {/*
+                                ⚠️ AHOLI YO'Q BO'LSA "—", NOL EMAS:
+                                nol "muammo yo'q" degan noto'g'ri
+                                xulosa berardi.
+                              */}
+                              {row.per1000 ?? "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                ) : null}
+
+                {/*
+                  ⚠️ AHOLI TO'LDIRILMAGANI ALOHIDA AYTILADI: usiz
+                  ustun bo'sh turardi va xodim "hisobot buzuq" deb
+                  o'ylardi. Qayerda to'ldirish kerakligi ham
+                  ko'rsatiladi.
+                */}
+                {(territory.data?.districts ?? []).some(
+                  (row) => row.per1000 === null,
+                ) ? (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    Ba&apos;zi tumanlarda aholi soni kiritilmagan — nisbiy
+                    ko&apos;rsatkich hisoblanmadi. Hudud bo&apos;limida
+                    to&apos;ldiriladi.
+                  </p>
+                ) : null}
               </CardContent>
             </Card>
 
@@ -414,6 +589,109 @@ export default function ReportsPage() {
         </TabsContent>
 
         {/* ══ YO'NALISHLAR ═════════════════════════════════════ */}
+        {/* ══ TIZIMLI MUAMMOLAR ══════════════════════════ */}
+        <TabsContent value="recurring">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">
+                Qayta-qayta takrorlanadigan muammolar
+              </CardTitle>
+              {/*
+                ⚠️ KESIMNING MA'NOSI YOZILADI: "Kommunal xizmatlar
+                — 400 ta" degan qator hech narsa aytmaydi, "Turon
+                MFY, Ichimlik suvi — 3 oyda 14 marta" esa ANIQ ish
+                buyurtmasi. Xodim buni tushunmasa, jadvalni oddiy
+                reyting deb o'qib ketardi.
+              */}
+              <p className="text-xs text-muted-foreground">
+                Ayni MFY da, ayni yo&apos;nalishda 3 martadan ko&apos;p
+                qaytgan muammolar. Bu quvurni yamash emas,
+                ALMASHTIRISH kerakligini ko&apos;rsatadi.
+              </p>
+            </CardHeader>
+            <CardContent className="p-0">
+              {recurring.isLoading ? (
+                <CardSkeleton count={1} />
+              ) : (recurring.data?.items.length ?? 0) === 0 ? (
+                <EmptyState
+                  icon={Repeat}
+                  title="Takrorlanadigan muammo topilmadi"
+                  hint="Tanlangan davrda ayni MFY va yo'nalish bo'yicha 3 martadan ko'p murojaat kelmagan."
+                />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>MFY</TableHead>
+                      <TableHead>Yo&apos;nalish</TableHead>
+                      <TableHead className="text-right">Hodisa</TableHead>
+                      <TableHead className="text-right">Jami</TableHead>
+                      <TableHead className="text-right">Oyiga</TableHead>
+                      <TableHead>Oxirgi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recurring.data?.items.map((row) => (
+                      <TableRow key={`${row.mahallaId}-${row.categoryId}`}>
+                        <TableCell className="text-sm">
+                          <p>{row.mahallaName}</p>
+                          {row.district ? (
+                            <p className="text-xs text-muted-foreground">
+                              {row.district.name}
+                            </p>
+                          ) : null}
+                        </TableCell>
+
+                        <TableCell className="text-sm">
+                          {/*
+                            ⚠️ OTA YO'NALISH HAM KO'RSATILADI: yakka
+                            "Ichimlik suvi" kontekstsiz qolardi va
+                            uni "Tozalik" bilan adashtirish mumkin
+                            edi (AI promptidagi ayni sabab).
+                          */}
+                          {row.parentName ? (
+                            <p className="text-xs text-muted-foreground">
+                              {row.parentName}
+                            </p>
+                          ) : null}
+                          <p>{row.categoryName}</p>
+                        </TableCell>
+
+                        <TableCell className="tabular text-right text-sm font-medium">
+                          {row.incidents}
+                        </TableCell>
+
+                        <TableCell className="tabular text-right text-sm text-muted-foreground">
+                          {/*
+                            ⚠️ JAMI VA HODISA ALOHIDA USTUN: bitta
+                            transformator uzilishi 20 ta murojaat
+                            bo'lishi mumkin va "20 marta muammo
+                            bo'ldi" degan xulosa XATO bo'lardi.
+                          */}
+                          {row.total}
+                          {row.duplicates > 0 ? (
+                            <span className="ml-1 text-xs">
+                              ({row.duplicates} takroriy)
+                            </span>
+                          ) : null}
+                        </TableCell>
+
+                        <TableCell className="tabular text-right text-sm">
+                          {row.perMonth}
+                        </TableCell>
+
+                        <TableCell className="text-xs text-muted-foreground">
+                          {row.lastAt ? formatDateTimeUz(row.lastAt) : "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="categories">
           <Card>
             <CardHeader>
@@ -446,6 +724,71 @@ export default function ReportsPage() {
                   </BarChart>
                 </ResponsiveContainer>
               )}
+
+              {/*
+                ⚠️ MUDDAT USTUNI DIAGRAMMAGA QO'SHILMADI, OSTIDA
+                JADVAL: ikki ustun yonma-yon chizilsa, "jami 400"
+                yonida "muddati o'tgan 12" ko'rinmas chiziqqa
+                aylanardi — holbuki MUHIM son aynan ikkinchisi.
+
+                ⚠️ JAMI YOLG'IZ HECH NARSA AYTMAYDI: "400 ta
+                murojaat" yo'nalish yomon ishlayotganini
+                bildirmaydi, "400 tadan 120 tasi muddatdan
+                o'tgan" esa bildiradi.
+              */}
+              {(categories.data ?? []).some((row) => row.overdue > 0) ? (
+                <Table className="mt-4">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Yo&apos;nalish</TableHead>
+                      <TableHead className="text-right">Murojaat</TableHead>
+                      <TableHead className="text-right">Muddati o&apos;tgan</TableHead>
+                      <TableHead className="text-right">Ulushi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[...(categories.data ?? [])]
+                      /*
+                        ⚠️ MUDDAT BUZILISHI BO'YICHA TARTIBLANADI,
+                        jami bo'yicha emas: jadvalning ma'nosi
+                        aynan shunda — "qayerda ish qolib
+                        ketyapti". Nusxa olinadi (`[...]`), chunki
+                        `sort` massivni JOYIDA o'zgartiradi va u
+                        TanStack Query keshidagi obyekt
+                        (diagramma tartibi ham o'zgarib ketardi).
+                      */
+                      .sort((a, b) => b.overdue - a.overdue)
+                      .filter((row) => row.overdue > 0)
+                      .map((row) => (
+                        <TableRow key={row.categoryId}>
+                          <TableCell className="text-sm">
+                            {row.parentName ? (
+                              <p className="text-xs text-muted-foreground">
+                                {row.parentName}
+                              </p>
+                            ) : null}
+                            <p>{row.name}</p>
+                          </TableCell>
+                          <TableCell className="tabular text-right text-sm text-muted-foreground">
+                            {row.count}
+                          </TableCell>
+                          <TableCell className="tabular text-right text-sm font-medium text-destructive">
+                            {row.overdue}
+                          </TableCell>
+                          <TableCell className="tabular text-right text-sm">
+                            {/*
+                              ⚠️ ULUSH HAM KO'RSATILADI: 12/400 va
+                              12/20 — ikki butunlay boshqa holat,
+                              lekin mutlaq son ikkisini bir xil
+                              ko'rsatardi.
+                            */}
+                            {Math.round((row.overdue / row.count) * 100)}%
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              ) : null}
             </CardContent>
           </Card>
         </TabsContent>

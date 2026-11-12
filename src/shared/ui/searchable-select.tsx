@@ -129,7 +129,30 @@ export const SearchableSelect = ({
           !selected && "text-muted-foreground",
         )}
       >
-        <span className="truncate">{selected ? selected.label : placeholder}</span>
+        {/*
+          ⚠️ TANLANGANDA IZOH HAM KO'RSATILADI va bu TUZATILGAN XATO:
+          avval tugmada faqat `label` turardi. Viloyatda BIR XIL
+          NOMLI MFY lar bor (har tumanda "Turon", "Birlik") va
+          Telegram guruhlari ro'yxatida ular bir-biridan farq
+          qilmasdi — operator qaysi tumanning MFY sini biriktirganini
+          BILMASDI. Izoh ro'yxatda ko'rinib, tanlangandan keyin
+          YO'QOLARDI.
+
+          ⚠️ `truncate` IKKALASIDA HAM: tor ustunda uzun tuman nomi
+          tugmani cho'zib, jadval ustunlarini surib yuborardi.
+        */}
+        <span className="min-w-0 flex-1 truncate">
+          {selected ? (
+            <>
+              <span>{selected.label}</span>
+              {selected.hint ? (
+                <span className="text-muted-foreground"> · {selected.hint}</span>
+              ) : null}
+            </>
+          ) : (
+            placeholder
+          )}
+        </span>
         <ChevronDown className="size-4 shrink-0 opacity-50" />
       </button>
 

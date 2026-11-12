@@ -28,7 +28,7 @@ import {
 } from "@/features/groups/api";
 import { GroupBulkActions } from "@/features/groups/bulk-actions";
 import { useSetGuard } from "@/features/security/api";
-import { useMahallas } from "@/features/territory/api";
+import { useDistricts, useMahallas } from "@/features/territory/api";
 import { ApiError } from "@/shared/api/client";
 import { formatDateUz } from "@/shared/lib/date";
 import { Badge } from "@/shared/ui/badge";
@@ -67,6 +67,17 @@ export default function GroupsPage() {
 
   const groups = useGroups(filters);
   const stats = useGroupStats();
+  const districts = useDistricts();
+
+  /**
+   * ⚠️ RO'YXAT TO'LIQ OLINADI, TUMAN BO'YICHA SO'RALMAYDI. Sabab
+   * jadvalda: har qatordagi MFY tanlovi guruhga ALLAQACHON
+   * biriktirilgan MFY ni ko'rsatishi kerak. Ro'yxat filtr bo'yicha
+   * kesilsa, boshqa tumandagi guruh qatorida tanlov "Biriktirilmagan"
+   * bo'lib ko'rinardi — holbuki u biriktirilgan.
+   *
+   * Filtr uchun esa pastda ALOHIDA, kesilgan ro'yxat quriladi.
+   */
   const mahallas = useMahallas();
 
   const setOfficial = useSetOfficial();
@@ -93,6 +104,24 @@ export default function GroupsPage() {
         hint: mahalla.district.name,
       })),
     [mahallas.data],
+  );
+
+  /**
+   * FILTR UCHUN MFY RO'YXATI — TANLANGAN TUMAN BO'YICHA.
+   *
+   * ⚠️ ALOHIDA RO'YXAT, chunki yuqoridagisi BIRIKTIRISH uchun va u
+   * to'liq bo'lishi shart. Bu yerda esa teskarisi: tuman tanlangach
+   * ro'yxat o'nlab yozuvga tushadi va bir xil nomli MFY lar
+   * chalkashligi butunlay yo'qoladi.
+   */
+  const filterMahallaOptions: SearchableOption[] = useMemo(
+    () =>
+      filters.districtId
+        ? (mahallas.data ?? [])
+            .filter((mahalla) => mahalla.district.id === filters.districtId)
+            .map((mahalla) => ({ value: mahalla.id, label: mahalla.name }))
+        : mahallaOptions,
+    [mahallas.data, filters.districtId, mahallaOptions],
   );
 
   return (
@@ -123,7 +152,7 @@ export default function GroupsPage() {
       </div>
 
       {/* ── Filtrlar ─────────────────────────────────────────── */}
-      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
         <Input
           placeholder="Guruh nomi yoki chat ID..."
           value={filters.search ?? ""}
@@ -149,6 +178,37 @@ export default function GroupsPage() {
         </Select>
 
         {/*
+          ⚠️ TUMAN FILTRI MFY DAN OLDIN: shahar/tuman kesimi —
+          operator birinchi o'ylaydigan narsa, MFY esa ikkinchi.
+          Tuman tanlangach quyidagi MFY ro'yxati ham toraydi va bir
+          xil nomli MFY lar chalkashligi yo'qoladi.
+        */}
+        <Select
+          value={filters.districtId ?? ALL}
+          onValueChange={(value) =>
+            patch({
+              districtId: value === ALL ? undefined : value,
+              // ⚠️ MFY TOZALANADI: eski tanlov yangi tumanga
+              // tegishli emas va ikkalasi birga qolsa, ro'yxat jim
+              // bo'sh chiqardi.
+              mahallaId: undefined,
+            })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Tuman" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Barcha tumanlar</SelectItem>
+            {districts.data?.map((district) => (
+              <SelectItem key={district.id} value={district.id}>
+                {district.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/*
           ⚠️ QIDIRUVLI TANLOV: viloyatda yuzlab MFY bor va oddiy
           ro'yxatdan kerakligini topish o'nlab marta aylantirishni
           talab qilardi.
@@ -158,7 +218,7 @@ export default function GroupsPage() {
           onValueChange={(value) =>
             patch({ mahallaId: value ?? undefined, unassigned: undefined })
           }
-          options={mahallaOptions}
+          options={filterMahallaOptions}
           placeholder="Barcha MFY"
           clearLabel="Barcha MFY"
           searchPlaceholder="MFY yoki tuman nomi..."
@@ -265,7 +325,7 @@ export default function GroupsPage() {
                         searchPlaceholder="MFY yoki tuman nomi..."
                         emptyLabel="MFY topilmadi"
                         disabled={assignMahalla.isPending}
-                        className="w-52"
+                        className="w-60"
                       />
                     ) : group.mahalla ? (
                       <div className="text-sm">
@@ -330,29 +390,48 @@ export default function GroupsPage() {
                     qo'shilsa, ular bir narsadek ko'rinardi.
                   */}
                   <TableCell>
-                    {can("security.guard") ? (
-                      <Switch
-                        checked={group.guardEnabled}
-                        onCheckedChange={(checked) =>
-                          setGuard.mutate({
-                            chatId: group.chatId,
-                            guardEnabled: checked,
-                          })
-                        }
-                        disabled={setGuard.isPending}
-                        aria-label="Xavfsizlik qalqoni"
-                      />
-                    ) : (
-                      <Badge
-                        className={
-                          group.guardEnabled
-                            ? "bg-primary/10 text-primary dark:bg-primary/20"
-                            : "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-400"
-                        }
-                      >
-                        {group.guardEnabled ? "Yoqilgan" : "O'chirilgan"}
-                      </Badge>
-                    )}
+                    <div className="flex flex-col items-start gap-1">
+                      {can("security.guard") ? (
+                        <Switch
+                          checked={group.guardEnabled}
+                          onCheckedChange={(checked) =>
+                            setGuard.mutate({
+                              chatId: group.chatId,
+                              guardEnabled: checked,
+                            })
+                          }
+                          disabled={setGuard.isPending}
+                          aria-label="Xavfsizlik qalqoni"
+                        />
+                      ) : (
+                        <Badge
+                          className={
+                            group.guardEnabled
+                              ? "bg-primary/10 text-primary dark:bg-primary/20"
+                              : "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-400"
+                          }
+                        >
+                          {group.guardEnabled ? "Yoqilgan" : "O'chirilgan"}
+                        </Badge>
+                      )}
+
+                      {/*
+                        ⚠️ "YOQILGAN, LEKIN ISHLAMAYDI" — ENG XAVFLI
+                        HOLAT: ma'muriyat himoya bor deb o'ylaydi,
+                        bot esa Telegram ruxsati yo'qligi uchun hech
+                        narsa o'chira olmaydi — va guruhga
+                        ogohlantirish ham YOZMAYDI. Ya'ni buni faqat
+                        shu yorliq ko'rsatadi.
+                      */}
+                      {group.guardEnabled && !group.canDeleteMessages ? (
+                        <Badge
+                          className="bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-200"
+                          title="Botni guruhda administrator qiling va 'Xabarlarni o'chirish' huquqini bering"
+                        >
+                          Bot o&apos;chira olmaydi
+                        </Badge>
+                      ) : null}
+                    </div>
                   </TableCell>
 
                   <TableCell className="tabular text-right text-sm">

@@ -13,9 +13,11 @@
  * qo'yardi — va u aholiga ketardi.
  */
 
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
+  AlertTriangle,
   ArrowLeft,
   CheckCircle2,
   ExternalLink,
@@ -37,11 +39,13 @@ import {
 import { useUsers } from "@/features/users/api";
 import { ApiError, fileUrl } from "@/shared/api/client";
 import {
+  DUE_SOURCE_LABELS,
   ISSUE_PRIORITY,
   ISSUE_SOURCE,
   ISSUE_STATUS,
   SIGNAL_KIND,
   SIGNAL_SEVERITY,
+  URGENCY_LABELS,
 } from "@/shared/config/labels";
 import { formatDateTimeUz, formatDateUz, toInputDate } from "@/shared/lib/date";
 import { Badge } from "@/shared/ui/badge";
@@ -135,8 +139,38 @@ export default function IssueDetailPage() {
   const aiRaw = meta.ai;
   const ai =
     aiRaw && typeof aiRaw === "object"
-      ? (aiRaw as { confidence?: number; priority?: string })
+      ? (aiRaw as {
+          confidence?: number;
+          priority?: string;
+          /** Matndan chiqqan shoshilinchlik darajasi — muddat TAVSIYASI. */
+          urgency?: string;
+          dueHours?: number;
+        })
       : null;
+
+  /**
+   * ── AI MUDDAT TAVSIYASI ───────────────────────────────
+   *
+   * ⚠️ TAVSIYA, QAROR EMAS. Muddat yo'nalish SLA'si yoki MFY
+   * qoidasidan chiqadi; AI matnni o'qib shoshilinchlik DARAJASINI
+   * beradi va u panelda ALOHIDA ko'rinadi. Xodim bir bosishda
+   * qo'llaydi.
+   *
+   * ⚠️ AVTOMATIK QO'LLANMAYDI va bu ataylab: matnni fuqaro yozadi
+   * va "SHOSHILINCH!!!" deb yozgan har kim navbatni oldinga surib
+   * yuborardi. Aynan shu sabab "ustuvorlikni AI taklifi
+   * o'zgartirmaydi" doktrinasida yozilgan — muddat ham o'sha
+   * qatorda.
+   */
+  const aiDueAt =
+    ai?.dueHours && data
+      ? new Date(new Date(data.createdAt).getTime() + ai.dueHours * 3_600_000)
+      : null;
+
+  /** ⚠️ TAVSIYA MAVJUD MUDDATDAN QISQAROQ bo'lgandagina ma'noli. */
+  const aiDueDiffers =
+    aiDueAt !== null &&
+    (!data?.dueAt || aiDueAt.getTime() < new Date(data.dueAt).getTime() - 3_600_000);
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
@@ -166,6 +200,24 @@ export default function IssueDetailPage() {
           <Badge className={status.className}>{status.label}</Badge>
           <Badge className={priority.className}>{priority.label}</Badge>
           <Badge className={source.className}>{source.label}</Badge>
+
+          {/*
+            ⚠️ SHUBHA BELGISI SARLAVHADA: xodim murojaatni
+            O'QIGUNICHA bilishi kerak — aks holda u mazmunsiz
+            matnni tushunishga urinib vaqt sarflardi.
+          */}
+          {data.isSuspicious ? (
+            <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-200">
+              <AlertTriangle className="mr-0.5 size-3" />
+              Shubhali
+            </Badge>
+          ) : null}
+
+          {data.duplicateOf ? (
+            <Badge className="bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300">
+              Takroriy
+            </Badge>
+          ) : null}
         </div>
 
         <h1 className="text-xl font-semibold tracking-tight">{data.title}</h1>
@@ -187,8 +239,103 @@ export default function IssueDetailPage() {
                   qator uzilishlari bor va ularsiz hamma gap bir
                   uzun paragrafga qo'shilib ketardi. */}
               <p className="whitespace-pre-wrap text-sm leading-relaxed">{data.body}</p>
+
+              {/*
+                ⚠️ SABAB MATN YONIDA KO'RSATILADI: xodim
+                "tizim nega shubha qildi" degan savolga javob
+                topishi kerak va u matnni KO'RIB turib
+                hal qiladi — yorliqqa ishonib emas.
+
+                ⚠️ "RAD ETILGAN" DEB YOZILMAYDI: murojaat
+                navbatda turadi va fuqaro javob kutadi. Qaror
+                XODIMDA (`signals` doktrinasi bilan ayni
+                mantiq: tizim taxmin qiladi, odam hal qiladi).
+              */}
+              {data.isSuspicious ? (
+                <div className="mt-3 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs dark:border-amber-900 dark:bg-amber-950/30">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-500" />
+                  <div className="space-y-0.5">
+                    <p className="font-medium text-amber-900 dark:text-amber-200">
+                      Tizim shubha qildi: {data.suspicionReason ?? "sabab yozilmagan"}
+                    </p>
+                    <p className="text-amber-800 dark:text-amber-300/80">
+                      Murojaat rad etilmagan. Matn mazmunsiz bo&apos;lsa, fuqaroga
+                      aniqlashtirish so&apos;rovi yuboring yoki rad etish sababini
+                      yozib yoping.
+                    </p>
+                  </div>
+                </div>
+              ) : null}
             </CardContent>
           </Card>
+
+          {/* ── OMMAVIY HODISA ────────────────────── */}
+          {/*
+            ⚠️ NIMA UCHUN BU KARTA BOR: transformator o'chganda
+            20 kishi "svet yo'q" deb yozadi va ularning har
+            biriga alohida javob yozish kerak bo'lardi. Endi
+            ular SHU murojaatga ulangan va u yopilganda javob
+            HAMMASIGA ketadi.
+          */}
+          {data.duplicates.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">
+                  Shu hodisa bo&apos;yicha yana {data.duplicates.length} murojaat
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Bu murojaatni yopganingizda javob ularning HAMMASIGA ketadi
+                  — alohida yozish kerak emas.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-1.5">
+                {data.duplicates.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-2 text-sm"
+                  >
+                    <Link
+                      href={`/issues/${item.id}`}
+                      className="font-mono text-xs text-muted-foreground hover:text-primary"
+                    >
+                      {item.publicNo}
+                    </Link>
+                    <span className="min-w-0 flex-1 truncate text-xs">
+                      {item.citizen
+                        ? `${item.citizen.firstName} ${item.citizen.lastName ?? ""}`.trim()
+                        : "—"}
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {formatDateTimeUz(item.createdAt)}
+                    </span>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {/*
+            ⚠️ TAKRORIYDA ASOSIYSIGA HAVOLA: xodim bu murojaatga
+            ALOHIDA javob yozib, keyin asosiysi yopilganda
+            fuqaro IKKI javob olardi.
+          */}
+          {data.duplicateOf ? (
+            <Card>
+              <CardContent className="py-4 text-sm">
+                <p className="text-muted-foreground">
+                  Bu murojaat boshqasiga ulangan — u bilan BIRGA yopiladi.
+                  Javobni asosiy murojaatda yozing:
+                </p>
+                <Link
+                  href={`/issues/${data.duplicateOf.id}`}
+                  className="mt-1 inline-flex items-center gap-2 font-medium hover:text-primary"
+                >
+                  <code className="text-xs">{data.duplicateOf.publicNo}</code>
+                  {data.duplicateOf.title}
+                </Link>
+              </CardContent>
+            </Card>
+          ) : null}
 
           {/* ── Ilovadan kelgan dalil (surat/video) ─────────── */}
           {data.attachments.length > 0 ? (
@@ -242,15 +389,14 @@ export default function IssueDetailPage() {
                 <CardTitle className="text-sm">Ilova ma&apos;lumotlari</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-sm">
-                {data.citizen ? (
-                  <Row
-                    label="Yuborgan fuqaro"
-                    value={`${data.citizen.firstName} ${data.citizen.lastName ?? ""}`.trim()}
-                  />
-                ) : null}
-                {data.citizen?.phone ? (
-                  <Row label="Telefon" value={data.citizen.phone} />
-                ) : null}
+                {/*
+                  ⚠️ FUQARO VA TELEFON BU YERDAN OLIB TASHLANDI —
+                  ular endi "Ma'lumot" kartasida, havola bilan. Sabab:
+                  bu karta FAQAT `source === "mobile"` da ko'rinadi,
+                  ya'ni botdan kelgan murojaatda yuboruvchi umuman
+                  ko'rinmasdi. Ikki joyda ko'rsatish esa "qaysi birini
+                  o'qiyman" degan savol tug'dirardi.
+                */}
                 {/*
                   ⚠️ MANZIL VA KOORDINATA BU YERDAN OLIB TASHLANDI —
                   ular endi "Joylashuv" kartasida, XARITA bilan
@@ -496,19 +642,92 @@ export default function IssueDetailPage() {
                 />
               ) : null}
 
+              {/*
+                ── YUBORGAN ──────────────────────────────────
+
+                ⚠️ FUQARO ISMI — HAVOLA, oddiy matn emas: operator
+                "bu odam yana nima yozgan, bloklanganmi, nechta
+                murojaati bor" degan savolga javobni FUQARO
+                sahifasidan oladi. Avval ism shunchaki matn edi va
+                uni qidirish uchun Fuqarolar bo'limiga o'tib, nomini
+                qo'lda yozish kerak bo'lardi — bir xil ismlar esa
+                ko'p.
+
+                ⚠️ XODIM (`author`) UCHUN HAVOLA YO'Q: panelda xodim
+                sahifasi yo'q va bo'lishi ham shart emas — u
+                "Adminlar" ro'yxatida.
+              */}
               <Row
                 label={data.source === "signal" ? "Biriktirgan" : "Yuborgan"}
                 value={
                   // ⚠️ MOBIL MUROJAATDA MUALLIF — FUQARO (`author` null).
-                  data.citizen
-                    ? `${data.citizen.firstName} ${data.citizen.lastName ?? ""}`.trim()
-                    : data.author
-                      ? `${data.author.firstName} ${data.author.lastName}`
-                      : "—"
+                  data.citizen ? (
+                    <Link
+                      href={`/citizens/${data.citizen.id}`}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {`${data.citizen.firstName} ${data.citizen.lastName ?? ""}`.trim()}
+                    </Link>
+                  ) : data.author ? (
+                    `${data.author.firstName} ${data.author.lastName}`
+                  ) : (
+                    "—"
+                  )
                 }
               />
 
-              {data.dueAt ? <Row label="Muddat" value={formatDateUz(data.dueAt)} /> : null}
+              {/*
+                ⚠️ TELEFON SHU YERDA, "Ilova ma'lumotlari" KARTASIDA
+                EMAS: u karta FAQAT `source === "mobile"` da
+                ko'rinadi, ya'ni botdan kelgan murojaatda raqam
+                umuman ko'rinmasdi — holbuki xodimga aynan o'sha
+                kerak. Telefon endi majburiy (`Settings.requirePhone`)
+                va u murojaatning ASOSIY ma'lumotlaridan biri.
+
+                ⚠️ `tel:` HAVOLASI: panel ko'pincha telefonli
+                kompyuterda ochiladi va bir bosishda qo'ng'iroq
+                qilish operatorning ishini tezlashtiradi.
+              */}
+              {data.citizen?.phone ? (
+                <Row
+                  label="Telefon"
+                  value={
+                    <a
+                      href={`tel:${data.citizen.phone}`}
+                      className="font-medium text-primary hover:underline"
+                    >
+                      {data.citizen.phone}
+                    </a>
+                  }
+                />
+              ) : data.citizen ? (
+                <Row label="Telefon" value="Ko'rsatilmagan" />
+              ) : null}
+
+              {/*
+                ── MUDDAT VA UNING MANBASI ──────────────────────
+
+                ⚠️ SANA YOLG'IZ TURGANDA U "TIZIM O'YLAB TOPGAN" dek
+                ko'rinardi: qayerdan kelgani (yo'nalish SLA'simi,
+                MFY qoidasimi, odam qo'yganmi) hech qayerda
+                yozilmasdi — va kech qolganda ham sababini hech kim
+                izlamasdi.
+              */}
+              {data.dueAt ? (
+                <Row
+                  label="Muddat"
+                  value={
+                    <span>
+                      {formatDateUz(data.dueAt)}
+                      {data.dueSource ? (
+                        <span className="block text-xs font-normal text-muted-foreground">
+                          {DUE_SOURCE_LABELS[data.dueSource] ?? data.dueSource}
+                        </span>
+                      ) : null}
+                    </span>
+                  }
+                />
+              ) : null}
             </CardContent>
           </Card>
 
@@ -565,7 +784,65 @@ export default function IssueDetailPage() {
                   <p className="text-xs text-muted-foreground">
                     Muddat — mo&apos;ljal. Tizim u o&apos;tganda avtomatik hech narsa
                     qilmaydi.
+                    {data.dueSource ? (
+                      <>
+                        {" "}
+                        Hozirgi qiymat:{" "}
+                        <strong>
+                          {DUE_SOURCE_LABELS[data.dueSource] ?? data.dueSource}
+                        </strong>
+                        .
+                      </>
+                    ) : null}
                   </p>
+
+                  {/*
+                    ── AI TAVSIYASI ────────────────────────────
+
+                    ⚠️ TUGMA, AVTOMATIK QO'LLASH EMAS. Matnni FUQARO
+                    yozadi va "SHOSHILINCH!!!" deb yozgan har kim
+                    navbatni oldinga surib yuborardi. Doktrina
+                    ("ustuvorlikni AI taklifi o'zgartirmaydi")
+                    muddatga ham tegishli — qaror ODAMDA qoladi.
+
+                    ⚠️ FAQAT MUDDATNI QISQARTIRADIGAN TAVSIYA
+                    KO'RSATILADI: uzaytirish tavsiyasi xodimga
+                    "kechiksa ham bo'ladi" degan signal berardi.
+                  */}
+                  {ai?.urgency && aiDueAt && aiDueDiffers ? (
+                    <div className="rounded-lg border border-dashed p-2.5">
+                      <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                        <span className="text-muted-foreground">AI tahlili:</span>
+                        <Badge
+                          className={
+                            URGENCY_LABELS[ai.urgency]?.className ??
+                            "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300"
+                          }
+                        >
+                          {URGENCY_LABELS[ai.urgency]?.label ?? ai.urgency}
+                        </Badge>
+                        <span className="text-muted-foreground">
+                          — {ai.dueHours} soat
+                        </span>
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 w-full"
+                        disabled={assign.isPending}
+                        onClick={() =>
+                          assign.mutate({
+                            id: data.id,
+                            assigneeId: data.assignee?.id ?? null,
+                            dueAt: aiDueAt.toISOString(),
+                          })
+                        }
+                      >
+                        {formatDateUz(aiDueAt.toISOString())} ga qo&apos;yish
+                      </Button>
+                    </div>
+                  ) : null}
                 </div>
               </CardContent>
             </Card>
@@ -666,7 +943,13 @@ export default function IssueDetailPage() {
   );
 }
 
-const Row = ({ label, value }: { label: string; value: string }) => (
+/**
+ * ⚠️ `value` ENDI `ReactNode`, `string` EMAS: ayrim qatorlar
+ * HAVOLA bo'ldi (fuqaro profili, `tel:`). Matnga cheklab qo'yilsa,
+ * havolani qo'yish uchun qatorni qo'lda qayta yozish kerak bo'lardi
+ * — va ikki xil ko'rinishdagi qator paydo bo'lardi.
+ */
+const Row = ({ label, value }: { label: string; value: ReactNode }) => (
   <div className="flex items-start justify-between gap-3">
     <span className="shrink-0 text-muted-foreground">{label}</span>
     <span className="text-right font-medium">{value}</span>

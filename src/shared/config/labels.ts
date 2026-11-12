@@ -163,6 +163,15 @@ export const AUDIT_ACTION: Record<string, string> = {
   "group.assign_mahalla": "Guruhga MFY biriktirdi",
   "group.guard_on": "Xavfsizlik qalqonini yoqdi",
   "group.guard_off": "Xavfsizlik qalqonini o'chirdi",
+  // ⚠️ BU TO'RTTASINI XODIM QILMAYDI — Telegram hodisasi yozadi
+  // (`userId: null`). Jurnalda "Tizim" deb ko'rsatiladi va aynan
+  // shuning uchun ular bor: bot guruhdan chiqarilgani JIMGINA
+  // sodir bo'ladi va panelda guruh shunchaki yo'qolib qolardi.
+  "group.bot_joined": "Bot guruhga qo'shildi",
+  "group.bot_removed": "⚠️ Bot guruhdan chiqarildi — kuzatuv to'xtadi",
+  "group.bot_cannot_delete": "⚠️ Botdan o'chirish huquqi olindi — qalqon ishlamaydi",
+  "group.bot_can_delete": "Botga o'chirish huquqi berildi",
+  "security.false_positive": "Noto'g'ri o'chirishni tuzatdi (havola tiklandi)",
   "signal.attach": "Signalni muammoga biriktirdi",
   "signal.dismiss": "Signalni e'tiborsiz qoldirdi",
   "issue.create": "Muammo yaratdi",
@@ -192,10 +201,41 @@ export const AUDIT_ACTION: Record<string, string> = {
   "announcement.create": "Yangilik qo'shdi",
   "announcement.update": "Yangilikni tahrirladi",
   "announcement.delete": "Yangilikni o'chirdi",
+  "announcement.publish": "Yangilikni e'lon qildi",
+  "announcement.schedule": "Yangilikni rejalashtirdi",
+  "issue.resolve.bulk": "Takroriy murojaatlarni birga yopdi",
+  "issue.reject.bulk": "Takroriy murojaatlarni birga rad etdi",
 };
 
 /** Sanoq so'zi — "12 ta murojaat". */
 export const plural = (count: number, word: string): string => `${count} ta ${word}`;
+
+/**
+ * KATTA SON — MINGLIK AJRATGICH BILAN ("1 240 580").
+ *
+ * ⚠️ YAGONA MANBA (`plural` bilan yonma-yon): aholi soni va
+ * murojaat soni panelning o'nlab joyida chiqadi va har joyda
+ * qo'lda yozilsa, bir sahifada "1240580", boshqasida "1,240,580"
+ * ko'rinardi.
+ *
+ * ⚠️ `toLocaleString("uz")` ISHLATILMAYDI: u ishlayotgan muhitning
+ * mintaqa sozlamasiga tayanadi (`date.ts` dagi ayni sabab) va
+ * brauzerga qarab vergul ham, nuqta ham chiqishi mumkin. Bo'shliq
+ * — rasmiy hujjatlardagi shakl.
+ *
+ * ⚠️ ODDIY BO'SHLIQ EMAS, UZILMAS BO'SHLIQ (`\u00a0`): oddiy
+ * bo'shliqda "1 240" jadval ustuni torayganda ikki qatorga
+ * bo'linib ketardi.
+ *
+ * ⚠️ BELGI `\u00a0` KO'RINISHIDA YOZILADI, ko'rinmas belgi
+ * sifatida emas: tahrirlovchida u oddiy bo'shliqdan farq
+ * qilmaydi va keyingi tahrirda bilmasdan almashtirib
+ * yuborilardi.
+ */
+export const formatPeople = (value: number): string =>
+  Math.round(value)
+    .toString()
+    .replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0");
 
 // ═══════════════════════════════════════════════════════════════════
 //  XAVFSIZLIK
@@ -277,6 +317,11 @@ export const threatReason = (reason: string): string => {
       return `Ikki kengaytmali nom (.${value} yashirilgan)`;
     case "blocked_host":
       return "Qora ro'yxatdagi domen";
+    // ⚠️ TASHQI RO'YXAT QO'LDAGISIDAN AJRATILGAN: ma'muriyat
+    // "qayerdan bilindi" degan savolga javob olishi kerak — aks
+    // holda tashqi ro'yxatning foydasi umuman ko'rinmasdi.
+    case "feed_host":
+      return "Tashqi fishing ro'yxatida";
     case "url_shortener":
       return "Qisqartirgich — manzil ko'rinmaydi";
     case "userinfo_in_url":
@@ -294,4 +339,92 @@ export const threatReason = (reason: string): string => {
     default:
       return reason;
   }
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  TARQATMA
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * ⚠️ ATAMA BOTDAGI BILAN AYNI (`bot/src/shared/texts.ts`): xodim
+ * panelda "Bot foydalanuvchilari" deb o'qib, botda "Fuqarolar" degan
+ * boshqa so'zni ko'rsa, ikkisi boshqa narsa deb o'ylardi.
+ */
+/**
+ * MUDDAT MANBASI — ODAM O'QIYDIGAN IZOH.
+ *
+ * ⚠️ "Muddat qanday belgilanyapti?" degan savolga javob. Sana
+ * yolg'iz turganda xodim uni "tizim o'ylab topgan" deb qabul qilardi
+ * — va kech qolganda ham sababini izlamasdi.
+ */
+export const DUE_SOURCE_LABELS: Record<string, string> = {
+  category: "yo'nalish muddati",
+  rule: "MFY qoidasi",
+  manual: "qo'lda qo'yilgan",
+  ai: "AI tahlili",
+};
+
+/**
+ * AI BAHOLAGAN SHOSHILINCHLIK — `mobile-ai.constants.ts` BILAN AYNI
+ * TO'PLAM.
+ *
+ * ⚠️ NOMLAR IKKI JOYDA (server va panel) va bu ataylab: server
+ * nomni FUQAROGA (ilovada), panel esa XODIMGA ko'rsatadi. Serverdan
+ * nom tashish uchun har murojaat bilan qo'shimcha maydon kerak
+ * bo'lardi — holbuki daraja to'plami SANALGAN va o'zgarmaydi.
+ */
+export const URGENCY_LABELS: Record<string, LabelDef> = {
+  emergency: {
+    label: "Favqulodda",
+    className: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-200",
+  },
+  urgent: {
+    label: "Shoshilinch",
+    className: "bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-300",
+  },
+  soon: {
+    label: "Tez orada",
+    className: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+  },
+  routine: {
+    label: "Oddiy",
+    className: "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300",
+  },
+};
+
+export const AUDIENCE_LABELS: Record<string, string> = {
+  citizens: "Bot foydalanuvchilari",
+  groups: "MFY guruhlari",
+  both: "Fuqarolar va guruhlar",
+};
+
+export const BROADCAST_MODE_LABELS: Record<string, string> = {
+  text: "Matn",
+  forward: "Uzatilgan (manba bilan)",
+  copy: "Asl holatda",
+};
+
+/**
+ * ⚠️ `sending` ALOHIDA HOLAT: tarqatma fon'da ketadi va minglab
+ * xabar bir necha daqiqa davom etadi. Uni "yuborildi" deb
+ * ko'rsatish xodimni "nega sonlar o'zgaryapti" degan savolga
+ * olib kelardi.
+ */
+export const BROADCAST_STATUS: Record<string, LabelDef> = {
+  pending: {
+    label: "Navbatda",
+    className: "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300",
+  },
+  sending: {
+    label: "Yuborilmoqda",
+    className: "bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
+  },
+  done: {
+    label: "Tugadi",
+    className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+  },
+  failed: {
+    label: "Xato",
+    className: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-200",
+  },
 };

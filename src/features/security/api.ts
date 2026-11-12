@@ -20,6 +20,7 @@ import type {
   SecurityEvent,
   SecurityStats,
   ThreatAction,
+  ThreatFeed,
   ThreatKind,
 } from "@/shared/api/types";
 
@@ -30,6 +31,14 @@ export interface SecurityFilters {
   districtId?: string;
   mahallaId?: string;
   senderTgId?: string;
+  /**
+   * NOTO'G'RI O'CHIRISHLAR FILTRI.
+   *
+   * ⚠️ ALOHIDA KESIM: `true` — qoidaning XATOLARI (ularni ko'rib
+   * ro'yxatni tuzatish kerak), `false` — tasdiqlangan
+   * tahdidlar. Berilmasa — ikkisi birga.
+   */
+  falsePositive?: boolean;
   from?: string;
   to?: string;
   page?: number;
@@ -134,6 +143,101 @@ export const useBulkSetGuard = () => {
       );
     },
 
+    onError: (error) => {
+      toast.error(error instanceof ApiError ? error.message : "Amal bajarilmadi");
+    },
+  });
+};
+
+// ═══════════════════════════════════════════════════════════════════
+//  TASHQI TAHDID RO'YXATLARI
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * ⚠️ `staleTime` QISQA: ro'yxat qo'lda yangilangach sonlar DARHOL
+ * o'zgarishi kerak — xodim "ishladimi" degan savolga javobni shu
+ * yerdan oladi.
+ */
+export const useThreatFeeds = () =>
+  useQuery({
+    queryKey: [...queryKeys.security.all(), "feeds"] as const,
+    queryFn: () => api.get<ThreatFeed[]>("/security/feeds"),
+    staleTime: 30_000,
+  });
+
+export const useRefreshFeed = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.post<{ started: boolean }>(`/security/feeds/${id}/refresh`),
+    onSuccess: () => {
+      /**
+       * ⚠️ "YUKLANDI" EMAS, "BOSHLANDI": ro'yxat 3,7 MB bo'lishi
+       * mumkin va yuklash daqiqalar davom etadi (server uni fon'da
+       * bajaradi). Son esa ro'yxatning o'zida yangilanadi.
+       */
+      toast.success("Yangilash boshlandi — natija ro'yxatda ko'rinadi");
+      void queryClient.invalidateQueries({ queryKey: queryKeys.security.all() });
+    },
+    onError: (error) => {
+      // ⚠️ SABAB KO'RSATILADI: "yuklanmadi" degan quruq xabar
+      // ma'muriyatga manba manzili o'zgarganini aytmasdi.
+      toast.error(error instanceof ApiError ? error.message : "Yuklanmadi");
+    },
+  });
+};
+
+export const useSetFeedEnabled = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { id: string; isEnabled: boolean }) =>
+      api.patch(`/security/feeds/${input.id}`, { isEnabled: input.isEnabled }),
+    onSuccess: (_result, input) => {
+      toast.success(input.isEnabled ? "Ro'yxat yoqildi" : "Ro'yxat o'chirildi");
+      void queryClient.invalidateQueries({ queryKey: queryKeys.security.all() });
+    },
+    onError: (error) => {
+      toast.error(error instanceof ApiError ? error.message : "Saqlanmadi");
+    },
+  });
+};
+
+/**
+ * NOTO'G'RI O'CHIRILGAN HAVOLANI TIKLASH.
+ *
+ * ⚠️ IKKI AMAL BITTA TUGMADA: hodisa "noto'g'ri" deb
+ * BELGILANADI (xato haqida dalil qoladi) va host OQ RO'YXATGA
+ * qo'shiladi (qaytalanmaydi). Faqat belgilansa, ertasi kuni
+ * o'sha havola yana o'chirilardi va xodim yana belgilardi —
+ * cheksiz.
+ *
+ * ⚠️ XABARNING O'ZI QAYTMAYDI va buni AYTISH kerak: Telegram
+ * API da o'chirilgan xabarni tiklash imkoni YO'Q. Xodim
+ * "tiklash" tugmasini bosib, xabar guruhga qaytadi deb
+ * o'ylardi — shuning uchun server javobidagi `note` matni
+ * ko'rsatiladi.
+ *
+ * ⚠️ `settings` KESHI HAM BEKOR QILINADI: oq ro'yxat
+ * sozlamalar sahifasida ko'rinadi va faqat `security` ni
+ * bekor qilish "qo'shdim, lekin ro'yxatda yo'q" holatini
+ * berardi.
+ */
+export const useAllowSecurityEvent = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) =>
+      api.post<{ ok: boolean; allowedHost: string | null; note: string }>(
+        `/security/events/${id}/allow`,
+        {},
+      ),
+    onSuccess: (result) => {
+      toast.success(result.note);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.security.all() });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settings.all() });
+    },
     onError: (error) => {
       toast.error(error instanceof ApiError ? error.message : "Amal bajarilmadi");
     },

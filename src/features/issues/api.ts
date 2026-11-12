@@ -27,6 +27,19 @@ export interface IssueFilters {
   mahallaId?: string;
   assigneeId?: string;
   overdue?: boolean;
+  /**
+   * ⚠️ SHUBHALI MUROJAATLAR — ALOHIDA KESIM: ular umumiy
+   * ro'yxatda yuzlab haqiqiy murojaat orasida ko'rinmay
+   * ketardi va o'sha "нилуфар халилова" degan matnli murojaat
+   * navbatda abadiy turardi.
+   */
+  suspicious?: boolean;
+  /**
+   * ⚠️ `false` — TAKRORIYLARNI YASHIRISH: transformator
+   * uzilishida 20 ta murojaat keladi va ro'yxat bitta hodisa
+   * bilan to'lib ketardi. `true` — faqat takroriylar.
+   */
+  duplicates?: boolean;
   search?: string;
   page?: number;
   limit?: number;
@@ -207,6 +220,13 @@ export const useSaveCategory = () => {
       name: string;
       color?: string;
       description?: string;
+      /**
+       * ⚠️ BO'SH SATR — "ASOSIY YO'NALISHGA CHIQAR". `null` ni
+       * yuborish `@IsOptional()` bilan `undefined` dan
+       * farqlanmasdi, ya'ni kichik yo'nalishni ildizga ko'chirib
+       * bo'lmasdi.
+       */
+      parentId?: string;
       sortOrder?: number;
       isActive?: boolean;
     }) => {

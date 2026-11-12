@@ -9,7 +9,8 @@
 
 import dynamic from "next/dynamic";
 
-import type { MapMarker } from "./leaflet-map";
+import type { HeatPoint } from "./heat-layer";
+import type { MapArea, MapMarker } from "./leaflet-map";
 
 const LeafletMap = dynamic(() => import("./leaflet-map"), {
   ssr: false,
@@ -24,6 +25,12 @@ interface Props {
   center: [number, number];
   zoom: number;
   markers: MapMarker[];
+  /** Issiqlik nuqtalari — bo'sh bo'lsa qatlam umuman qo'shilmaydi. */
+  heat?: HeatPoint[];
+  /** MFY kesimi — poligon yoki doira. */
+  areas?: MapArea[];
+  /** Panel mavzusiga ergashadi — `leaflet-map.tsx` izohi. */
+  dark?: boolean;
   /** O'ram div klasslari (joylashuv/o'lcham). Leaflet konteyner — ICHIDA. */
   className?: string;
 }
@@ -39,4 +46,4 @@ export const MapView = ({ className, ...rest }: Props) => (
     <LeafletMap {...rest} className="h-full w-full" />
   </div>
 );
-export type { MapMarker };
+export type { HeatPoint, MapArea, MapMarker };

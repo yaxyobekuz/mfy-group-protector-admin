@@ -87,6 +87,10 @@ export const queryKeys = {
     map: (params?: QueryParams) => ["reports", "map", params ?? {}] as const,
     districtMap: (params?: QueryParams) =>
       ["reports", "district-map", params ?? {}] as const,
+    mahallaMap: (params?: QueryParams) =>
+      ["reports", "mahalla-map", params ?? {}] as const,
+    recurring: (params?: QueryParams) =>
+      ["reports", "recurring", params ?? {}] as const,
   },
 
   settings: {
@@ -107,5 +111,24 @@ export const queryKeys = {
   announcements: {
     all: () => ["announcements"] as const,
     list: (params?: QueryParams) => ["announcements", "list", params ?? {}] as const,
+  },
+
+  /**
+   * ⚠️ IJROCHI QOIDALARI `issues` IERARXIYASI ICHIDA: qoida
+   * o'zgarganda muammolar ro'yxati ham eskiradi (yangi murojaat
+   * boshqa xodimga tushadi), ya'ni ikkisi BIR kalit daraxtida
+   * bo'lgani to'g'ri — `invalidateQueries(["issues"])` ikkalasini
+   * ham bekor qiladi.
+   */
+  assignmentRules: {
+    all: () => ["issues", "assignment-rules"] as const,
+    list: (params?: QueryParams) =>
+      ["issues", "assignment-rules", "list", params ?? {}] as const,
+  },
+
+  broadcasts: {
+    all: () => ["broadcasts"] as const,
+    list: (params?: QueryParams) => ["broadcasts", "list", params ?? {}] as const,
+    detail: (id: string) => ["broadcasts", "detail", id] as const,
   },
 } as const;
