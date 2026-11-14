@@ -705,6 +705,61 @@ export interface RecurringRow {
   perMonth: number;
 }
 
+/**
+ * QAMROV — BITTA TUMAN QATORI.
+ *
+ * ⚠️ UCH HOLAT UCH USTUNDA va ular BIR-BIRIGA QO'SHILMAYDI: har
+ * biri BOSHQA choraga olib boradi (botni qo'shish / admin huquqi
+ * so'rash / huquqlarni to'g'rilash). Bitta "qamrov 60%" degan son
+ * ma'muriyatga nima qilishni aytmasdi.
+ */
+export interface CoverageRow {
+  districtId: string;
+  districtName: string;
+  /** Tumandagi arxivlanmagan MFY lar soni. */
+  mahallaTotal: number;
+  /** Kamida bitta guruhida bot BOR MFY lar. */
+  covered: number;
+  /**
+   * ⚠️ BOT UMUMAN KIRMAGAN: guruh reyestrda yo'q, yoki bor-u bot
+   * undan chiqarib tashlangan. Ikkisi uchun chora AYNI — raisga
+   * murojaat qilib, botni qo'shish.
+   */
+  notAttached: number;
+  /**
+   * ⚠️ BOT BOR, ADMIN EMAS: kuzatuv ISHLAYDI (xabarlarni
+   * o'qiydi), lekin zararli xabarni o'chira olmaydi. Chora boshqa:
+   * guruhni qayta qo'shish emas, mavjud botga huquq berish.
+   */
+  notAdmin: number;
+  /**
+   * ⚠️ ADMIN, LEKIN O'CHIRISH HUQUQI YO'Q — eng jim holat:
+   * Telegram'da admin huquqlari ALOHIDA belgilanadi va panelda bot
+   * admin bo'lib ko'rinadi, qalqon esa ishlamaydi.
+   */
+  adminNoDelete: number;
+  /** ⚠️ MFY si yo'q tumanda `null`, `0` EMAS. */
+  coverageRate: number | null;
+}
+
+export interface CoverageReport {
+  districts: CoverageRow[];
+  /**
+   * ⚠️ TUMAN KESIMIDA KO'RSATILMAYDI va ko'rsatib ham bo'lmaydi:
+   * bu guruhlarning qaysi tumanga tegishli ekani NOMA'LUM — aynan
+   * shuning uchun ular biriktirilmagan.
+   */
+  unassignedGroups: number;
+  totals: {
+    mahallaTotal: number;
+    covered: number;
+    notAttached: number;
+    notAdmin: number;
+    adminNoDelete: number;
+    coverageRate: number | null;
+  };
+}
+
 export interface RecurringReport {
   items: RecurringRow[];
 }

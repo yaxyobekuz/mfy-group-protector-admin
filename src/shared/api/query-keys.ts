@@ -91,6 +91,8 @@ export const queryKeys = {
       ["reports", "mahalla-map", params ?? {}] as const,
     recurring: (params?: QueryParams) =>
       ["reports", "recurring", params ?? {}] as const,
+    /** ⚠️ PARAMETRSIZ: qamrov filtr olmaydi (hozirgi holat). */
+    coverage: () => ["reports", "coverage"] as const,
   },
 
   settings: {

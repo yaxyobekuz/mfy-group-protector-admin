@@ -16,6 +16,7 @@ import {
   MapPin,
   MessageSquareWarning,
   Megaphone,
+  Network,
   Send,
   UserCog,
   Radio,
@@ -104,6 +105,25 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/territory", label: "Hudud", icon: MapPin, permission: "territory.view" },
   { href: "/map", label: "Xarita", icon: MapIcon, permission: "reports.view" },
   { href: "/reports", label: "Hisobotlar", icon: FileText, permission: "reports.view" },
+  /**
+   * ⚠️ QAMROV — ALOHIDA SAHIFA, "Hisobotlar" ichidagi tab EMAS.
+   * Sabab: u BOSHQA savolga javob beradi. Hisobotlar — kelgan
+   * murojaatlar haqida ("nima bo'ldi"), qamrov esa tizimning
+   * O'ZIDAGI bo'shliq haqida ("nimani ko'rmayapmiz"). Tab bo'lsa,
+   * u murojaat kesimlari orasida yo'qolib ketardi — holbuki
+   * "MFY da bot yo'q" degan xabar hamma murojaat hisobotidan
+   * MUHIMROQ: o'sha mahalladan umuman ma'lumot kelmayapti.
+   *
+   * ⚠️ `reports.view` BILAN: yig'ma son rahbariyatga kerak.
+   * Biriktirilmagan guruhlar RO'YXATI esa `groups.view` talab
+   * qiladi va tugma o'sha ruxsatsiz ko'rinmaydi.
+   */
+  {
+    href: "/coverage",
+    label: "Qamrov",
+    icon: Network,
+    permission: "reports.view",
+  },
   { href: "/users", label: "Adminlar", icon: Users, permission: "users.view" },
   { href: "/audit", label: "Audit jurnali", icon: ScrollText, permission: "audit.view" },
   { href: "/settings", label: "Sozlamalar", icon: Settings, permission: "settings.manage" },
