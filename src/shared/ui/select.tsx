@@ -17,7 +17,22 @@ export const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm",
+      /**
+       * ⚠️ `bg-card`, `bg-background` EMAS: sahifa foni bej
+       * (`--background: 150 12% 95%`), `--card` esa OQ. Avval
+       * trigger sahifa foni bilan bir xil edi va filtr qatori
+       * fonga singib ketardi — maydon borligini faqat ingichka
+       * ramka bildirardi.
+       *
+       * ⚠️ `Input` BILAN AYNI TOKEN: ular yonma-yon turadi
+       * (filtr qatorida qidiruv maydoni va tanlovlar birga) va
+       * boshqa-boshqa fon bo'lsa, qator yamoq bo'lib ko'rinardi.
+       *
+       * ⚠️ OQ RANG QO'LDA YOZILMAYDI (`bg-white`): tungi rejimda
+       * u ko'zni qamashtiradigan oq dog' bo'lib qolardi. `--card`
+       * tungi rejimda `0 0% 11%` — ya'ni token mavzuga ergashadi.
+       */
+      "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-2 text-sm shadow-sm",
       "data-[placeholder]:text-muted-foreground",
       "focus:outline-none focus:ring-2 focus:ring-ring",
       "disabled:cursor-not-allowed disabled:opacity-50",
@@ -45,7 +60,11 @@ export const SelectContent = React.forwardRef<
         // ⚠️ `z-[1200]` — Leaflet xaritasidan YUQORI. Leaflet
         // boshqaruvlari `z-index: 1000` oladi va `z-50` portal ular
         // ostida qolib, xarita sahifasida dropdown ko'rinmay qolardi.
-        "relative z-[1200] max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-popover bg-card text-card-foreground shadow-md",
+        // ⚠️ `bg-popover` OLIB TASHLANDI: u `bg-card` dan oldin
+        // turardi va keyingisi uni bosib ketardi — ya'ni o'lik
+        // sinf edi. Ikki fon sinfi yonma-yon turganda "qaysi biri
+        // ishlayapti" degan savol paydo bo'lardi.
+        "relative z-[1200] max-h-96 min-w-[8rem] overflow-hidden rounded-md border bg-card text-card-foreground shadow-md",
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
         position === "popper" && "data-[side=bottom]:translate-y-1",
         className,

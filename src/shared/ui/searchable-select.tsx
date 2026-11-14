@@ -123,7 +123,12 @@ export const SearchableSelect = ({
         disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
         className={cn(
-          "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-left text-sm shadow-sm",
+          // ⚠️ `bg-card` — `Select` BILAN AYNI TOKEN: ikkisi
+          // bitta filtr qatorida yonma-yon turadi (Guruhlar
+          // sahifasi) va boshqa-boshqa fon bo'lsa, bittasi
+          // "o'chirilgan" bo'lib ko'rinardi. `select.tsx`
+          // izohida sabab to'liq yozilgan.
+          "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-2 text-left text-sm shadow-sm",
           "focus:outline-none focus:ring-2 focus:ring-ring",
           "disabled:cursor-not-allowed disabled:opacity-50",
           !selected && "text-muted-foreground",
