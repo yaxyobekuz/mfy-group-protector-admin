@@ -23,6 +23,19 @@
  * ⚠️ BULAR BIR USTUNGA YIG'ILMAYDI: "qamrov 60%" degan yakka son
  * ma'muriyatga NIMA QILISHNI aytmasdi. Har holat boshqa odamga,
  * boshqa so'rov bilan boriladi.
+ *
+ * ── FAQAT KANAL BILAN QOPLANGAN MFY ──────────────────────────────────
+ *
+ * ⚠️ KANAL QAMROVNI BERADI: postlar o'qiladi, AI tahlil qiladi,
+ * signal ham, muammo ham chiqadi. Lekin QALQON USTUNLARI unga
+ * tegishli emas — kanalda zararli kontentni o'sha kanalning O'Z
+ * admini yozadi, ya'ni o'chiriladigan begona xabar yo'q.
+ *
+ * ⚠️ SHUNING UCHUN "FAQAT KANAL" — ALOHIDA USTUN: u "admin emas" va
+ * "o'chirish yo'q" ustunlarining MAXRAJINI tushuntiradi. Usiz
+ * sonlar qo'shilmay qolgani xodimga xato bo'lib ko'rinardi, kanal
+ * ham sanalsa esa panelda TUZATIB BO'LMAYDIGAN ogohlantirish
+ * turardi (Telegram kanalda huquq bersa ham qalqon ishga tushmaydi).
  */
 
 import { Download, FileSpreadsheet, Network } from "lucide-react";
@@ -115,7 +128,7 @@ export default function CoveragePage() {
                 onClick={() => exportReport.mutate("unassigned-groups")}
               >
                 <FileSpreadsheet className="mr-1.5 size-4" />
-                Biriktirilmagan guruhlar
+                Biriktirilmaganlar
               </Button>
             ) : null}
           </div>
@@ -167,6 +180,17 @@ export default function CoveragePage() {
               }
             />
 
+            {/*
+              ⚠️ "FAQAT KANAL" QALQON PLITKALARIDAN OLDIN: u
+              ikkisining maxrajini tushuntiradi. Rangi NEYTRAL —
+              bu nosozlik emas, ongli holat.
+            */}
+            <StatTile
+              label="Faqat kanal"
+              value={data?.totals.channelOnly ?? "—"}
+              hint="Kuzatuvda, qalqon tegishli emas"
+            />
+
             <StatTile
               label="Admin emas"
               value={data?.totals.notAdmin ?? "—"}
@@ -189,7 +213,7 @@ export default function CoveragePage() {
               noto'g'ri chiqardi.
             */}
             <StatTile
-              label="Biriktirilmagan guruh"
+              label="Biriktirilmagan chat"
               value={data?.unassignedGroups ?? "—"}
               tone={data?.unassignedGroups ? "warning" : "default"}
               hint="Qaysi MFY ga tegishli — noma'lum"
@@ -212,7 +236,9 @@ export default function CoveragePage() {
                 qo&apos;shish kerak. <strong>Admin emas</strong> — guruh
                 egasidan admin huquqi so&apos;rash.{" "}
                 <strong>O&apos;chirish huquqi yo&apos;q</strong> — admin, lekin
-                &laquo;Xabarlarni o&apos;chirish&raquo; belgisi yoqilmagan.
+                &laquo;Xabarlarni o&apos;chirish&raquo; belgisi yoqilmagan.{" "}
+                <strong>Faqat kanal</strong> — kuzatuv ishlaydi, qalqon esa
+                kanalga tegishli emas: hech narsa qilish kerak emas.
               </p>
             </CardHeader>
 
@@ -233,6 +259,7 @@ export default function CoveragePage() {
                       <TableHead className="text-right">MFY</TableHead>
                       <TableHead className="text-right">Bot bor</TableHead>
                       <TableHead className="text-right">Botsiz</TableHead>
+                      <TableHead className="text-right">Faqat kanal</TableHead>
                       <TableHead className="text-right">Admin emas</TableHead>
                       <TableHead className="text-right">
                         O&apos;chirish yo&apos;q
@@ -301,6 +328,15 @@ const CoverageTableRow = ({ row }: { row: CoverageRow }) => (
       ) : (
         <span className="text-muted-foreground">—</span>
       )}
+    </TableCell>
+
+    {/*
+      ⚠️ RANGSIZ KO'RSATILADI: "faqat kanal" — nosozlik emas,
+      ongli holat. Sariq bo'lsa, xodim uni tuzatilishi kerak deb
+      o'ylab, kanalga bekorga admin huquqi so'rab yurardi.
+    */}
+    <TableCell className="tabular text-right text-sm text-muted-foreground">
+      {row.channelOnly > 0 ? row.channelOnly : "—"}
     </TableCell>
 
     <TableCell className="tabular text-right text-sm">

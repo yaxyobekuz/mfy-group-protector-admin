@@ -128,14 +128,27 @@ export const useBulkSetGuard = () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.groups.all() });
       void queryClient.invalidateQueries({ queryKey: queryKeys.security.all() });
 
+      /**
+       * ⚠️ O'TKAZIB YUBORILGAN KANALLAR BIRINCHI AYTILADI: operator
+       * "50 ta chatni tanlagandim, 47 tasiga tushdi" degan farqni
+       * SHU yerda tushunishi kerak. Jim o'tkazilsa, u amalni
+       * yarim bajarilgan deb o'ylab, qaytadan urinib yurardi.
+       */
+      const notes = [
+        result.skippedChannels
+          ? `${result.skippedChannels} kanal o'tkazib yuborildi — qalqon ularga tegishli emas.`
+          : null,
+        result.unchanged > 0 ? `${result.unchanged} tasi allaqachon shunday edi.` : null,
+      ].filter(Boolean);
+
       toast.success(
         input.guardEnabled
           ? `Qalqon yoqildi: ${result.changed} ta guruh`
           : `Qalqon o'chirildi: ${result.changed} ta guruh`,
         {
           description:
-            result.unchanged > 0
-              ? `${result.unchanged} tasi allaqachon shunday edi.`
+            notes.length > 0
+              ? notes.join(" ")
               : input.guardEnabled
                 ? "Bot bu guruhlarda zararli fayl va havolalarni o'chiradi."
                 : "Bot bu guruhlarda endi hech narsani o'chirmaydi.",

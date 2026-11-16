@@ -166,6 +166,20 @@ export interface TelegramGroup {
    * faqat shu maydon ko'rsatadi.
    */
   canDeleteMessages: boolean;
+  /**
+   * CHAT KANALMI — SERVER HAL QILADI.
+   *
+   * ⚠️ KANALDA QALQON UMUMAN ISHLAMAYDI: zararli kontentni o'sha
+   * kanalning O'Z admini yozadi, ya'ni o'chiriladigan begona xabar
+   * yo'q. Shuning uchun panel kanal qatorida qalqon tugmasini ham,
+   * "bot o'chira olmaydi" ogohlantirishini ham KO'RSATMAYDI —
+   * ikkisi ham tuzatib bo'lmaydigan vazifa berardi.
+   *
+   * ⚠️ `type` DAN QAYTA HISOBLANMAYDI: shart panelda o'nlab joyda
+   * kerak va har joyda `type === "channel"` deb yozilsa, bittasi
+   * albatta unutilardi.
+   */
+  isChannel: boolean;
   /** ⚠️ `null` — "hali o'qilmagan", `0` dan BOSHQA narsa. */
   memberCount: number | null;
   memberCountAt: string | null;
@@ -181,6 +195,16 @@ export interface TelegramGroup {
 export interface GroupStats {
   total: number;
   official: number;
+  /**
+   * REYESTRDAGI KANALLAR — QALQON SANOQCHILARIDAN TASHQARIDA.
+   *
+   * ⚠️ `total` DAN AYIRILMAYDI: reyestr bitta va "jami 120 chat"
+   * degan son to'g'ri. Lekin `guarded` va `guardBlind` faqat
+   * guruhlarni oladi — son aytilmasa, ma'muriyat "120 dan 40
+   * tasida qalqon" degan raqamni ko'rib, qolgan 80 tasini yoqishga
+   * urinib yurardi.
+   */
+  channels: number;
   unassigned: number;
   pendingMessages: number;
   /** Qalqon yoqilgan guruhlar soni. */
@@ -188,6 +212,10 @@ export interface GroupStats {
   /**
    * ⚠️ QALQON YOQILGAN, LEKIN BOT O'CHIRA OLMAYDI — eng xavfli
    * holat: ma'muriyat himoya bor deb o'ylaydi, amalda esa yo'q.
+   *
+   * ⚠️ KANALLAR HISOBGA OLINMAYDI: u yerda qalqon umuman ishga
+   * tushmaydi, ya'ni "o'chirish huquqi yo'q" degan ogohlantirishni
+   * TUZATIB BO'LMASDI va u panelda abadiy turardi.
    */
   guardBlind: number;
   /**
@@ -228,6 +256,8 @@ export interface BulkGroupInput {
   filterMahallaId?: string;
   filterUnassigned?: boolean;
   filterSearch?: string;
+  /** Chat turi filtri — kanalda qalqon yo'q (`labels.ts`). */
+  filterChatType?: "group" | "channel";
   /** Tasdiqlash oynasida ko'rsatilgan guruhlar soni. */
   expectedCount: number;
 }
@@ -244,6 +274,16 @@ export interface BulkResult {
   matched: number;
   skippedNoMahalla?: number;
   purgedMessages?: number;
+  /**
+   * OMMAVIY QALQONDA O'TKAZIB YUBORILGAN KANALLAR.
+   *
+   * ⚠️ JIM O'TKAZILMAYDI: filtrda kanal turgani uchun amal
+   * to'xtamaydi (qolgan 40 guruhga qalqon yoqmay qo'yish
+   * operatorni boshi berk ko'chaga olib borardi), lekin soni
+   * AYTILADI — aks holda "50 ta tanlagandim, 47 tasiga tushdi"
+   * degan farq tushuntirilmagan qolardi.
+   */
+  skippedChannels?: number;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -340,6 +380,15 @@ export interface SecurityStats {
    * tekshirib bo'lmasdi.
    */
   falsePositives: number;
+  /**
+   * KANALLAR — QALQON SANOQCHILARIDAN TASHQARIDA.
+   *
+   * ⚠️ `totalGroups` GA QO'SHILMAYDI: kanalda qalqon ishlamaydi,
+   * ya'ni u "himoyalanmagan guruh" emas — "himoya tegishli
+   * bo'lmagan chat". Qo'shilsa, "40/120" degan son hech qachon
+   * to'lmasdi.
+   */
+  channels: number;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -738,6 +787,19 @@ export interface CoverageRow {
    * admin bo'lib ko'rinadi, qalqon esa ishlamaydi.
    */
   adminNoDelete: number;
+  /**
+   * QOPLANGAN, LEKIN FAQAT KANAL BILAN.
+   *
+   * ⚠️ `covered` NING BIR BO'LAGI, UNGA QO'SHIMCHA EMAS: bu MFY lar
+   * kuzatuvda (postlari o'qiladi, signal chiqadi), lekin qalqon
+   * ustunlari ularga tegishli emas — kanalda o'chiriladigan begona
+   * xabar yo'q.
+   *
+   * ⚠️ USTUN KO'RSATILADI: usiz "qoplangan 50, admin emas 10,
+   * o'chirish yo'q 5" sonlari qo'shilmay qolgani tushunarsiz
+   * bo'lardi.
+   */
+  channelOnly: number;
   /** ⚠️ MFY si yo'q tumanda `null`, `0` EMAS. */
   coverageRate: number | null;
 }
@@ -756,6 +818,7 @@ export interface CoverageReport {
     notAttached: number;
     notAdmin: number;
     adminNoDelete: number;
+    channelOnly: number;
     coverageRate: number | null;
   };
 }

@@ -428,3 +428,61 @@ export const BROADCAST_STATUS: Record<string, LabelDef> = {
     className: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-200",
   },
 };
+
+// ═══════════════════════════════════════════════════════════════════
+//  CHAT TURI — GURUH VA KANAL
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * ⚠️ NIMA UCHUN AJRATILADI: bot kanalda ham admin qilib qo'yiladi,
+ * lekin KANAL — GURUH EMAS. U yerda aholi yozmaydi, faqat rais
+ * post qiladi — ya'ni kuzatuv (post → AI → signal) ishlaydi, QALQON
+ * esa ma'nosiz: zararli kontentni o'sha kanalning O'Z admini
+ * yozadi.
+ *
+ * ⚠️ PANELDA BU FARQ KO'RINISHI SHART: aks holda kanal qatorida
+ * "qalqon ishlamayapti" degan — TUZATIB BO'LMAYDIGAN —
+ * ogohlantirish turardi va ma'muriyat uni tuzatishga urinib
+ * yurardi. Yolg'on ogohlantirish haqiqiysini ko'rinmas qiladi.
+ */
+export const CHAT_TYPE_LABELS: Record<string, string> = {
+  /**
+   * ⚠️ `group` VA `supergroup` BITTA YORLIQ: Telegram oddiy guruhni
+   * a'zo soni oshganda JIMGINA supergroup'ga aylantiradi va
+   * operator uchun ikkisi BIR XIL narsa. Ikki yorliq bo'lsa,
+   * ro'yxatda bir xil guruhlar ikki boshqa turdek ko'rinardi.
+   */
+  group: "Guruh",
+  supergroup: "Guruh",
+  channel: "Kanal",
+};
+
+/**
+ * Chat KANALMI.
+ *
+ * ⚠️ `type === "channel"` QO'LDA YOZILMAYDI: shart panelda o'nlab
+ * joyda kerak (qalqon tugmasi, ogohlantirish yorlig'i, ustunlar) va
+ * har joyda takrorlansa bittasi albatta unutilardi.
+ *
+ * ⚠️ SERVER HAM `isChannel` BAYROG'INI QAYTARADI
+ * (`TelegramGroup.isChannel`) — ro'yxat qatorida o'shani ishlatish
+ * afzal. Bu funksiya server bayroq bermaydigan joylar uchun
+ * (masalan `type` yolg'iz kelgan ro'yxatlar).
+ */
+export const isChannelType = (type: string | null | undefined): boolean =>
+  type === "channel";
+
+/**
+ * QALQON SHU CHATDA MA'NOLIMI.
+ *
+ * ⚠️ ALOHIDA NOM, `!isChannelType` EMAS: shart "kanal emas" degani
+ * emas, "qalqon bu yerda ma'noli" degani — keyin yangi tur
+ * qo'shilsa, o'zgarish bitta joyda bo'ladi
+ * (`server/src/common/chat-type.ts` bilan AYNI yondashuv).
+ */
+export const guardAppliesTo = (type: string | null | undefined): boolean =>
+  !isChannelType(type);
+
+/** Chat turining o'qiladigan nomi — noma'lum tur ham bo'lishi mumkin. */
+export const chatTypeLabel = (type: string | null | undefined): string =>
+  (type ? CHAT_TYPE_LABELS[type] : undefined) ?? "Guruh";

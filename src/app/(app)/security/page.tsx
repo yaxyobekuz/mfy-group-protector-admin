@@ -176,7 +176,17 @@ export default function SecurityPage() {
           tone={
             data && data.guardedGroups < data.totalGroups ? "warning" : "default"
           }
-          hint="Guruhlar bo'limida yoqiladi"
+          hint={
+            /*
+              ⚠️ KANALLAR SONI AYTILADI: maxraj faqat GURUHLARNI
+              sanaydi (kanalda qalqon ishlamaydi) va u reyestrdagi
+              jami chatdan kichik. Aytilmasa, xodim yo'qolgan
+              chatlarni izlab yurardi.
+            */
+            data?.channels
+              ? `Guruhlar bo'limida yoqiladi · +${data.channels} kanal (tegishli emas)`
+              : "Guruhlar bo'limida yoqiladi"
+          }
           href="/groups"
         />
       </div>
@@ -193,6 +203,13 @@ export default function SecurityPage() {
 
         ⚠️ MATN NIMA QILISH KERAKLIGINI AYTADI: "huquq yo'q" degan
         quruq xabar ma'muriyatga yo'l ko'rsatmasdi.
+      */}
+      {/*
+        ⚠️ KANALLAR BU SANOQCHIGA KIRMAYDI (server chiqarib
+        tashlaydi): kanalda qalqon umuman ishga tushmaydi, ya'ni
+        "o'chirish huquqi yo'q" degan ogohlantirishni TUZATIB
+        BO'LMASDI — u panelda abadiy turib, haqiqiy
+        ogohlantirishlarni ko'rinmas qilardi.
       */}
       {data?.blindGroups ? (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">

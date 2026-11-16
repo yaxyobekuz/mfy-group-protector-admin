@@ -54,7 +54,7 @@ export const NAV_ITEMS: NavItem[] = [
     permission: "issues.view",
     badge: "issues",
   },
-  { href: "/groups", label: "Telegram guruhlari", icon: Radio, permission: "groups.view" },
+  { href: "/groups", label: "Guruh va kanallar", icon: Radio, permission: "groups.view" },
   {
     href: "/security",
     label: "Xavfsizlik",

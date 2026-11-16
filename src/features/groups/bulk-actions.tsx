@@ -99,7 +99,7 @@ export const GroupBulkActions = ({ filters, total }: BulkActionsProps) => {
       <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2.5">
         <p className="mr-auto text-sm text-muted-foreground">
           Filtrdagi{" "}
-          <span className="font-medium text-foreground">{total} ta guruh</span>{" "}
+          <span className="font-medium text-foreground">{total} ta chat</span>{" "}
           uchun ommaviy amal
         </p>
 
@@ -195,7 +195,9 @@ export const GroupBulkActions = ({ filters, total }: BulkActionsProps) => {
 const titleOf = (action: PendingAction, total: number): string => {
   const subject = action.kind === "official" ? "Kuzatuv" : "Qalqon";
   const verb = action.enable ? "yoqilsinmi" : "o'chirilsinmi";
-  return `${total} ta guruhda ${subject.toLowerCase()} ${verb}?`;
+  // ⚠️ "CHAT", "GURUH" EMAS: filtrda kanal ham bo'lishi mumkin va
+  // sarlavha ularni chetlab o'tgandek ko'rinardi.
+  return `${total} ta chatda ${subject.toLowerCase()} ${verb}?`;
 };
 
 const descriptionOf = (action: PendingAction): string => {
@@ -210,6 +212,12 @@ const descriptionOf = (action: PendingAction): string => {
   }
 
   return action.enable
-    ? "Bot bu guruhlarda zararli fayl va havolali xabarlarni o'chira boshlaydi. Guruhga hech narsa yozilmaydi — o'chirilgani faqat panelda ko'rinadi."
+    ? // ⚠️ KANALLAR HAQIDA OLDINDAN AYTILADI: server ularni
+      // o'tkazib yuboradi (kanalda o'chiriladigan begona xabar
+      // yo'q) va natija xabarida ham ko'rsatiladi, lekin odam
+      // buni TASDIQLASHDAN OLDIN bilgani ma'qul — aks holda
+      // "50 ta tanlagandim, 47 tasiga tushdi" degan farq
+      // tushuntirilmagan qolardi.
+      "Bot bu guruhlarda zararli fayl va havolali xabarlarni o'chira boshlaydi. Guruhga hech narsa yozilmaydi — o'chirilgani faqat panelda ko'rinadi. Kanallar o'tkazib yuboriladi: u yerda postni kanalning o'z admini yozadi."
     : "Bot bu guruhlarda endi hech narsani o'chirmaydi. Oldin yozilgan xavfsizlik hodisalari jurnalda qoladi.";
 };

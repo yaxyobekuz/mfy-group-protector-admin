@@ -283,18 +283,39 @@ export default function DashboardPage() {
         {can("groups.view") ? (
           <ChartFrame
             title="Kuzatuv holati"
-            subtitle="Telegram guruhlari"
+            subtitle="Telegram guruhlari va kanallari"
             href="/groups"
             hrefLabel="Guruhlar"
             className="lg:col-span-3 xl:col-span-3"
           >
             <div className="space-y-3">
-              <Row label="Jami guruh" value={groupStats.data?.total ?? "—"} />
+              <Row label="Jami chat" value={groupStats.data?.total ?? "—"} />
               <Row
                 label="Kuzatuvda (rasmiy)"
                 value={groupStats.data?.official ?? "—"}
               />
-              <Row label="Qalqon yoqilgan" value={groupStats.data?.guarded ?? "—"} />
+              {/*
+                ⚠️ KANALLAR ALOHIDA QATOR: ularga qalqon tegishli
+                emas (zararli kontentni o'sha kanalning O'Z admini
+                yozadi) va pastdagi "Qalqon yoqilgan" soni ularni
+                UMUMAN hisobga olmaydi. Qator bo'lmasa, "jami 120,
+                qalqon 40" degan farq tushuntirilmagan qolardi.
+
+                ⚠️ NOL BO'LSA KO'RSATILMAYDI: kanali yo'q
+                tashkilotga keraksiz qator.
+              */}
+              {groupStats.data?.channels ? (
+                <Row
+                  label="Kanal"
+                  value={groupStats.data.channels}
+                  hint="Faqat kuzatuv — qalqon tegishli emas"
+                />
+              ) : null}
+              <Row
+                label="Qalqon yoqilgan"
+                value={groupStats.data?.guarded ?? "—"}
+                hint={groupStats.data?.channels ? "Faqat guruhlar" : undefined}
+              />
               {/*
                 ⚠️ "YOQILGAN, LEKIN ISHLAMAYDI" — ENG XAVFLI HOLAT:
                 ma'muriyat himoya bor deb o'ylaydi, bot esa Telegram

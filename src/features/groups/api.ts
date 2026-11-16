@@ -26,6 +26,15 @@ export interface GroupFilters {
   mahallaId?: string;
   unassigned?: boolean;
   search?: string;
+  /**
+   * CHAT TURI — `group` yoki `channel`.
+   *
+   * ⚠️ FILTR KERAK, CHUNKI ULARGA QILINADIGAN ISH BOSHQA: kanalda
+   * qalqon yo'q (`labels.ts#guardAppliesTo`). Qalqonni ommaviy
+   * yoqayotgan operator ro'yxatda kanallarni ko'rib, "nega ularga
+   * tegmadi" deb hayron bo'lardi.
+   */
+  chatType?: "group" | "channel";
   page?: number;
   limit?: number;
 }
@@ -43,6 +52,10 @@ export const toBulkFilter = (
   filterMahallaId: filters.mahallaId,
   filterUnassigned: filters.unassigned,
   filterSearch: filters.search,
+  // ⚠️ CHAT TURI HAM UZATILADI: ommaviy amalning qamrovi —
+  // EKRANDAGI filtr natijasi. Tushib qolsa, operator guruhlarni
+  // ko'rib turib, amalni kanallarga ham bajarardi.
+  filterChatType: filters.chatType,
   expectedCount,
 });
 

@@ -13,10 +13,21 @@
  * biriktirilmagan guruhni kuzatuvga qo'yishni rad etadi: signallar
  * hududsiz qolib, faqat viloyat xodimiga ko'rinardi, ya'ni amalda
  * hech kim ko'rmasdi.
+ *
+ * ⚠️ RO'YXATDA KANAL HAM BOR — VA U GURUH EMAS. Kanalda aholi
+ * yozmaydi, faqat rais post qiladi: kuzatuv (post → AI → signal)
+ * ishlaydi, QALQON esa ma'nosiz — zararli kontentni o'sha kanalning
+ * O'Z admini yozadi.
+ *
+ * ⚠️ SHUNING UCHUN KANAL QATORIDA QALQON TUGMASI YO'Q va "bot
+ * o'chira olmaydi" ogohlantirishi ham chiqmaydi: ikkisi ham xodimga
+ * TUZATIB BO'LMAYDIGAN vazifa berardi (Telegram kanalda huquq bersa
+ * ham qalqon ishga tushmaydi). Yolg'on ogohlantirish haqiqiysini
+ * ko'rinmas qiladi.
  */
 
 import { useMemo, useState } from "react";
-import { MapPinOff, Radio, Users } from "lucide-react";
+import { MapPinOff, Megaphone, Radio, Users } from "lucide-react";
 
 import { useSession } from "@/entities/session/auth-provider";
 import {
@@ -30,6 +41,7 @@ import { GroupBulkActions } from "@/features/groups/bulk-actions";
 import { useSetGuard } from "@/features/security/api";
 import { useDistricts, useMahallas } from "@/features/territory/api";
 import { ApiError } from "@/shared/api/client";
+import { chatTypeLabel } from "@/shared/config/labels";
 import { formatDateUz } from "@/shared/lib/date";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -127,7 +139,7 @@ export default function GroupsPage() {
   return (
     <>
       <PageHeader
-        title="Telegram guruhlari"
+        title="Telegram guruh va kanallari"
       />
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -137,6 +149,18 @@ export default function GroupsPage() {
           value={stats.data?.official ?? "—"}
           icon={Radio}
           tone="success"
+        />
+        {/*
+          ⚠️ KANALLAR ALOHIDA SANOQCHI: "jami 120" degan son ichida
+          nechtasi kanal ekani ko'rinmasdi — holbuki ularga qalqon
+          tegishli emas va xavfsizlik sahifasidagi "40/80" soni
+          aynan shuning uchun jamidan kichik.
+        */}
+        <StatTile
+          label="Kanal"
+          value={stats.data?.channels ?? "—"}
+          icon={Megaphone}
+          hint="Faqat kuzatuv — qalqon yo'q"
         />
         <StatTile
           label="MFY biriktirilmagan"
@@ -225,6 +249,31 @@ export default function GroupsPage() {
           emptyLabel="MFY topilmadi"
         />
 
+        {/*
+          ⚠️ CHAT TURI FILTRI: reyestrda guruh ham, kanal ham turadi
+          va ularga qilinadigan ish boshqa. Ommaviy qalqon
+          kanallarga tushmaydi — operator ro'yxatni oldin
+          guruhlarga toraytirsa, "nega 50 tadan 47 tasiga tushdi"
+          degan savol umuman paydo bo'lmaydi.
+        */}
+        <Select
+          value={filters.chatType ?? ALL}
+          onValueChange={(value) =>
+            patch({
+              chatType: value === ALL ? undefined : (value as "group" | "channel"),
+            })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Turi" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Guruh va kanal</SelectItem>
+            <SelectItem value="group">Faqat guruh</SelectItem>
+            <SelectItem value="channel">Faqat kanal</SelectItem>
+          </SelectContent>
+        </Select>
+
         <Button
           variant={filters.unassigned ? "default" : "outline"}
           onClick={() =>
@@ -260,9 +309,12 @@ export default function GroupsPage() {
         ) : (groups.data?.items.length ?? 0) === 0 ? (
           <EmptyState
             icon={Users}
-            title="Guruh topilmadi"
+            title="Chat topilmadi"
             hint={
-              filters.search || filters.isOfficial !== undefined || filters.unassigned
+              filters.search ||
+              filters.isOfficial !== undefined ||
+              filters.chatType ||
+              filters.unassigned
                 ? "Filtrlarni kengaytirib ko'ring."
                 : "Botni MFY guruhiga qo'shing. Bot faqat o'ziga kelgan hodisadan guruhni biladi, shuning uchun qo'shilgandan keyin guruhda biror harakat bo'lishi kerak."
             }
@@ -271,7 +323,11 @@ export default function GroupsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Guruh</TableHead>
+                {/*
+                  ⚠️ "GURUH" EMAS, "CHAT": ustunda kanal ham turadi
+                  va sarlavha uni chetlab o'tgandek ko'rinardi.
+                */}
+                <TableHead>Chat</TableHead>
                 <TableHead>MFY</TableHead>
                 <TableHead>Kuzatuv</TableHead>
                 <TableHead>Qalqon</TableHead>
@@ -286,7 +342,20 @@ export default function GroupsPage() {
                   {/* ── Guruh ───────────────────────────────── */}
                   <TableCell>
                     <div className="space-y-0.5">
-                      <p className="font-medium">{group.title}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium">{group.title}</p>
+                        {/*
+                          ⚠️ KANAL YORLIG'I NOM YONIDA: qalqon
+                          ustuni unda bo'sh turadi va SABABI shu
+                          yorliqdan o'qiladi — aks holda operator
+                          "tugma yuklanmadi" deb o'ylardi.
+                        */}
+                        {group.isChannel ? (
+                          <Badge className="bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-200">
+                            {chatTypeLabel(group.type)}
+                          </Badge>
+                        ) : null}
+                      </div>
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                         <code>{group.chatId}</code>
                         {group.username ? <span>@{group.username}</span> : null}
@@ -302,7 +371,13 @@ export default function GroupsPage() {
                       */}
                       {!group.isPresent ? (
                         <Badge className="bg-destructive/10 text-destructive">
-                          Bot guruhda yo&apos;q
+                          {/*
+                            ⚠️ MATN TURGA QARAB: "Bot guruhda yo'q"
+                            degan yozuv kanal qatorida xato
+                            ko'rinardi va xodim boshqa chatni
+                            izlardi.
+                          */}
+                          Bot {group.isChannel ? "kanalda" : "guruhda"} yo&apos;q
                         </Badge>
                       ) : null}
                     </div>
@@ -390,48 +465,66 @@ export default function GroupsPage() {
                     qo'shilsa, ular bir narsadek ko'rinardi.
                   */}
                   <TableCell>
-                    <div className="flex flex-col items-start gap-1">
-                      {can("security.guard") ? (
-                        <Switch
-                          checked={group.guardEnabled}
-                          onCheckedChange={(checked) =>
-                            setGuard.mutate({
-                              chatId: group.chatId,
-                              guardEnabled: checked,
-                            })
-                          }
-                          disabled={setGuard.isPending}
-                          aria-label="Xavfsizlik qalqoni"
-                        />
-                      ) : (
-                        <Badge
-                          className={
-                            group.guardEnabled
-                              ? "bg-primary/10 text-primary dark:bg-primary/20"
-                              : "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-400"
-                          }
-                        >
-                          {group.guardEnabled ? "Yoqilgan" : "O'chirilgan"}
-                        </Badge>
-                      )}
+                    {/*
+                      ⚠️ KANALDA QALQON UMUMAN YO'Q: zararli
+                      kontentni o'sha kanalning O'Z admini yozadi,
+                      ya'ni o'chiriladigan begona xabar yo'q. Tugma
+                      ko'rsatilsa, server uni rad etardi va xodim
+                      "panel buzuq" deb o'ylardi; ko'rsatmay jim
+                      bo'sh qoldirilsa esa "yuklanmadi" deb
+                      o'ylardi — shuning uchun SABAB yoziladi.
+                    */}
+                    {group.isChannel ? (
+                      <span
+                        className="text-xs text-muted-foreground"
+                        title="Kanalda postni kanalning o'z admini yozadi — o'chiriladigan begona xabar yo'q"
+                      >
+                        — Kanalga tegishli emas
+                      </span>
+                    ) : (
+                      <div className="flex flex-col items-start gap-1">
+                        {can("security.guard") ? (
+                          <Switch
+                            checked={group.guardEnabled}
+                            onCheckedChange={(checked) =>
+                              setGuard.mutate({
+                                chatId: group.chatId,
+                                guardEnabled: checked,
+                              })
+                            }
+                            disabled={setGuard.isPending}
+                            aria-label="Xavfsizlik qalqoni"
+                          />
+                        ) : (
+                          <Badge
+                            className={
+                              group.guardEnabled
+                                ? "bg-primary/10 text-primary dark:bg-primary/20"
+                                : "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-400"
+                            }
+                          >
+                            {group.guardEnabled ? "Yoqilgan" : "O'chirilgan"}
+                          </Badge>
+                        )}
 
-                      {/*
-                        ⚠️ "YOQILGAN, LEKIN ISHLAMAYDI" — ENG XAVFLI
-                        HOLAT: ma'muriyat himoya bor deb o'ylaydi,
-                        bot esa Telegram ruxsati yo'qligi uchun hech
-                        narsa o'chira olmaydi — va guruhga
-                        ogohlantirish ham YOZMAYDI. Ya'ni buni faqat
-                        shu yorliq ko'rsatadi.
-                      */}
-                      {group.guardEnabled && !group.canDeleteMessages ? (
-                        <Badge
-                          className="bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-200"
-                          title="Botni guruhda administrator qiling va 'Xabarlarni o'chirish' huquqini bering"
-                        >
-                          Bot o&apos;chira olmaydi
-                        </Badge>
-                      ) : null}
-                    </div>
+                        {/*
+                          ⚠️ "YOQILGAN, LEKIN ISHLAMAYDI" — ENG XAVFLI
+                          HOLAT: ma'muriyat himoya bor deb o'ylaydi,
+                          bot esa Telegram ruxsati yo'qligi uchun hech
+                          narsa o'chira olmaydi — va guruhga
+                          ogohlantirish ham YOZMAYDI. Ya'ni buni faqat
+                          shu yorliq ko'rsatadi.
+                        */}
+                        {group.guardEnabled && !group.canDeleteMessages ? (
+                          <Badge
+                            className="bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-200"
+                            title="Botni guruhda administrator qiling va 'Xabarlarni o'chirish' huquqini bering"
+                          >
+                            Bot o&apos;chira olmaydi
+                          </Badge>
+                        ) : null}
+                      </div>
+                    )}
                   </TableCell>
 
                   <TableCell className="tabular text-right text-sm">
@@ -457,7 +550,7 @@ export default function GroupsPage() {
       {groups.data && groups.data.total > groups.data.limit ? (
         <div className="flex items-center justify-between pt-3">
           <p className="text-xs text-muted-foreground">
-            {groups.data.total} ta guruh · {groups.data.page}-sahifa
+            {groups.data.total} ta chat · {groups.data.page}-sahifa
           </p>
           <div className="flex gap-2">
             <Button
