@@ -19,6 +19,14 @@
  * ishlaydi, QALQON esa ma'nosiz — zararli kontentni o'sha kanalning
  * O'Z admini yozadi.
  *
+ * ⚠️ A'ZOLAR SONI USTUNDA KO'RINADI va u reyestrning asosiy
+ * ma'nolaridan biri: "bu kanalda 4 000 obunachi bor" degan son
+ * tarqatma qilish, MFY biriktirish va kuzatuvni yoqish bo'yicha
+ * qarorni O'ZGARTIRADI. Son bazada allaqachon bor edi
+ * (`memberCount`), lekin faqat boshqaruv panelidagi YIG'INDIDA
+ * ko'rinardi — ya'ni "qaysi guruh katta" degan savolga javob
+ * yo'q edi va xodim buni Telegram'ni ochib qo'lda tekshirardi.
+ *
  * ⚠️ SHUNING UCHUN KANAL QATORIDA QALQON TUGMASI YO'Q va "bot
  * o'chira olmaydi" ogohlantirishi ham chiqmaydi: ikkisi ham xodimga
  * TUZATIB BO'LMAYDIGAN vazifa berardi (Telegram kanalda huquq bersa
@@ -27,7 +35,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { MapPinOff, Megaphone, Radio, Users } from "lucide-react";
+import { MapPinOff, Megaphone, MessagesSquare, Radio, Users } from "lucide-react";
 
 import { useSession } from "@/entities/session/auth-provider";
 import {
@@ -41,7 +49,7 @@ import { GroupBulkActions } from "@/features/groups/bulk-actions";
 import { useSetGuard } from "@/features/security/api";
 import { useDistricts, useMahallas } from "@/features/territory/api";
 import { ApiError } from "@/shared/api/client";
-import { chatTypeLabel } from "@/shared/config/labels";
+import { chatTypeLabel, formatPeople } from "@/shared/config/labels";
 import { formatDateUz } from "@/shared/lib/date";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -142,7 +150,7 @@ export default function GroupsPage() {
         title="Telegram guruh va kanallari"
       />
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         <StatTile label="Jami guruh" value={stats.data?.total ?? "—"} icon={Users} />
         <StatTile
           label="Kuzatuvda"
@@ -167,6 +175,29 @@ export default function GroupsPage() {
           value={stats.data?.unassigned ?? "—"}
           icon={MapPinOff}
           tone={stats.data?.unassigned ? "warning" : "default"}
+        />
+        {/*
+          ⚠️ IKKI SON ALOHIDA, QO'SHILMAYDI: MFY ning guruhi ham,
+          kanali ham bo'lsa, o'sha mahalla aholisi odatda
+          IKKALASIGA a'zo — qo'shilsa, auditoriya ikki barobar
+          katta ko'rinardi.
+
+          ⚠️ SO'Z HAM BOSHQA: guruhda "a'zo", kanalda "obunachi".
+        */}
+        <StatTile
+          label="Guruh a'zolari"
+          value={
+            stats.data ? formatPeople(stats.data.groupMembers) : "—"
+          }
+          icon={MessagesSquare}
+          hint="Kanal obunachilari bundan tashqari"
+        />
+        <StatTile
+          label="Kanal obunachilari"
+          value={
+            stats.data ? formatPeople(stats.data.channelMembers) : "—"
+          }
+          icon={Megaphone}
         />
         <StatTile
           label="Navbatdagi xabar"
@@ -329,6 +360,15 @@ export default function GroupsPage() {
                 */}
                 <TableHead>Chat</TableHead>
                 <TableHead>MFY</TableHead>
+                {/*
+                  ⚠️ A'ZOLAR USTUNI MFY DAN KEYIN, KUZATUVDAN
+                  OLDIN: "kuzatuvni yoqamanmi" degan qarorda
+                  guruhning HAJMI muhim — 5 a'zoli test guruhi va
+                  3 000 a'zoli mahalla guruhi bir xil qiymatda
+                  emas. Ustun oxirida tursa, operator qarorni
+                  ko'rmay qabul qilardi.
+                */}
+                <TableHead className="text-right">A&apos;zolar</TableHead>
                 <TableHead>Kuzatuv</TableHead>
                 <TableHead>Qalqon</TableHead>
                 <TableHead className="text-right">Navbat</TableHead>
@@ -413,6 +453,41 @@ export default function GroupsPage() {
                       <span className="text-sm text-amber-600 dark:text-amber-400">
                         Biriktirilmagan
                       </span>
+                    )}
+                  </TableCell>
+
+                  {/* ── A'zolar ─────────────────────────────── */}
+                  {/*
+                    ⚠️ `null` — "HALI O'QILMAGAN", `0` DAN BOSHQA
+                    NARSA: bot a'zolar sonini 6 soatda bir marta
+                    o'qiydi va yangi guruhda u hali bo'sh bo'lishi
+                    MUMKIN. `0` ko'rsatilsa, "guruhda hech kim
+                    yo'q" degan noto'g'ri xulosa chiqardi.
+
+                    ⚠️ O'QILGAN SANA YONIDA: son 6 soatlik nusxa
+                    (`getChatMemberCount` har xabarda chaqirilsa
+                    Telegram chegarasini yeb qo'yardi), ya'ni
+                    xodim u QANCHALIK yangi ekanini bilishi kerak.
+                  */}
+                  <TableCell className="text-right">
+                    {group.memberCount == null ? (
+                      <span
+                        className="text-sm text-muted-foreground"
+                        title="Bot a'zolar sonini 6 soatda bir marta o'qiydi — hali o'qilmagan"
+                      >
+                        —
+                      </span>
+                    ) : (
+                      <div className="space-y-0.5">
+                        <p className="tabular text-sm font-medium">
+                          {formatPeople(group.memberCount)}
+                        </p>
+                        {group.memberCountAt ? (
+                          <p className="text-xs text-muted-foreground">
+                            {formatDateUz(group.memberCountAt)}
+                          </p>
+                        ) : null}
+                      </div>
                     )}
                   </TableCell>
 

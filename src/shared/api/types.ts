@@ -219,13 +219,24 @@ export interface GroupStats {
    */
   guardBlind: number;
   /**
-   * GURUHLARDAGI A'ZOLAR YIG'INDISI.
+   * GURUHLARDAGI A'ZOLAR YIG'INDISI (kanallar BUNDAN TASHQARI).
    *
    * ⚠️ BOTDAGI FUQAROLAR SONI BILAN QO'SHILMAYDI: guruhdagi odam
    * botga yozmagan bo'lishi mumkin va teskarisi ham — qo'shilsa,
    * bir odam ikki marta sanalardi.
    */
-  members: number;
+  groupMembers: number;
+  /**
+   * KANAL OBUNACHILARI — GURUH A'ZOLARIDAN ALOHIDA SON.
+   *
+   * ⚠️ QO'SHILMAYDI, CHUNKI BIR ODAM IKKALASIDA HAM BO'LADI: MFY
+   * ning guruhi ham, kanali ham bo'lsa, o'sha mahalla aholisi
+   * odatda ikkalasiga a'zo. Qo'shilsa, "auditoriya 2 400 kishi"
+   * degan son haqiqiydan ikki barobar katta chiqardi.
+   *
+   * ⚠️ SO'Z HAM BOSHQA: guruhda "a'zo", kanalda "obunachi".
+   */
+  channelMembers: number;
 }
 
 /**

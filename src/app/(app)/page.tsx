@@ -31,6 +31,7 @@ import {
   AlertTriangle,
   ArrowRight,
   MapPinOff,
+  Megaphone,
   MessageSquareWarning,
   MessagesSquare,
   Radio as RadioIcon,
@@ -50,6 +51,7 @@ import {
   useDailyReport,
   useMobileReport,
 } from "@/features/reports/api";
+import { formatPeople } from "@/shared/config/labels";
 import { formatRelativeUz } from "@/shared/lib/date";
 import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/states";
@@ -348,11 +350,21 @@ export default function DashboardPage() {
         {/*
           ── 4-QATOR: OBUNACHILAR ───────────────────────────
 
-          ⚠️ IKKI SON QO'SHILMAYDI va bu ataylab: guruhdagi odam
+          ⚠️ SONLAR QO'SHILMAYDI va bu ataylab: guruhdagi odam
           botga yozmagan bo'lishi mumkin, botga yozgan odam esa
           hech qaysi MFY guruhida bo'lmasligi mumkin. Qo'shilsa,
           bir odam IKKI MARTA sanalardi — va bu son hisobotga
           chiqardi.
+
+          ⚠️ KANAL OBUNACHILARI HAM ALOHIDA, AYNI SABABDAN va u
+          eng kuchli holat: MFY ning guruhi ham, kanali ham bo'lsa,
+          o'sha mahalla aholisi odatda IKKALASIGA a'zo. Qo'shilsa,
+          "auditoriya 2 400 kishi" degan son haqiqiydan ikki
+          barobar katta chiqardi.
+
+          ⚠️ SO'Z HAM BOSHQA: guruhda "a'zo", kanalda "obunachi".
+          Bitta yorliq ostida ko'rsatilsa, xodim ularni bir xil
+          narsa deb o'qirdi.
 
           ⚠️ "RO'YXATDAN O'TGAN" VA "FAOL" HAM ALOHIDA: botni bir
           marta ochib tashlab ketgan odam ro'yxatda abadiy qoladi,
@@ -361,18 +373,40 @@ export default function DashboardPage() {
         {can("groups.view") || can("citizens.view") ? (
           <ChartFrame
             title="Obunachilar"
-            subtitle="Guruh a'zolari va bot foydalanuvchilari — alohida"
+            subtitle="Guruh, kanal va bot — uchalasi alohida"
             className="lg:col-span-6"
           >
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {can("groups.view") ? (
                 <>
+                  {/*
+                    ⚠️ `formatPeople` — YAGONA MANBA: usiz son
+                    "1240" bo'lib chiqardi va uch xonali
+                    guruhlardan ajralmasdi.
+                  */}
                   <MiniStat
                     icon={MessagesSquare}
-                    label="Guruhlardagi a'zolar"
-                    value={groupStats.data?.members ?? "—"}
+                    label="Guruh a'zolari"
+                    value={
+                      groupStats.data
+                        ? formatPeople(groupStats.data.groupMembers)
+                        : "—"
+                    }
                     tone="primary"
                   />
+                  {/*
+                    ⚠️ KANAL QATORI FAQAT KANAL BO'LSA: kanali yo'q
+                    tashkilotda doimiy "0" turadigan qator
+                    kartani bekorga to'ldirardi.
+                  */}
+                  {groupStats.data?.channels ? (
+                    <MiniStat
+                      icon={Megaphone}
+                      label="Kanal obunachilari"
+                      value={formatPeople(groupStats.data.channelMembers)}
+                      tone="primary"
+                    />
+                  ) : null}
                   <MiniStat
                     icon={RadioIcon}
                     label="Kuzatuvdagi guruh"
