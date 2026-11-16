@@ -271,11 +271,11 @@ export const api = {
     send<T>(path, { method: "POST", form }, false),
 
   /**
-   * FAYLNI YUKLAB OLISH (CSV hisobot).
+   * FAYLNI YUKLAB OLISH (XLSX hisobot).
    *
-   * ⚠️ `send` DAN ALOHIDA: u javobni `JSON.parse` qiladi va CSV
-   * o'sha yerda yiqilardi. Shuning uchun bu yerda javob `Blob`
-   * sifatida olinadi.
+   * ⚠️ `send` DAN ALOHIDA: u javobni `JSON.parse` qiladi va XLSX
+   * o'sha yerda yiqilardi (u — IKKILIK fayl, matn emas). Shuning
+   * uchun bu yerda javob `Blob` sifatida olinadi.
    *
    * ⚠️ FAYL NOMI SERVERDAN OLINADI (`Content-Disposition`): panelda
    * qo'lda yasalsa, server kesim nomini o'zgartirganda ikki joyda
@@ -316,7 +316,7 @@ export const api = {
 
     return {
       blob: await response.blob(),
-      filename: match?.[1] ?? "hisobot.csv",
+      filename: match?.[1] ?? "hisobot.xlsx",
     };
   },
 };
@@ -326,7 +326,7 @@ export const api = {
  *
  * ⚠️ `URL.revokeObjectURL` MAJBURIY: har yuklab olishda brauzer
  * xotirasida blob qoladi va rahbariyat o'n marta bosganda u
- * yig'ilib boradi (CSV 5000 qatorli bo'lishi mumkin).
+ * yig'ilib boradi (hisobot 5000 qatorli bo'lishi mumkin).
  */
 export const saveBlob = (blob: Blob, filename: string): void => {
   const url = URL.createObjectURL(blob);

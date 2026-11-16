@@ -98,7 +98,7 @@ export default function CoveragePage() {
               ) : (
                 <Download className="mr-1.5 size-4" />
               )}
-              Qamrov (CSV)
+              Qamrov (Excel)
             </Button>
 
             {/*

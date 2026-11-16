@@ -92,7 +92,7 @@ const VALID_TABS = [
  * kelardi.
  *
  * ⚠️ TABDA MOS KESIM BO'LMASA — UMUMIY: "AI samarasi" va
- * "Ilova" tablari uchun alohida CSV yozilmadi, chunki
+ * "Ilova" tablari uchun alohida eksport yozilmadi, chunki
  * ularning raqamlari bir nechta (jami, foiz) va jadval
  * shakliga tushmaydi.
  */
@@ -194,7 +194,7 @@ export default function ReportsPage() {
               onClick={() => exportReport.mutate({ kind: "issues", filters })}
             >
               <FileSpreadsheet className="mr-1.5 size-4" />
-              Murojaatlar (CSV)
+              Murojaatlar (Excel)
             </Button>
           </div>
         }

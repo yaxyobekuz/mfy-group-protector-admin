@@ -117,7 +117,7 @@ export const useRecurringReport = (filters: ReportFilters) =>
   });
 
 /**
- * HISOBOTNI CSV QILIB YUKLAB OLISH.
+ * HISOBOTNI EXCEL (XLSX) QILIB YUKLAB OLISH.
  *
  * ⚠️ `useQuery` EMAS, `useMutation`: bu SO'ROV emas, AMAL —
  * natijasi ekranda ko'rsatilmaydi, faylga tushadi. `useQuery`

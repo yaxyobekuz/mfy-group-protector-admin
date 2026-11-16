@@ -28,7 +28,7 @@ export const useCoverageReport = () =>
   });
 
 /**
- * QAMROVNI CSV QILIB YUKLAB OLISH.
+ * QAMROVNI EXCEL (XLSX) QILIB YUKLAB OLISH.
  *
  * ⚠️ `kind` IKKI XIL, IKKI RUXSAT BILAN:
  *
