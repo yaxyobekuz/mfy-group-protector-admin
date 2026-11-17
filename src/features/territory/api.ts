@@ -25,6 +25,32 @@ export const useDistricts = (includeArchived = false) =>
     staleTime: 10 * 60_000,
   });
 
+/**
+ * XARITA CHEGARALARI — VILOYAT ROMI VA TUMAN KONTURLARI.
+ *
+ * ⚠️ `staleTime` JUDA UZOQ (1 soat): chegaralar ma'muriy hujjat
+ * bilan o'zgaradi, ya'ni yilda bir marta. Javobda esa o'nlab
+ * poligon bor — uni har filtr o'zgarishida qayta yuklash xaritani
+ * sezilarli sekinlashtirardi.
+ *
+ * ⚠️ MUROJAATLAR KESIMIDAN ALOHIDA SO'ROV: u filtrga bog'liq va
+ * har o'zgarishda qayta yuklanadi; chegara esa o'zgarmaydi.
+ * Bitta so'rovga qo'shilsa, har status almashtirilganda poligonlar
+ * ham qayta kelardi.
+ */
+export interface TerritoryBoundaries {
+  /** ⚠️ `null` — hali import qilinmagan; xarita romsiz chiziladi. */
+  province: unknown;
+  districts: { id: string; name: string; geoJson: unknown }[];
+}
+
+export const useBoundaries = () =>
+  useQuery({
+    queryKey: queryKeys.territory.boundaries(),
+    queryFn: () => api.get<TerritoryBoundaries>("/territory/boundaries"),
+    staleTime: 60 * 60_000,
+  });
+
 export interface MahallaFilters {
   districtId?: string;
   search?: string;

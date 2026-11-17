@@ -27,8 +27,16 @@ interface Props {
   markers: MapMarker[];
   /** Issiqlik nuqtalari — bo'sh bo'lsa qatlam umuman qo'shilmaydi. */
   heat?: HeatPoint[];
-  /** MFY kesimi — poligon yoki doira. */
+  /** MFY yoki tuman kesimi — poligon yoki doira. */
   areas?: MapArea[];
+  /**
+   * Viloyat chegarasi — xaritaning ROMI, qatlam emas.
+   *
+   * ⚠️ HAR REJIMDA CHIZILADI (`leaflet-map.tsx` izohi): usiz
+   * nuqtalar qo'shni viloyatlar va Qirg'iziston ustida suzib
+   * turardi.
+   */
+  province?: unknown;
   /** Panel mavzusiga ergashadi — `leaflet-map.tsx` izohi. */
   dark?: boolean;
   /** O'ram div klasslari (joylashuv/o'lcham). Leaflet konteyner — ICHIDA. */

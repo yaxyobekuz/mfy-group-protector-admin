@@ -31,6 +31,7 @@ import { useTheme } from "next-themes";
 
 import { useSession } from "@/entities/session/auth-provider";
 import { useMahallaMap, useMapReport } from "@/features/reports/api";
+import { useBoundaries } from "@/features/territory/api";
 import type { IssueStatus } from "@/shared/api/types";
 import { categoryColor, categoryIcon } from "@/shared/config/category-icons";
 import { ISSUE_STATUS } from "@/shared/config/labels";
@@ -70,8 +71,16 @@ export default function MapPage() {
    *   nuqtalar  — "qayerda NIMA bo'ldi"
    *   issiqlik  — "qayerda KO'P"
    *   MFY       — "qaysi MAHALLADA ko'p"
+   *   tuman     — "qaysi TUMANDA ko'p"
+   *
+   * ⚠️ TUMAN VA MFY — IKKI BOSHQA SAVOL: viloyatda yuzlab MFY bor
+   * va ularning to'ri uzoqdan qaralganda bir xil rangli uyumga
+   * aylanadi. Tuman kesimi esa 14 ta poligon — "qayerga odam
+   * yuborish kerak" degan savolga BIR QARASHDA javob beradi.
    */
-  const [view, setView] = useState<"points" | "heat" | "areas">("points");
+  const [view, setView] = useState<"points" | "heat" | "areas" | "districts">(
+    "points",
+  );
   /** Bosilgan markerning murojaat id'si — o'ng panel shundan ochiladi. */
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -92,6 +101,16 @@ export default function MapPage() {
    * emas.
    */
   const mahallas = useMahallaMap(view === "points" ? {} : { status });
+
+  /**
+   * XARITA ROMI — VILOYAT VA TUMAN CHEGARALARI.
+   *
+   * ⚠️ HAR REJIMDA SO'RALADI: viloyat konturi qatlam emas, ROM —
+   * u nuqtalar rejimida ham chiziladi. So'rov bir soat keshlanadi
+   * (`useBoundaries`), ya'ni rejim almashtirish uni qayta
+   * yuklamaydi.
+   */
+  const boundaries = useBoundaries();
 
   /**
    * ⚠️ XARITA PANEL MAVZUSIGA ERGASHADI: oq xarita qorong'i
@@ -167,21 +186,65 @@ export default function MapPage() {
     return [...fromPoints, ...fromMahallas];
   }, [view, points.data, mahallas.data, selected]);
 
-  /** MFY poligonlari/doiralari — tanlangan yo'nalishlar bo'yicha. */
+  /**
+   * POLIGONLAR — MFY YOKI TUMAN KESIMIDA.
+   *
+   * ⚠️ BITTA `areas` QATLAMI, IKKITA EMAS: ikkisi ham AYNI
+   * savolga ("qayerda ko'p") ayni shaklda javob beradi va ular
+   * hech qachon birga chizilmaydi. Alohida qatlam yozilsa, rang
+   * shkalasi va tultip ikki joyda takrorlanib, bittasi albatta
+   * eskirardi.
+   *
+   * ⚠️ TUMAN SONI MFY LARDAN YIG'ILADI, YANGI SO'ROV BILAN EMAS:
+   * server allaqachon har MFY ning yo'nalishlar bo'yicha kesimini
+   * yuborgan va tanlangan chiplar MIJOZDA qo'llanadi — tuman
+   * uchun alohida endpoint o'sha filtrni ikkinchi marta
+   * bajarishni talab qilardi.
+   *
+   * ⚠️ YIG'INDI NOM BO'YICHA EMAS, `district.id` BO'YICHA: nomda
+   * apostrof va "tumani" so'zi har xil yozilishi mumkin, id esa
+   * bitta.
+   */
   const areas = useMemo(() => {
-    if (view !== "areas") return [];
+    if (view === "areas") {
+      return (mahallas.data ?? []).map((item) => ({
+        id: item.id,
+        name: item.name,
+        districtName: item.district.name,
+        count: countFor(item, selected),
+        lat: item.lat,
+        lng: item.lng,
+        geoJson: item.geoJson,
+        isApproximate: item.isApproximate,
+      }));
+    }
 
-    return (mahallas.data ?? []).map((item) => ({
-      id: item.id,
-      name: item.name,
-      districtName: item.district.name,
-      count: countFor(item, selected),
-      lat: item.lat,
-      lng: item.lng,
-      geoJson: item.geoJson,
-      isApproximate: item.isApproximate,
+    if (view !== "districts") return [];
+
+    const counts = new Map<string, number>();
+
+    for (const item of mahallas.data ?? []) {
+      const id = item.district.id;
+      counts.set(id, (counts.get(id) ?? 0) + countFor(item, selected));
+    }
+
+    /**
+     * ⚠️ CHEGARASI BOR TUMANLARGINA: chegarasizini doira qilib
+     * chizish mumkin emas — tumanning markazi reyestrda yo'q va
+     * uni murojaatlardan hisoblash butun tuman o'rtasiga emas,
+     * eng faol MFY ga tushardi.
+     */
+    return (boundaries.data?.districts ?? []).map((district) => ({
+      id: district.id,
+      name: district.name,
+      // ⚠️ Tuman kesimida ustki daraja — viloyatning o'zi.
+      districtName: "",
+      count: counts.get(district.id) ?? 0,
+      lat: null,
+      lng: null,
+      geoJson: district.geoJson,
     }));
-  }, [view, mahallas.data, selected]);
+  }, [view, mahallas.data, selected, boundaries.data]);
 
   if (!can("reports.view")) {
     return (
@@ -220,6 +283,11 @@ export default function MapPage() {
               markers={view === "points" ? markers : []}
               heat={heat}
               areas={areas}
+              /**
+               * ⚠️ ROM HAR REJIMDA: u qatlam emas va boshqalar
+               * bilan navbatlashmaydi (`leaflet-map.tsx` izohi).
+               */
+              province={boundaries.data?.province}
               dark={isDark}
               // ⚠️ `map-root`: globals.css xaritani pointer-auto qiladi
               // (shell zanjiri pointer-shaffof bo'lganда ham). `z-0` —
@@ -272,6 +340,7 @@ export default function MapPage() {
               [
                 ["points", "Nuqtalar"],
                 ["heat", "Issiqlik"],
+                ["districts", "Tuman"],
                 ["areas", "MFY"],
               ] as const
             ).map(([value, label]) => (
@@ -292,8 +361,10 @@ export default function MapPage() {
           </div>
 
           <span className="px-1 text-sm text-muted-foreground">
-            {view === "areas"
-              ? `${areas.filter((area) => area.count > 0).length} / ${areas.length} ta MFY`
+            {view === "areas" || view === "districts"
+              ? `${areas.filter((area) => area.count > 0).length} / ${areas.length} ta ${
+                  view === "areas" ? "MFY" : "tuman"
+                }`
               : `${markers.length} / ${points.data?.length ?? 0} ta nuqta`}
           </span>
         </div>

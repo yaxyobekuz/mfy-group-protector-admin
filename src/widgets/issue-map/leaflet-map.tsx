@@ -69,6 +69,19 @@ interface Props {
   heat?: HeatPoint[];
   areas?: MapArea[];
   /**
+   * VILOYAT CHEGARASI — XARITANING TAYANCHI.
+   *
+   * ⚠️ QATLAM EMAS, ROM: unda SON yo'q va u boshqa qatlamlar
+   * bilan navbatlashmaydi — har rejimda chiziladi. Chegarasiz
+   * xaritada nuqtalar qo'shni viloyatlar va Qirg'iziston ustida
+   * suzib turardi va "bu nuqta bizning hududdami" degan savolga
+   * ko'z bilan javob berib bo'lmasdi.
+   *
+   * ⚠️ TO'LDIRILMAYDI: ichki rang poligon qatlamini (MFY/tuman)
+   * bo'yab, "qayerda ko'p" savolini ko'mib yuborardi.
+   */
+  province?: unknown;
+  /**
    * ⚠️ TO'Q MAVZU — PANEL MAVZUSIGA ERGASHADI: oq xarita qorong'i
    * panelda ko'zni qamashtiradi va operator kun bo'yi unga qaraydi.
    */
@@ -138,6 +151,7 @@ export default function LeafletMap({
   markers,
   heat,
   areas,
+  province,
   dark,
   className,
 }: Props) {
@@ -145,6 +159,7 @@ export default function LeafletMap({
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
   const areaRef = useRef<L.LayerGroup | null>(null);
+  const provinceRef = useRef<L.LayerGroup | null>(null);
   const heatRef = useRef<HeatLayer | null>(null);
   const tileRef = useRef<L.TileLayer | null>(null);
 
@@ -164,6 +179,13 @@ export default function LeafletMap({
      * poligon markerlarni bosib, ularni bosib bo'lmasdi.
      */
     areaRef.current = L.layerGroup().addTo(map);
+    /**
+     * ⚠️ VILOYAT KONTURI POLIGONLARDAN YUQORIDA, MARKERLARDAN
+     * PASTDA: pastda qolsa, MFY to'ldirishlari uni bosib qo'yardi
+     * va rom ko'rinmasdi; tepada bo'lsa esa chiziq ustidagi
+     * markerlarni bosib bo'lmasdi.
+     */
+    provinceRef.current = L.layerGroup().addTo(map);
     heatRef.current = new HeatLayer([]);
     layerRef.current = L.layerGroup().addTo(map);
 
@@ -311,6 +333,35 @@ export default function LeafletMap({
       circle.addTo(layer);
     }
   }, [areas]);
+
+  // ── Viloyat konturi ────────────────────────────────────────────
+  useEffect(() => {
+    const layer = provinceRef.current;
+    if (!layer) return;
+
+    layer.clearLayers();
+    if (!province) return;
+
+    L.geoJSON(province as never, {
+      style: {
+        /**
+         * ⚠️ RANG MAVZUGA BOG'LIQ EMAS, LEKIN TO'Q FONDA
+         * OCHROQ: qora xaritada quyuq chiziq ko'rinmasdi.
+         */
+        color: dark ? "#94a3b8" : "#475569",
+        weight: 2,
+        opacity: 0.85,
+        // ⚠️ TO'LDIRISH YO'Q — rom, qatlam emas.
+        fill: false,
+      },
+      /**
+       * ⚠️ BOSILMAYDI: rom ustiga bosilganda hech narsa
+       * ochilmasligi kerak va u ostidagi marker/poligonning
+       * bosilishini to'smasligi ham kerak.
+       */
+      interactive: false,
+    }).addTo(layer);
+  }, [province, dark]);
 
   return <div ref={containerRef} className={className} />;
 }

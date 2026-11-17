@@ -35,6 +35,8 @@ export const queryKeys = {
       ["territory", "districts", params ?? {}] as const,
     mahallas: (params?: QueryParams) =>
       ["territory", "mahallas", params ?? {}] as const,
+    /** Xarita romi — viloyat va tuman chegaralari. */
+    boundaries: () => ["territory", "boundaries"] as const,
   },
 
   groups: {
