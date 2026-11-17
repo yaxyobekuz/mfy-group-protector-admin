@@ -49,7 +49,7 @@ import { GroupBulkActions } from "@/features/groups/bulk-actions";
 import { useSetGuard } from "@/features/security/api";
 import { useDistricts, useMahallas } from "@/features/territory/api";
 import { ApiError } from "@/shared/api/client";
-import { chatTypeLabel, formatPeople } from "@/shared/config/labels";
+import { chatTypeLabel, formatPeople, plural } from "@/shared/config/labels";
 import { formatDateUz } from "@/shared/lib/date";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
@@ -166,23 +166,28 @@ export default function GroupsPage() {
       */}
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {/*
-          ⚠️ JAMI GURUH — KANALSIZ (`total` dan `channels` ayirildi).
-          Avval bu plitka "Jami guruh" deb yozilib, ichida KANALLARNI
-          ham sanardi — yonidagi "Kanal: 14" plitkasi bilan birga u
-          ikki marta sanalgandek ko'rinardi. Yorliq nimani aytsa,
-          son ham o'shani ko'rsatishi kerak.
+          ⚠️ YIRIK SON — ODAMLAR, CHATLAR EMAS. Reyestrdagi guruhlar
+          soni ichki ko'rsatkich: u ma'muriyatga "nechta yozuv bor"
+          deydi. Panelning savoli esa boshqa — "biz necha kishiga
+          yetib boryapmiz". Tarqatma, qamrov va hisobot qarorlari
+          aynan shu songa qaraydi, shuning uchun u plitkaning
+          MAZMUNI bo'ldi, guruhlar soni esa uning o'lchovi.
 
-          ⚠️ A'ZOLAR SONI IZOHDA: u shu sonning o'lchovi — "178 ta
-          guruh, ularda 105 550 odam". Alohida plitkada turganda
-          qaysi guruhlarniki ekani ko'rinmasdi.
+          ⚠️ YORLIQ HAM ALMASHDI: yirik son "a'zolar" bo'lgach,
+          ustida "Jami guruh" deb yozib qo'yish sonni noto'g'ri
+          o'qitardi — 108 508 ta guruh bordek.
+
+          ⚠️ GURUHLAR SONI KANALSIZ (`total` dan `channels`
+          ayirildi): yonida "Kanal" plitkasi turibdi va kanallar
+          ikki marta sanalgandek ko'rinardi.
         */}
         <StatTile
-          label="Jami guruh"
-          value={stats.data ? stats.data.total - stats.data.channels : "—"}
+          label="Guruh a'zolari"
+          value={stats.data ? formatPeople(stats.data.groupMembers) : "—"}
           icon={Users}
           hint={
             stats.data
-              ? `${formatPeople(stats.data.groupMembers)} a'zo`
+              ? plural(stats.data.total - stats.data.channels, "guruh")
               : undefined
           }
         />
@@ -206,12 +211,12 @@ export default function GroupsPage() {
           odatda ikkalasiga a'zo.
         */}
         <StatTile
-          label="Kanal"
-          value={stats.data?.channels ?? "—"}
+          label="Kanal obunachilari"
+          value={stats.data ? formatPeople(stats.data.channelMembers) : "—"}
           icon={Megaphone}
           hint={
             stats.data
-              ? `${formatPeople(stats.data.channelMembers)} obunachi · qalqon yo'q`
+              ? `${plural(stats.data.channels, "kanal")} · qalqon yo'q`
               : "Faqat kuzatuv — qalqon yo'q"
           }
         />
