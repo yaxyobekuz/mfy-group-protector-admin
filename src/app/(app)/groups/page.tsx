@@ -35,7 +35,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { MapPinOff, Megaphone, MessagesSquare, Radio, Users } from "lucide-react";
+import { MapPinOff, Megaphone, Radio, Users } from "lucide-react";
 
 import { useSession } from "@/entities/session/auth-provider";
 import {
@@ -150,8 +150,42 @@ export default function GroupsPage() {
         title="Telegram guruh va kanallari"
       />
 
-      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
-        <StatTile label="Jami guruh" value={stats.data?.total ?? "—"} icon={Users} />
+      {/*
+        ⚠️ TO'RTTA PLITKA, YETTITA EMAS. A'zolar soni avval ALOHIDA
+        ikki plitkada turardi va qator ekranga sig'may ketgan edi:
+        yetti plitka orasida "MFY biriktirilmagan" — ya'ni ish talab
+        qiladigan YAGONA son — ko'zga tashlanmay qolardi.
+
+        ⚠️ SON O'ZI TEGISHLI PLITKA ICHIGA KO'CHDI: "a'zolar" guruh
+        sonining IZOHI, mustaqil ko'rsatkich emas. Yonma-yon
+        turganda ular bir-biriga teng ikki o'lchovdek ko'rinardi.
+
+        ⚠️ "NAVBATDAGI XABAR" BU SAHIFADAN OLIB TASHLANDI: u
+        kuzatuv OQIMI haqida (tahlil qachon bo'ladi), reyestr
+        haqida emas. Boshqaruv panelida o'z o'rnida qoladi.
+      */}
+      <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {/*
+          ⚠️ JAMI GURUH — KANALSIZ (`total` dan `channels` ayirildi).
+          Avval bu plitka "Jami guruh" deb yozilib, ichida KANALLARNI
+          ham sanardi — yonidagi "Kanal: 14" plitkasi bilan birga u
+          ikki marta sanalgandek ko'rinardi. Yorliq nimani aytsa,
+          son ham o'shani ko'rsatishi kerak.
+
+          ⚠️ A'ZOLAR SONI IZOHDA: u shu sonning o'lchovi — "178 ta
+          guruh, ularda 105 550 odam". Alohida plitkada turganda
+          qaysi guruhlarniki ekani ko'rinmasdi.
+        */}
+        <StatTile
+          label="Jami guruh"
+          value={stats.data ? stats.data.total - stats.data.channels : "—"}
+          icon={Users}
+          hint={
+            stats.data
+              ? `${formatPeople(stats.data.groupMembers)} a'zo`
+              : undefined
+          }
+        />
         <StatTile
           label="Kuzatuvda"
           value={stats.data?.official ?? "—"}
@@ -159,50 +193,33 @@ export default function GroupsPage() {
           tone="success"
         />
         {/*
-          ⚠️ KANALLAR ALOHIDA SANOQCHI: "jami 120" degan son ichida
-          nechtasi kanal ekani ko'rinmasdi — holbuki ularga qalqon
-          tegishli emas va xavfsizlik sahifasidagi "40/80" soni
-          aynan shuning uchun jamidan kichik.
+          ⚠️ KANAL ALOHIDA PLITKA: unga qalqon tegishli emas va
+          xavfsizlik sahifasidagi "40/80" soni aynan shuning uchun
+          jamidan kichik.
+
+          ⚠️ IZOHDA IKKI FAKT BIRGA: obunachilar soni va qalqon
+          yo'qligi. Ikkinchisi olib tashlansa, jadvaldagi bo'sh
+          qalqon ustuni tushuntirilmagan qolardi.
+
+          ⚠️ "OBUNACHI", "A'ZO" EMAS — va ikkisi QO'SHILMAYDI: MFY
+          ning guruhi ham, kanali ham bo'lsa, o'sha mahalla aholisi
+          odatda ikkalasiga a'zo.
         */}
         <StatTile
           label="Kanal"
           value={stats.data?.channels ?? "—"}
           icon={Megaphone}
-          hint="Faqat kuzatuv — qalqon yo'q"
+          hint={
+            stats.data
+              ? `${formatPeople(stats.data.channelMembers)} obunachi · qalqon yo'q`
+              : "Faqat kuzatuv — qalqon yo'q"
+          }
         />
         <StatTile
           label="MFY biriktirilmagan"
           value={stats.data?.unassigned ?? "—"}
           icon={MapPinOff}
           tone={stats.data?.unassigned ? "warning" : "default"}
-        />
-        {/*
-          ⚠️ IKKI SON ALOHIDA, QO'SHILMAYDI: MFY ning guruhi ham,
-          kanali ham bo'lsa, o'sha mahalla aholisi odatda
-          IKKALASIGA a'zo — qo'shilsa, auditoriya ikki barobar
-          katta ko'rinardi.
-
-          ⚠️ SO'Z HAM BOSHQA: guruhda "a'zo", kanalda "obunachi".
-        */}
-        <StatTile
-          label="Guruh a'zolari"
-          value={
-            stats.data ? formatPeople(stats.data.groupMembers) : "—"
-          }
-          icon={MessagesSquare}
-          hint="Kanal obunachilari bundan tashqari"
-        />
-        <StatTile
-          label="Kanal obunachilari"
-          value={
-            stats.data ? formatPeople(stats.data.channelMembers) : "—"
-          }
-          icon={Megaphone}
-        />
-        <StatTile
-          label="Navbatdagi xabar"
-          value={stats.data?.pendingMessages ?? "—"}
-          hint="Keyingi tahlilda ko'riladi"
         />
       </div>
 
