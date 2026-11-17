@@ -16,7 +16,6 @@
  */
 
 import { useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   CheckCircle2,
@@ -30,11 +29,8 @@ import {
 import { useSession } from "@/entities/session/auth-provider";
 import {
   useAllowSecurityEvent,
-  useRefreshFeed,
   useSecurityEvents,
   useSecurityStats,
-  useSetFeedEnabled,
-  useThreatFeeds,
   type SecurityFilters,
 } from "@/features/security/api";
 import { useMahallas } from "@/features/territory/api";
@@ -49,7 +45,6 @@ import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent } from "@/shared/ui/card";
 import { Input } from "@/shared/ui/input";
-import { Switch } from "@/shared/ui/switch";
 import {
   Select,
   SelectContent,
@@ -192,39 +187,22 @@ export default function SecurityPage() {
       </div>
 
       {/*
-        ── QALQON YOQILGAN, LEKIN ISHLAMAYDI ─────────────────
+        ⚠️ "QALQON ISHLAMAYAPTI" OGOHLANTIRISHI VA TASHQI TAHDID
+        RO'YXATLARI KARTASI BU YERDAN OLIB TASHLANDI — ikkalasi ham
+        sahifaning ASOSIY ishini (hodisalar ro'yxatini) pastga surib,
+        ekranni band qilib turardi.
 
-        ⚠️ ENG XAVFLI HOLAT VA U ALOHIDA QATORDA: `guardEnabled` —
-        ma'muriyat XOHISHI, `canDeleteMessages` — Telegram RUXSATI.
-        Ikkisi ajralganda qalqon panelda "yoqilgan" bo'lib
-        ko'rinadi, amalda esa hech narsa o'chirilmaydi — va bot
-        guruhga ogohlantirish YOZMAYDI, ya'ni buni hech kim
-        sezmaydi.
+        ⚠️ MA'LUMOT YO'QOLMADI: qalqon ishlamayotgan guruhlar soni
+        boshqaruv panelidagi "Qalqon ishlamayapti" qatorida va
+        Qamrov hisobotidagi "O'chirish huquqi yo'q" ustunida
+        qoladi — ya'ni holat KO'RINADI, lekin har kirishda ko'zga
+        urilib turmaydi.
 
-        ⚠️ MATN NIMA QILISH KERAKLIGINI AYTADI: "huquq yo'q" degan
-        quruq xabar ma'muriyatga yo'l ko'rsatmasdi.
+        ⚠️ RO'YXATLAR ENDI O'ZI YANGILANADI (har 3 kunda,
+        `threat-feeds.service.ts`), ya'ni qo'lda bosiladigan
+        "Yangilash" tugmasi kerak emas. Ularning holati
+        `GET /security/feeds` da o'z joyida qoladi.
       */}
-      {/*
-        ⚠️ KANALLAR BU SANOQCHIGA KIRMAYDI (server chiqarib
-        tashlaydi): kanalda qalqon umuman ishga tushmaydi, ya'ni
-        "o'chirish huquqi yo'q" degan ogohlantirishni TUZATIB
-        BO'LMASDI — u panelda abadiy turib, haqiqiy
-        ogohlantirishlarni ko'rinmas qilardi.
-      */}
-      {data?.blindGroups ? (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
-          <strong>{data.blindGroups}</strong> ta guruhda qalqon yoqilgan, lekin
-          bot xabarlarni <strong>o&apos;chira olmaydi</strong>. Telegram&apos;da
-          guruh → Administratorlar → bot → &laquo;Xabarlarni o&apos;chirish&raquo;
-          huquqini yoqing.{" "}
-          <Link href="/groups" className="underline">
-            Guruhlar ro&apos;yxati
-          </Link>
-        </div>
-      ) : null}
-
-      {/* ── TASHQI TAHDID RO'YXATLARI ────────────────────────── */}
-      <ThreatFeedsCard canManage={can("security.guard")} />
 
       {/* ── FILTRLAR ────────────────────────────────────────── */}
       <div className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -547,102 +525,3 @@ const EventCard = ({
   );
 };
 
-/**
- * TASHQI TAHDID RO'YXATLARI — O'ZI YANGILANADIGAN QORA RO'YXAT.
- *
- * ⚠️ QO'LDAGI QORA RO'YXAT HAR DOIM KECHIKADI: yangi firibgar
- * domen ertalab paydo bo'lib, kechqurun bloklanardi — oradagi vaqtda
- * aholi havolani bosib ulgurardi. URLhaus, OpenPhish va shunga
- * o'xshash ro'yxatlar esa SOATLAB yangilanadi.
- *
- * ⚠️ O'RNINI BOSMAYDI, QO'SHIMCHA: mahalliy firibgar domenlar
- * (`uzbekistonviplata.xyz`) tashqi ro'yxatlarga umuman tushmaydi.
- * Oq ro'yxat esa ikkalasidan ham USTUN.
- *
- * ⚠️ XATO KO'RSATILISHI SHART: ro'yxat bir hafta yuklanmay turgan
- * bo'lsa, himoya eskirib ketganini faqat shu yozuv aytadi.
- */
-const ThreatFeedsCard = ({ canManage }: { canManage: boolean }) => {
-  const feeds = useThreatFeeds();
-  const refresh = useRefreshFeed();
-  const setEnabled = useSetFeedEnabled();
-
-  // ⚠️ RO'YXAT BO'SH BO'LSA KARTA UMUMAN CHIQMAYDI: bo'sh karta
-  // sahifani uzaytirib, hech narsa bermasdi.
-  if (feeds.isLoading || (feeds.data?.length ?? 0) === 0) return null;
-
-  return (
-    <Card className="mb-5">
-      <CardContent className="space-y-3 p-4">
-        <div>
-          <p className="text-sm font-medium">Tashqi tahdid ro&apos;yxatlari</p>
-          <p className="text-xs text-muted-foreground">
-            O&apos;zi yangilanadigan fishing va zararli domen ro&apos;yxatlari.
-            Panelda qo&apos;lda kiritilgan qora ro&apos;yxat bilan BIRGA
-            ishlaydi.
-          </p>
-        </div>
-
-        <div className="divide-y rounded-lg border">
-          {feeds.data?.map((feed) => (
-            <div
-              key={feed.id}
-              className="flex flex-wrap items-center justify-between gap-3 p-3"
-            >
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium">{feed.name}</span>
-                  {feed.isEnabled ? (
-                    <Badge className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
-                      {feed.lastCount} domen
-                    </Badge>
-                  ) : (
-                    <Badge className="bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300">
-                      O&apos;chirilgan
-                    </Badge>
-                  )}
-                </div>
-
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  {feed.lastFetchedAt
-                    ? `Yangilangan: ${formatRelativeUz(feed.lastFetchedAt)}`
-                    : "Hali yuklanmagan"}
-                </p>
-
-                {/*
-                  ⚠️ XATO QIZIL RANGDA VA TO'LIQ: "yuklanmadi" degan
-                  quruq xabar ma'muriyatga manba manzili o'zgarganini
-                  aytmasdi.
-                */}
-                {feed.lastError ? (
-                  <p className="mt-1 text-xs text-destructive">{feed.lastError}</p>
-                ) : null}
-              </div>
-
-              {canManage ? (
-                <div className="flex shrink-0 items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={refresh.isPending || !feed.isEnabled}
-                    onClick={() => refresh.mutate(feed.id)}
-                  >
-                    Yangilash
-                  </Button>
-                  <Switch
-                    checked={feed.isEnabled}
-                    disabled={setEnabled.isPending}
-                    onCheckedChange={(checked) =>
-                      setEnabled.mutate({ id: feed.id, isEnabled: checked })
-                    }
-                    aria-label="Ro'yxatni yoqish"
-                  />
-                </div>
-              ) : null}
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
