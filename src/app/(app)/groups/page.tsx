@@ -327,8 +327,20 @@ export default function GroupsPage() {
           </SelectContent>
         </Select>
 
+        {/*
+          ⚠️ OXIRGI FILTR QATORNI TO'LDIRADI. Elementlar soni
+          ustunlar soniga BO'LINMAGANDA oxirgisi yolg'iz qolib, uning
+          yonida ekran kengligicha BO'SH joy turardi — qator
+          tugamagandek, sahifa esa yarim yuklangandek ko'rinardi.
+
+          ⚠️ CHO'ZISH FAQAT KERAKLI KENGLIKDA: boshqa kenglikda
+          elementlar tekis bo'linadi va o'shanda cho'zish teskari
+          natija berardi — bitta filtr qolganlardan ikki barobar
+          keng bo'lib ko'rinardi.
+        */}
         <Button
           variant={filters.unassigned ? "default" : "outline"}
+          className="lg:col-span-5"
           onClick={() =>
             patch({
               unassigned: filters.unassigned ? undefined : true,

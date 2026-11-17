@@ -188,13 +188,30 @@ export default function IssuesPage() {
           </SelectContent>
         </Select>
 
+        {/*
+          ⚠️ OXIRGI FILTR QATORNI TO'LDIRADI. Elementlar soni
+          ustunlar soniga BO'LINMAGANDA oxirgisi yolg'iz qolib, uning
+          yonida ekran kengligicha BO'SH joy turardi — qator
+          tugamagandek, sahifa esa yarim yuklangandek ko'rinardi.
+
+          ⚠️ CHO'ZISH FAQAT KERAKLI KENGLIKDA: boshqa kenglikda
+          elementlar tekis bo'linadi va o'shanda cho'zish teskari
+          natija berardi — bitta filtr qolganlardan ikki barobar
+          keng bo'lib ko'rinardi.
+        */}
         <Select
           value={filters.mahallaId ?? ALL}
           onValueChange={(value) =>
             patch({ mahallaId: value === ALL ? undefined : value })
           }
         >
-          <SelectTrigger>
+          {/*
+            ⚠️ SINF `SelectTrigger` DA, `Select` DA EMAS: Radix'ning
+            `Select` ildizi DOM ga hech narsa chizmaydi, ya'ni
+            to'rning haqiqiy bolasi — tugmaning o'zi. Sinf ildizga
+            qo'yilsa, u jimgina e'tiborsiz qolardi.
+          */}
+          <SelectTrigger className="sm:col-span-2 lg:col-span-1">
             <SelectValue placeholder="MFY" />
           </SelectTrigger>
           <SelectContent>
