@@ -414,8 +414,6 @@ export default function GroupsPage() {
                 <TableHead className="text-right">A&apos;zolar</TableHead>
                 <TableHead>Kuzatuv</TableHead>
                 <TableHead>Qalqon</TableHead>
-                <TableHead className="text-right">Navbat</TableHead>
-                <TableHead className="text-right">Signal</TableHead>
               </TableRow>
             </TableHeader>
 
@@ -439,8 +437,17 @@ export default function GroupsPage() {
                           </Badge>
                         ) : null}
                       </div>
+                      {/*
+                        ⚠️ `chatId` QATORDA KO'RSATILMAYDI: u uzun
+                        manfiy son va har qatorda takrorlanib,
+                        o'qiladigan ma'lumotni (nom, username,
+                        sana) ko'mib yuborardi. Kerak bo'lganda
+                        qidiruv maydoni uni BARIBIR qabul qiladi
+                        ("Guruh nomi yoki chat ID...") va
+                        biriktirilmaganlar faylida alohida ustun
+                        bo'lib chiqadi.
+                      */}
                       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                        <code>{group.chatId}</code>
                         {group.username ? <span>@{group.username}</span> : null}
                         <span>{formatDateUz(group.joinedAt)}</span>
                       </div>
@@ -507,10 +514,11 @@ export default function GroupsPage() {
                     MUMKIN. `0` ko'rsatilsa, "guruhda hech kim
                     yo'q" degan noto'g'ri xulosa chiqardi.
 
-                    ⚠️ O'QILGAN SANA YONIDA: son 6 soatlik nusxa
-                    (`getChatMemberCount` har xabarda chaqirilsa
-                    Telegram chegarasini yeb qo'yardi), ya'ni
-                    xodim u QANCHALIK yangi ekanini bilishi kerak.
+                    ⚠️ O'QILGAN SANA KO'RSATILMAYDI: u har qatorda
+                    takrorlanib, jadvalni ikki qavatli qilib
+                    qo'yardi — holbuki son hamma guruh uchun bir
+                    vaqtda, 6 soatda bir marta yangilanadi, ya'ni
+                    qatorlar orasida farq qilmaydi.
                   */}
                   <TableCell className="text-right">
                     {group.memberCount == null ? (
@@ -521,16 +529,9 @@ export default function GroupsPage() {
                         —
                       </span>
                     ) : (
-                      <div className="space-y-0.5">
-                        <p className="tabular text-sm font-medium">
-                          {formatPeople(group.memberCount)}
-                        </p>
-                        {group.memberCountAt ? (
-                          <p className="text-xs text-muted-foreground">
-                            {formatDateUz(group.memberCountAt)}
-                          </p>
-                        ) : null}
-                      </div>
+                      <p className="tabular text-sm font-medium">
+                        {formatPeople(group.memberCount)}
+                      </p>
                     )}
                   </TableCell>
 
@@ -642,20 +643,6 @@ export default function GroupsPage() {
                           </Badge>
                         ) : null}
                       </div>
-                    )}
-                  </TableCell>
-
-                  <TableCell className="tabular text-right text-sm">
-                    {group.pendingMessages || "—"}
-                  </TableCell>
-
-                  <TableCell className="tabular text-right text-sm">
-                    {group.newSignals ? (
-                      <span className="font-medium text-amber-600 dark:text-amber-400">
-                        {group.newSignals}
-                      </span>
-                    ) : (
-                      "—"
                     )}
                   </TableCell>
                 </TableRow>
