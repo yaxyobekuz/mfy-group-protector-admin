@@ -229,8 +229,19 @@ export default function GroupsPage() {
       </div>
 
       {/* ── Filtrlar ─────────────────────────────────────────── */}
+      {/*
+        ⚠️ QIDIRUV — BUTUN QATOR (`col-span-full`). U tanlovlar bilan
+        bir xil kenglikda turganda ikkisi TENG og'irlikdagi filtrdek
+        ko'rinardi, holbuki qidiruv — erkin matn: unga uzun nom ham,
+        chat ID ham yoziladi va tor maydonda ular ko'rinmay qolardi.
+
+        ⚠️ TANLOVLAR SONI USTUNLAR SONIGA TENG: qidiruv o'z qatoriga
+        chiqqach, pastdagi qator TEKIS bo'linishi kerak — aks holda
+        bitta tanlov yolg'iz qolib, yonida bo'sh joy turardi.
+      */}
       <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
         <Input
+          className="col-span-full"
           placeholder="Guruh nomi yoki chat ID..."
           value={filters.search ?? ""}
           onChange={(event) => patch({ search: event.target.value || undefined })}
@@ -327,8 +338,18 @@ export default function GroupsPage() {
           </SelectContent>
         </Select>
 
+        {/*
+          ⚠️ `sm` DA QATORNI TO'LDIRADI: u yerda to'r ikki ustunli
+          va uchta/beshta tanlov tekis bo'linmaydi — oxirgisi yolg'iz
+          qolib, yonida bo'sh joy turardi.
+
+          ⚠️ `lg` DA QAYTARILADI: o'sha kenglikda tanlovlar soni
+          ustunlar soniga teng va cho'zish bitta tugmani
+          qolganlardan ikki barobar keng qilib ko'rsatardi.
+        */}
         <Button
           variant={filters.unassigned ? "default" : "outline"}
+          className="sm:col-span-2 lg:col-span-1"
           onClick={() =>
             patch({
               unassigned: filters.unassigned ? undefined : true,

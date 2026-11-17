@@ -96,8 +96,19 @@ export default function UsersPage() {
       />
 
       {/* ── Filtrlar ─────────────────────────────────────────── */}
-      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      {/*
+        ⚠️ QIDIRUV — BUTUN QATOR (`col-span-full`). U tanlovlar bilan
+        bir xil kenglikda turganda ikkisi TENG og'irlikdagi filtrdek
+        ko'rinardi, holbuki qidiruv — erkin matn: unga uzun nom ham,
+        chat ID ham yoziladi va tor maydonda ular ko'rinmay qolardi.
+
+        ⚠️ TANLOVLAR SONI USTUNLAR SONIGA TENG: qidiruv o'z qatoriga
+        chiqqach, pastdagi qator TEKIS bo'linishi kerak — aks holda
+        bitta tanlov yolg'iz qolib, yonida bo'sh joy turardi.
+      */}
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         <Input
+          className="col-span-full"
           placeholder="Ism yoki login..."
           value={filters.search ?? ""}
           onChange={(event) =>
@@ -155,8 +166,18 @@ export default function UsersPage() {
           </SelectContent>
         </Select>
 
+        {/*
+          ⚠️ `sm` DA QATORNI TO'LDIRADI: u yerda to'r ikki ustunli
+          va uchta/beshta tanlov tekis bo'linmaydi — oxirgisi yolg'iz
+          qolib, yonida bo'sh joy turardi.
+
+          ⚠️ `lg` DA QAYTARILADI: o'sha kenglikda tanlovlar soni
+          ustunlar soniga teng va cho'zish bitta tugmani
+          qolganlardan ikki barobar keng qilib ko'rsatardi.
+        */}
         <Button
           variant={filters.includeArchived ? "default" : "outline"}
+          className="sm:col-span-2 lg:col-span-1"
           onClick={() =>
             setFilters((prev) => ({
               ...prev,

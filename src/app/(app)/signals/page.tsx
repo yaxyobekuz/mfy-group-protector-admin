@@ -175,8 +175,19 @@ export default function SignalsPage() {
       ) : null}
 
       {/* ── Filtrlar ─────────────────────────────────────────── */}
-      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+      {/*
+        ⚠️ QIDIRUV — BUTUN QATOR (`col-span-full`). U tanlovlar bilan
+        bir xil kenglikda turganda ikkisi TENG og'irlikdagi filtrdek
+        ko'rinardi, holbuki qidiruv — erkin matn: unga uzun nom ham,
+        chat ID ham yoziladi va tor maydonda ular ko'rinmay qolardi.
+
+        ⚠️ TANLOVLAR SONI USTUNLAR SONIGA TENG: qidiruv o'z qatoriga
+        chiqqach, pastdagi qator TEKIS bo'linishi kerak — aks holda
+        bitta tanlov yolg'iz qolib, yonida bo'sh joy turardi.
+      */}
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <Input
+          className="col-span-full"
           placeholder="Matn bo'yicha izlash..."
           value={filters.search ?? ""}
           onChange={(event) => patch({ search: event.target.value || undefined })}
