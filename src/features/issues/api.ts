@@ -26,6 +26,14 @@ export interface IssueFilters {
   districtId?: string;
   mahallaId?: string;
   assigneeId?: string;
+  /**
+   * ⚠️ IJROCHI TASHKILOT BO'YICHA KESIM — `assigneeId` DAN
+   * BOSHQA savol: "Suvoqova qaysi murojaatlarga javob
+   * bermayapti". Tashkilot xodimining ro'yxati esa baribir
+   * serverda kesilgan (`issueScopeWhere`) va bu filtr unga
+   * hech narsa qo'shmaydi.
+   */
+  organizationId?: string;
   overdue?: boolean;
   /**
    * ⚠️ SHUBHALI MUROJAATLAR — ALOHIDA KESIM: ular umumiy
@@ -261,6 +269,40 @@ export const useDeactivateCategory = () => {
     },
     onError: (error) => {
       toast.error(error instanceof ApiError ? error.message : "O'chirib bo'lmadi");
+    },
+  });
+};
+
+/**
+ * TASHKILOT "BAJARDIM" DEB BELGILAYDI.
+ *
+ * ⚠️ MUROJAATNI YOPMAYDI: rasmiy javobni (fuqaroning Telegram
+ * chatiga ketadigan matnni) shtab xodimi yozadi. Bu belgi uning
+ * uchun signal — "ish bajarildi, javob yozishingiz mumkin".
+ *
+ * ⚠️ RUXSAT `issues.view` (serverda ham): tashkilot hisobida
+ * `issues.resolve` YO'Q va bo'lmasligi kerak — yuzlab hisobga
+ * fuqaroga to'g'ridan-to'g'ri yozish huquqi berilmaydi.
+ */
+export const useMarkOrgDone = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (input: { id: string; done: boolean }) =>
+      api.patch(`/issues/${input.id}/org-done`, { done: input.done }),
+    onSuccess: (_result, input) => {
+      toast.success(
+        input.done
+          ? "Bajarildi deb belgilandi — javobni shtab yozadi"
+          : "Belgi olib tashlandi",
+      );
+      // ⚠️ RO'YXAT HAM BEKOR QILINADI: belgi u yerda ham ustun
+      // bo'lib ko'rinadi va faqat kartani yangilasak, ro'yxat
+      // eski holatni ko'rsatib turardi.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.issues.all() });
+    },
+    onError: (error) => {
+      toast.error(error instanceof ApiError ? error.message : "Amal bajarilmadi");
     },
   });
 };

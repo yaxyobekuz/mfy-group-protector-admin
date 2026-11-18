@@ -23,6 +23,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { useSession } from "@/entities/session/auth-provider";
+import { ChangePasswordGate } from "@/features/auth/change-password";
 import { api, tokens } from "@/shared/api/client";
 import { queryKeys } from "@/shared/api/query-keys";
 import type { IssueStats, SignalCounts } from "@/shared/api/types";
@@ -56,10 +57,18 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
    * `viewer` roli menyuda ko'rinmaydigan bo'lim uchun 403 olib,
    * konsolni to'ldirardi.
    */
+  /**
+   * ⚠️ TAYYOR PAROL ALMASHTIRILMAGUNCHA SO'ROVLAR YUBORILMAYDI:
+   * server ularni 403 bilan rad etadi (`JwtAuthGuard`) va
+   * natijada menyudagi raqamlar o'rnida xatolar uyumi paydo
+   * bo'lardi.
+   */
+  const isReady = Boolean(user) && !user?.mustChangePassword;
+
   const { data: signalCounts } = useQuery({
     queryKey: queryKeys.signals.counts(),
     queryFn: () => api.get<SignalCounts>("/signals/counts"),
-    enabled: Boolean(user) && can("signals.view"),
+    enabled: isReady && can("signals.view"),
     // ⚠️ 60 SEKUND: bu sarlavhadagi raqam, ro'yxat emas — har 30
     // sekundda yangilash keraksiz so'rov bo'lardi.
     staleTime: 60_000,
@@ -68,7 +77,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
   const { data: issueStats } = useQuery({
     queryKey: queryKeys.issues.stats(),
     queryFn: () => api.get<IssueStats>("/issues/stats"),
-    enabled: Boolean(user) && can("issues.view"),
+    enabled: isReady && can("issues.view"),
     staleTime: 60_000,
   });
 
@@ -81,6 +90,16 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
     );
   }
 
+  /**
+   * ⚠️ MAJBURIY PAROL ALMASHTIRISH — SIDEBAR'DAN OLDIN: qobiq
+   * ko'rsatilsa, foydalanuvchi menyuni bosib, hamma so'rovi 403
+   * bo'lgan BUZUQ ekranni ko'rardi va sababini tushunmasdi
+   * (serverdagi to'siq — `JwtAuthGuard`).
+   */
+  if (user.mustChangePassword) {
+    return <ChangePasswordGate username={user.username} />;
+  }
+
   const badges = {
     signals: signalCounts?.new ?? 0,
     issues: issueStats?.open ?? 0,
@@ -90,7 +109,22 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
   // (`nav.ts` izohi). Server baribir tekshiradi.
   const items = NAV_ITEMS.filter(
     (item) => !item.permission || can(item.permission),
-  );
+  ).filter((item) => {
+    /**
+     * ⚠️ TASHKILOT XODIMIGA "BOSHQARUV PANELI" KO'RSATILMAYDI.
+     * U sahifa VILOYAT kesimlarini chizadi (signal sanoqchisi,
+     * guruhlar, hudud diagrammasi) va ularning hammasi tashkilot
+     * xodimida BO'SH qaytadi (qamrovi `organizationId` bo'yicha).
+     * Natijada u "tizim buzilgan" degan ekranni ko'rardi —
+     * holbuki uning ishi murojaatlar ro'yxatida.
+     *
+     * ⚠️ RUXSAT BILAN HAL QILINMAYDI: bu sahifa ruxsat TALAB
+     * QILMAYDI (`nav.ts` da `permission` yo'q) va unga ruxsat
+     * qo'shish hamma xodimdan uni olib qo'yardi.
+     */
+    if (user.scopeKind === "org" && item.href === "/") return false;
+    return true;
+  });
 
   const sidebar = (
     <nav className="flex h-full flex-col gap-1 p-4">
@@ -183,7 +217,17 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
             <div className="min-w-0 leading-tight">
               <p className="truncate text-sm font-medium">{user.username}</p>
               <p className="truncate text-xs text-muted-foreground">
-                {USER_ROLE[user.role]} · {SCOPE_KIND[user.scopeKind]}
+                {/*
+                  ⚠️ TASHKILOT XODIMIDA ROL O'RNIGA TASHKILOT
+                  NOMI: uning roli `operator` bo'lib qolgan
+                  (yangi rol OCHILMADI — izoh serverda,
+                  `organizations.service.ts`) va "Operator"
+                  degan yozuv unga hech narsa aytmasdi. Muhimi —
+                  qaysi tashkilot nomidan kirgani.
+                */}
+                {user.scopeKind === "org"
+                  ? (user.organizationName ?? SCOPE_KIND.org)
+                  : `${USER_ROLE[user.role]} · ${SCOPE_KIND[user.scopeKind]}`}
               </p>
             </div>
           </div>

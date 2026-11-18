@@ -18,6 +18,7 @@ import { useSearchParams } from "next/navigation";
 import { AlertTriangle, Copy, MessageSquare, MessageSquareWarning } from "lucide-react";
 
 import { useSession } from "@/entities/session/auth-provider";
+import { useOrganizations } from "@/features/organizations/api";
 import {
   useAllCategories,
   useIssueStats,
@@ -84,6 +85,12 @@ export default function IssuesPage() {
     // ⚠️ `districtId` HAM: tumanlar xaritasidan "shu tumandagi
     // murojaatlar" havolasi shu parametr bilan keladi.
     districtId: searchParams.get("districtId") ?? undefined,
+    /**
+     * ⚠️ URL DAN O'QILADI: Tashkilotlar bo'limidagi "N murojaat"
+     * soni shu havolani beradi (`overdue`, `categoryId` bilan
+     * AYNI yo'l).
+     */
+    organizationId: searchParams.get("organizationId") ?? undefined,
     page: 1,
     limit: 50,
   }));
@@ -92,6 +99,16 @@ export default function IssuesPage() {
   const stats = useIssueStats();
   const categories = useAllCategories();
   const mahallas = useMahallas();
+
+  /**
+   * ⚠️ RUXSAT BO'LMASA SO'ROV YUBORILMAYDI: tashkilot xodimida
+   * `organizations.view` yo'q va u 403 olib, konsolni
+   * to'ldirardi (`app-shell.tsx` dagi ayni qoida). Filtr ham
+   * unga keraksiz — uning ro'yxati allaqachon o'z tashkiloti
+   * bilan kesilgan.
+   */
+  const canSeeOrgs = can("organizations.view");
+  const organizations = useOrganizations();
 
   const patch = (next: Partial<IssueFilters>) =>
     setFilters((prev) => ({ ...prev, ...next, page: 1 }));
@@ -198,6 +215,27 @@ export default function IssuesPage() {
             ))}
           </SelectContent>
         </Select>
+
+        {canSeeOrgs ? (
+          <Select
+            value={filters.organizationId ?? ALL}
+            onValueChange={(value) =>
+              patch({ organizationId: value === ALL ? undefined : value })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Tashkilot" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>Barcha tashkilotlar</SelectItem>
+              {organizations.data?.map((org) => (
+                <SelectItem key={org.id} value={org.id}>
+                  {org.shortName ?? org.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : null}
 
         <Select
           value={filters.mahallaId ?? ALL}
@@ -308,6 +346,14 @@ export default function IssuesPage() {
                 <TableHead>Holat</TableHead>
                 <TableHead>Manba</TableHead>
                 <TableHead>Hudud</TableHead>
+                {/*
+                  ⚠️ IKKI USTUN, BITTA EMAS: "Ijrochi" — shtabda
+                  KIM kuzatadi, "Tashkilot" — KIM bajaradi. Bitta
+                  ustunga qo'shilsa, "murojaat Suvoqovaga ketdi,
+                  lekin uni shtabda kim kuzatyapti" degan savol
+                  javobsiz qolardi.
+                */}
+                <TableHead>Tashkilot</TableHead>
                 <TableHead>Ijrochi</TableHead>
                 <TableHead>Muddat</TableHead>
               </TableRow>
@@ -420,6 +466,28 @@ export default function IssuesPage() {
                         <span className="text-xs text-amber-600 dark:text-amber-400">
                           Belgilanmagan
                         </span>
+                      )}
+                    </TableCell>
+
+                    <TableCell className="text-sm">
+                      {issue.organization ? (
+                        <div className="min-w-0">
+                          <p className="truncate">{issue.organization.name}</p>
+                          {/*
+                            ⚠️ "BAJARILDI" BELGISI SHU YERDA: murojaat
+                            hali YOPILMAGAN va bu holat ustunida
+                            ko'rinmaydi. Xodim aynan shu qatordan
+                            "javob yozsam bo'ladi" degan xulosaga
+                            keladi.
+                          */}
+                          {issue.orgDoneAt ? (
+                            <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                              Bajarildi
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
 

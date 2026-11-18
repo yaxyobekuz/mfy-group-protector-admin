@@ -145,6 +145,14 @@ export const USER_ROLE: Record<UserRole, string> = {
 export const SCOPE_KIND: Record<ScopeKind, string> = {
   province: "Butun viloyat",
   district: "Bitta tuman",
+  /**
+   * ⚠️ HUDUDIY QAMROV EMAS: tashkilot xodimi o'z tumanidagi
+   * HAMMA murojaatni emas, faqat O'ZIGA yo'naltirilganini
+   * ko'radi. Yorliqda "tuman" so'zi ishlatilsa, admin uni
+   * hududiy qamrov deb o'qib, "nega u qo'shnisining
+   * murojaatini ko'rmayapti" deb hayron bo'lardi.
+   */
+  org: "Faqat o'z tashkiloti",
 };
 
 /**
@@ -205,6 +213,23 @@ export const AUDIT_ACTION: Record<string, string> = {
   "announcement.schedule": "Yangilikni rejalashtirdi",
   "issue.resolve.bulk": "Takroriy murojaatlarni birga yopdi",
   "issue.reject.bulk": "Takroriy murojaatlarni birga rad etdi",
+  "issue.org_done": "Tashkilot «Bajarildi» deb belgiladi",
+  "issue.org_done.undo": "«Bajarildi» belgisini oldi",
+  "organization.create": "Tashkilot qo'shdi",
+  "organization.update": "Tashkilotni tahrirladi",
+  "organization.archive": "Tashkilotni arxivladi",
+  "organization.restore": "Tashkilotni qaytardi",
+  "organization.route.save": "Yo'naltirish qoidasini qo'ydi",
+  "organization.route.remove": "Yo'naltirish qoidasini olib tashladi",
+  "organization.login.create": "Tashkilotga hisob yaratdi",
+  "organization.login.reset": "Tashkilot parolini tikladi",
+  // ⚠️ BUNI XODIM QILMAYDI — tashkilot botda O'ZI ulanadi
+  // (`userId: null`, jurnalda "Tizim"). `group.bot_joined` bilan
+  // ayni sabab: amal jimgina sodir bo'ladi va uning izi qolishi
+  // kerak.
+  "organization.telegram_linked": "Tashkilot Telegram'ga ulandi",
+  "auth.password_changed": "Parolini almashtirdi",
+  "auth.password_change_failed": "Parol almashtirish urinishi muvaffaqiyatsiz",
 };
 
 /** Sanoq so'zi — "12 ta murojaat". */
