@@ -15,12 +15,7 @@
 //  SANOQLI QIYMATLAR
 // ═══════════════════════════════════════════════════════════════════
 
-/**
- * ⚠️ `org` — HUDUDIY QAMROV EMAS: tashkilot xodimi o'z tumanidagi
- * hamma murojaatni emas, faqat O'ZIGA yo'naltirilganini ko'radi
- * (serverda `issueScopeWhere`).
- */
-export type ScopeKind = "province" | "district" | "org";
+export type ScopeKind = "province" | "district";
 export type UserRole = "owner" | "admin" | "operator" | "viewer";
 
 export type SignalKind = "complaint" | "suggestion" | "question";
@@ -91,18 +86,6 @@ export interface MeResponse {
   scopeKind: ScopeKind;
   districtId: string | null;
   permissions: string[];
-  /** ⚠️ `scopeKind === "org"` bo'lganda to'ladi. */
-  organizationId: string | null;
-  organizationName: string | null;
-  /**
-   * TAYYOR PAROL HALI ALMASHTIRILMAGAN.
-   *
-   * ⚠️ TO'SIQ SERVERDA HAM BOR (`JwtAuthGuard`): panelda faqat
-   * ekran ko'rsatiladi, lekin `GET /auth/me` dan boshqa hamma
-   * so'rov 403 qaytaradi. Panelda to'sib qo'yilsa-yu, serverda
-   * to'silmasa, nazorat KO'RINISH bo'lib qolardi.
-   */
-  mustChangePassword: boolean;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -528,20 +511,6 @@ export interface IssueListItem {
   category: { id: string; name: string; color: string | null };
   mahalla: MahallaWithDistrict | null;
   assignee: PersonRef | null;
-  /**
-   * IJROCHI TASHKILOT — `assignee` NING O'RNINI BOSMAYDI.
-   *
-   * ⚠️ IKKISI IKKI BOSHQA SAVOLGA JAVOB BERADI: `assignee` —
-   * shtabda KIM kuzatadi, `organization` — KIM bajaradi. Bitta
-   * ustunga sig'dirilsa, "murojaat Suvoqovaga ketdi, lekin uni
-   * shtabda kim kuzatyapti" degan savol javobsiz qolardi.
-   *
-   * ⚠️ `name` — QISQA nom (serverda tanlanadi): to'liq nom
-   * jadval ustuniga sig'maydi.
-   */
-  organization: { id: string; name: string } | null;
-  /** ⚠️ Tashkilot bajardi, lekin murojaat hali YOPILMAGAN. */
-  orgDoneAt: string | null;
   author: PersonRef | null;
   /** ⚠️ `source==="mobile"` da muallif shu (xodim emas). */
   citizen: CitizenRef | null;
@@ -609,20 +578,6 @@ export interface IssueDetail {
     | (MahallaWithDistrict & { chairmanName: string | null; chairmanPhone: string | null })
     | null;
   assignee: PersonRef | null;
-  /** ⚠️ Ijrochi tashkilot — telefoni bilan (xodim qo'ng'iroq qiladi). */
-  organization:
-    | {
-        id: string;
-        name: string;
-        shortName: string | null;
-        phone: string | null;
-        district: { id: string; name: string } | null;
-      }
-    | null;
-  organizationId: string | null;
-  /** ⚠️ Tashkilot "bajardim" deb belgilagan payt — murojaat YOPILMAYDI. */
-  orgDoneAt: string | null;
-  orgDoneUser: PersonRef | null;
   author: PersonRef | null;
   /** ⚠️ `source==="mobile"` da muallif shu (telefon, username bilan). */
   citizen: (PersonRef & { username: string | null; phone: string | null; telegramId: string }) | null;
@@ -1305,94 +1260,4 @@ export interface MahallaMapItem {
   total: number;
   /** ⚠️ Yo'nalish bo'yicha kesim — filtr mijozda, so'rovsiz ishlashi uchun. */
   byCategory: Record<string, number>;
-}
-// ═══════════════════════════════════════════════════════════════════
-//  TASHKILOTLAR — MUROJAATNI BAJARADIGAN TOMON
-// ═══════════════════════════════════════════════════════════════════
-
-export interface Organization {
-  id: string;
-  name: string;
-  shortName: string | null;
-  phone: string | null;
-  address: string | null;
-  /** ⚠️ `null` — VILOYAT darajasidagi tashkilot (barcha tumanlar). */
-  district: { id: string; name: string } | null;
-  isActive: boolean;
-  isArchived: boolean;
-  createdAt: string;
-  /**
-   * ⚠️ `true`/`false`, CHAT ID EMAS: id panelda hech kimga kerak
-   * emas va uni ko'rsatish begona odamga "shu chatga yozsa
-   * bo'ladi" degan ma'lumot berardi.
-   */
-  hasTelegram: boolean;
-  /** ⚠️ Kutayotgan ulanish kodi — admin uni tashkilotga aytadi. */
-  pendingLinkCode: string | null;
-  routeCount: number;
-  userCount: number;
-  issueCount: number;
-}
-
-/**
- * YO'NALTIRISH QOIDALARI — YO'NALISHLAR VA ULARGA QO'YILGANLARI.
- *
- * ⚠️ YO'NALISHLARDAN BOSHLANADI, QOIDALARDAN EMAS: panel "qaysi
- * yo'nalish TASHKILOTSIZ qolgan" degan savolga javob berishi kerak
- * va faqat mavjud qoidalar ko'rsatilsa, BO'SH joylar ko'rinmay
- * qolardi — aynan ular esa muammo.
- */
-export interface OrgRoutesResponse {
-  categories: Array<{
-    id: string;
-    name: string;
-    icon: string | null;
-    parent: { id: string; name: string } | null;
-    /** ⚠️ Qoida yo'q bo'lsa ilova shu MATNni ko'rsatadi (zaxira). */
-    orgName: string | null;
-  }>;
-  routes: Array<{
-    id: string;
-    categoryId: string;
-    /** ⚠️ `null` — VILOYAT bo'ylab zaxira qoidasi. */
-    districtId: string | null;
-    district: { id: string; name: string } | null;
-    organization: {
-      id: string;
-      name: string;
-      shortName: string | null;
-      isActive: boolean;
-      isArchived: boolean;
-    };
-    /** ⚠️ Qoida bor, lekin tashkilot faol emas — ya'ni ISHLAMAYDI. */
-    isBroken: boolean;
-  }>;
-}
-
-export interface OrgUser {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  phone: string | null;
-  telegramId: string | null;
-  isActive: boolean;
-  isArchived: boolean;
-  /** ⚠️ Tayyor parol hali almashtirilmagan. */
-  mustChangePassword: boolean;
-  lastLoginAt: string | null;
-}
-
-/**
- * YANGI HISOB — PAROL BIR MARTA QAYTARILADI.
- *
- * ⚠️ QAYTA SO'RAB BO'LMAYDI: parol bazada ochiq saqlanmaydi (faqat
- * argon2id hash). Yo'qolsa — tiklash (`reset`), ya'ni YANGI parol.
- */
-export interface OrgLoginResult {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  password: string;
 }

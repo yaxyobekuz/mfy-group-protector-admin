@@ -32,7 +32,6 @@ import { useSession } from "@/entities/session/auth-provider";
 import {
   useAddComment,
   useAssignIssue,
-  useMarkOrgDone,
   useIssue,
   useReopenIssue,
   useResolveIssue,
@@ -79,7 +78,6 @@ export default function IssueDetailPage() {
   const users = useUsers({ limit: 200 });
 
   const assign = useAssignIssue();
-  const orgDone = useMarkOrgDone();
   const resolve = useResolveIssue();
   const reopen = useReopenIssue();
   const addComment = useAddComment();
@@ -732,82 +730,6 @@ export default function IssueDetailPage() {
               ) : null}
             </CardContent>
           </Card>
-
-          {/*
-            ── IJROCHI TASHKILOT ────────────────────────────────
-
-            ⚠️ "Ijrochi" KARTASIDAN ALOHIDA va bu ataylab: `assignee`
-            — shtabda murojaatni KUZATADIGAN xodim, tashkilot esa
-            ishni BAJARADIGAN tomon. Bitta kartaga qo'shilsa,
-            "murojaat Suvoqovaga ketdi, lekin uni shtabda kim
-            kuzatyapti" degan savol javobsiz qolardi.
-
-            ⚠️ TASHKILOT PANELDA TANLANMAYDI: u tuman × yo'nalish
-            qoidasidan AVTOMATIK qo'yiladi va `Issue.organizationId`
-            — MUHRLANGAN nusxa. Qo'lda almashtirish yo'li ochilsa,
-            qoida bilan haqiqat ajralib ketardi va "nega bu
-            murojaat bu tashkilotda" degan savolga javob
-            yo'qolardi. Qoidani Tashkilotlar bo'limida
-            o'zgartiriladi — u KELAJAK murojaatlariga ta'sir
-            qiladi.
-          */}
-          {data.organization ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Ijrochi tashkilot</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <p className="text-sm font-medium">{data.organization.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {data.organization.district?.name ?? "Butun viloyat"}
-                  </p>
-                </div>
-
-                {data.organization.phone ? (
-                  <a
-                    href={`tel:${data.organization.phone}`}
-                    className="block text-sm font-medium text-primary hover:underline"
-                  >
-                    {data.organization.phone}
-                  </a>
-                ) : null}
-
-                {/*
-                  ⚠️ "BAJARILDI" MUROJAATNI YOPMAYDI: rasmiy javobni
-                  (fuqaroning Telegram chatiga ketadigan matnni)
-                  shtab xodimi yozadi. Bu belgi uning uchun signal
-                  — "ish bajarildi, javob yozishingiz mumkin".
-                */}
-                {data.orgDoneAt ? (
-                  <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-sm dark:border-emerald-900 dark:bg-emerald-950/40">
-                    <p className="font-medium text-emerald-800 dark:text-emerald-200">
-                      Bajarildi — {formatDateUz(data.orgDoneAt)}
-                    </p>
-                    {data.orgDoneUser ? (
-                      <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                        {data.orgDoneUser.firstName} {data.orgDoneUser.lastName}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                {!isClosed ? (
-                  <Button
-                    variant={data.orgDoneAt ? "ghost" : "outline"}
-                    size="sm"
-                    className="w-full"
-                    disabled={orgDone.isPending}
-                    onClick={() =>
-                      orgDone.mutate({ id: data.id, done: !data.orgDoneAt })
-                    }
-                  >
-                    {data.orgDoneAt ? "Belgini olish" : "Bajarildi deb belgilash"}
-                  </Button>
-                ) : null}
-              </CardContent>
-            </Card>
-          ) : null}
 
           {/* ── Ijrochi ──────────────────────────────────────── */}
           {can("issues.assign") && !isClosed ? (

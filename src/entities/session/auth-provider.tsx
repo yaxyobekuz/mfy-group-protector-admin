@@ -107,15 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // keshga qo'yish keyingi o'qishda noto'g'ri tur berardi.
       await queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
 
-      /**
-       * ⚠️ TASHKILOT XODIMI "/" GA EMAS, MUROJAATLARGA YUBORILADI:
-       * boshqaruv paneli VILOYAT kesimlarini chizadi va ularning
-       * hammasi uning qamrovida BO'SH qaytadi (`issueScopeWhere`) —
-       * ya'ni u kirishi bilan bo'sh diagrammalarni ko'rib, "tizim
-       * buzilgan" deb o'ylardi. Menyuda ham o'sha sahifa
-       * ko'rsatilmaydi (`app-shell.tsx`).
-       */
-      router.replace(result.user.scopeKind === "org" ? "/issues" : "/");
+      router.replace("/");
     },
     [queryClient, router],
   );

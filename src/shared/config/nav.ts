@@ -10,7 +10,6 @@
 
 import type { LucideIcon } from "lucide-react";
 import {
-  Building2,
   FileText,
   LayoutDashboard,
   Map as MapIcon,
@@ -85,19 +84,6 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Ijrochilar",
     icon: UserCog,
     permission: "issues.assign",
-  },
-  /**
-   * ⚠️ "TASHKILOTLAR" IJROCHILAR YONIDA: ikkisi ham murojaat
-   * TAQSIMOTI haqida ("kim kuzatadi" va "kim bajaradi"). Tizim
-   * bo'limiga qo'yilsa, operator uni "sozlama" deb o'tkazib
-   * yuborardi — holbuki qoida qo'yilmagan yo'nalishning
-   * murojaatlari hech qaysi tashkilotga ketmaydi.
-   */
-  {
-    href: "/organizations",
-    label: "Tashkilotlar",
-    icon: Building2,
-    permission: "organizations.view",
   },
   {
     href: "/announcements",

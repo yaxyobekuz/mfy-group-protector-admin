@@ -67,22 +67,6 @@ export const queryKeys = {
       ["issues", "categories", activeOnly ?? false] as const,
   },
 
-  organizations: {
-    all: () => ["organizations"] as const,
-    list: (params?: QueryParams) =>
-      ["organizations", "list", params ?? {}] as const,
-    /**
-     * YO'NALTIRISH QOIDALARI.
-     *
-     * ⚠️ `list` NING ICHIDA EMAS, YONIDA: qoida saqlanganda
-     * tashkilotlar ro'yxati (va undagi `routeCount`) ham bekor
-     * bo'lishi kerak — shuning uchun ikkisi `all()` ostida.
-     */
-    routes: (params?: QueryParams) =>
-      ["organizations", "routes", params ?? {}] as const,
-    users: (id: string) => ["organizations", "users", id] as const,
-  },
-
   users: {
     all: () => ["users"] as const,
     list: (params?: QueryParams) => ["users", "list", params ?? {}] as const,
