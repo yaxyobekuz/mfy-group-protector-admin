@@ -815,6 +815,40 @@ export interface CoverageRow {
   coverageRate: number | null;
 }
 
+/**
+ * MFY DARAJASIDAGI QATOR — "QAYSI BIRI ULANDI".
+ *
+ * ⚠️ TUMAN KESIMI "NECHTASI" GA JAVOB BERADI, BU "QAYSI BIRI" GA:
+ * "42 MFY dan 30 tasi qoplangan" degan qator xodimga ISHLASH uchun
+ * yetmaydi — raisga qo'ng'iroq qilish kerak bo'lgan mahallaning
+ * NOMI o'sha ro'yxatda.
+ */
+export interface MahallaCoverageRow {
+  districtId: string;
+  districtName: string;
+  mahallaName: string;
+  /** Bot kamida bitta chatda ichkarida. */
+  connected: boolean;
+  /**
+   * ⚠️ "ULANMAGAN" QATORDA HAM TO'LADI: guruh reyestrda bor-u bot
+   * undan chiqarib yuborilganmi degan savolga javob shu yerda
+   * (chora ham boshqa: guruh ochish emas, botni qaytarish).
+   */
+  chats: string[];
+  /**
+   * ⚠️ KANAL VA BOTSIZ MFY UCHUN `null`: u yerda o'chiriladigan
+   * begona xabar yo'q va "admin emas" yorlig'i TUZATIB
+   * BO'LMAYDIGAN vazifa bo'lardi.
+   */
+  guard: "ok" | "not-admin" | "no-delete" | null;
+}
+
+/** Tuman bo'yicha guruhlangan MFY kesimi. */
+export interface MahallaCoverageGroup {
+  districtName: string;
+  rows: MahallaCoverageRow[];
+}
+
 export interface CoverageReport {
   districts: CoverageRow[];
   /**

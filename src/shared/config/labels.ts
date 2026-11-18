@@ -486,3 +486,21 @@ export const guardAppliesTo = (type: string | null | undefined): boolean =>
 /** Chat turining o'qiladigan nomi — noma'lum tur ham bo'lishi mumkin. */
 export const chatTypeLabel = (type: string | null | undefined): string =>
   (type ? CHAT_TYPE_LABELS[type] : undefined) ?? "Guruh";
+
+/**
+ * QAMROVDAGI QALQON HOLATI — MFY KESIMI UCHUN.
+ *
+ * ⚠️ `null` ("qalqon tegishli emas") CHIZIQCHA BO'LIB QOLADI:
+ * kanalda ham, bot umuman yo'q MFY da ham o'chiriladigan begona
+ * xabar yo'q. "Ishlamayapti" deb yozilsa, xodim TUZATIB
+ * BO'LMAYDIGAN vazifa olardi (`guardAppliesTo` bilan ayni sabab).
+ *
+ * ⚠️ MATN EKSPORTDAGI BILAN AYNI (`reports-export.service.ts`):
+ * fayl va ekran bir holatni boshqacha atasa, xodim ularni ikki
+ * boshqa narsa deb o'qirdi.
+ */
+export const COVERAGE_GUARD_LABELS: Record<string, string> = {
+  ok: "Ishlaydi",
+  "not-admin": "Admin emas",
+  "no-delete": "O'chirish huquqi yo'q",
+};

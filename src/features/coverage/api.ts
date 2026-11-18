@@ -12,7 +12,7 @@ import { toast } from "sonner";
 
 import { ApiError, api, saveBlob } from "@/shared/api/client";
 import { queryKeys } from "@/shared/api/query-keys";
-import type { CoverageReport } from "@/shared/api/types";
+import type { CoverageReport, MahallaCoverageGroup } from "@/shared/api/types";
 
 export const useCoverageReport = () =>
   useQuery({
@@ -24,6 +24,30 @@ export const useCoverageReport = () =>
      * kerak. Uzoq bo'lsa, u "biriktirdim, lekin hisobot
      * o'zgarmadi" deb o'ylab, ikkinchi marta biriktirardi.
      */
+    staleTime: 60_000,
+  });
+
+/**
+ * MFY KESIMI — "QAYSI BIRI ULANDI, QAYSI BIRI YO'Q".
+ *
+ * ⚠️ `enabled` BILAN: ro'yxat sahifa ochilganda EMAS, birinchi
+ * tuman ochilganda yuklanadi. Viloyatda yuzlab MFY bor va ularni
+ * har kirishda tortish sahifani sekinlashtirardi — holbuki xodim
+ * ko'pincha faqat yig'ma jadvalga qaraydi.
+ *
+ * ⚠️ HAMMASI BITTA SO'ROVDA (`territory` sahifasidagi ayni qoida):
+ * har tuman uchun alohida so'rov yozilsa, 14 tuman ochilganda 14
+ * so'rov ketardi — javob esa har safar AYNI hisobdan chiqardi.
+ */
+export const useCoverageMahallas = (enabled: boolean) =>
+  useQuery({
+    queryKey: queryKeys.reports.coverageMahallas(),
+    queryFn: () =>
+      api.get<MahallaCoverageGroup[]>("/reports/coverage/mahallas"),
+    enabled,
+    // ⚠️ YIG'MA JADVAL BILAN AYNI: ikkisi bitta holatni ko'rsatadi
+    // va boshqa-boshqa eskirsa, ochilgan ro'yxat yuqoridagi son
+    // bilan mos kelmay qolardi.
     staleTime: 60_000,
   });
 

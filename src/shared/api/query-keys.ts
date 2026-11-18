@@ -95,6 +95,13 @@ export const queryKeys = {
       ["reports", "recurring", params ?? {}] as const,
     /** ⚠️ PARAMETRSIZ: qamrov filtr olmaydi (hozirgi holat). */
     coverage: () => ["reports", "coverage"] as const,
+    /**
+     * MFY kesimi — tuman qatori ochilganda yuklanadi.
+     *
+     * ⚠️ ALOHIDA KALIT: yig'ma jadval bilan bitta keshda tursa,
+     * og'ir ro'yxat sahifa har ochilganda tortilardi.
+     */
+    coverageMahallas: () => ["reports", "coverage", "mahallas"] as const,
   },
 
   settings: {

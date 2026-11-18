@@ -38,13 +38,19 @@
  * turardi (Telegram kanalda huquq bersa ham qalqon ishga tushmaydi).
  */
 
-import { Download, FileSpreadsheet, Network } from "lucide-react";
+import { ChevronDown, ChevronRight, Download, FileSpreadsheet, Network } from "lucide-react";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
 import { useSession } from "@/entities/session/auth-provider";
-import { useCoverageReport, useExportCoverage } from "@/features/coverage/api";
+import {
+  useCoverageMahallas,
+  useCoverageReport,
+  useExportCoverage,
+} from "@/features/coverage/api";
 import { ApiError } from "@/shared/api/client";
-import type { CoverageRow } from "@/shared/api/types";
+import type { CoverageRow, MahallaCoverageRow } from "@/shared/api/types";
+import { COVERAGE_GUARD_LABELS } from "@/shared/config/labels";
 import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/card";
@@ -70,6 +76,54 @@ export default function CoveragePage() {
 
   const coverage = useCoverageReport();
   const exportReport = useExportCoverage();
+
+  /**
+   * OCHIQ TUMANLAR.
+   *
+   * ⚠️ `Set`, BITTA `openId` EMAS (`territory` sahifasidagi ayni
+   * qoida): xodim ikki tumanni yonma-yon solishtiradi va bittasini
+   * ochganda ikkinchisi yopilib ketmasligi kerak.
+   *
+   * ⚠️ STANDART HOLDA YOPIQ: hammasi ochiq bo'lsa, sahifa yuzlab
+   * qatorli ro'yxatga aylanib, tumanlar jadvalining o'zi ko'rinmay
+   * ketardi — holbuki sahifaning asosiy ishi aynan o'sha jadval.
+   */
+  const [open, setOpen] = useState<Set<string>>(new Set());
+
+  /**
+   * ⚠️ RO'YXAT BIRINCHI OCHILISHDA YUKLANADI: sahifa ochilganda
+   * emas. Ko'pchilik xodim faqat yig'ma jadvalga qaraydi va
+   * yuzlab MFY ni har kirishda tortish bekorga kutish bo'lardi.
+   */
+  const mahallas = useCoverageMahallas(open.size > 0);
+
+  /**
+   * ⚠️ `districtId` BO'YICHA INDEKS, NOM BO'YICHA EMAS: nomda
+   * apostrof va "tumani" so'zi har xil yozilishi mumkin
+   * (`issue-map` dagi ayni sabab).
+   */
+  const byDistrict = useMemo(() => {
+    const index = new Map<string, MahallaCoverageRow[]>();
+
+    for (const group of mahallas.data ?? []) {
+      for (const row of group.rows) {
+        const bucket = index.get(row.districtId);
+        if (bucket) bucket.push(row);
+        else index.set(row.districtId, [row]);
+      }
+    }
+
+    return index;
+  }, [mahallas.data]);
+
+  const toggle = (districtId: string) => {
+    setOpen((current) => {
+      const next = new Set(current);
+      if (next.has(districtId)) next.delete(districtId);
+      else next.add(districtId);
+      return next;
+    });
+  };
 
   const data = coverage.data;
   const canManageGroups = can("groups.view");
@@ -270,7 +324,14 @@ export default function CoveragePage() {
 
                   <TableBody>
                     {sorted.map((row) => (
-                      <CoverageTableRow key={row.districtId} row={row} />
+                      <CoverageTableRow
+                        key={row.districtId}
+                        row={row}
+                        open={open.has(row.districtId)}
+                        onToggle={() => toggle(row.districtId)}
+                        mahallas={byDistrict.get(row.districtId)}
+                        loading={mahallas.isLoading}
+                      />
                     ))}
                   </TableBody>
                 </Table>
@@ -302,18 +363,44 @@ export default function CoveragePage() {
 //  TUMAN QATORI
 // ═══════════════════════════════════════════════════════════════════
 
-const CoverageTableRow = ({ row }: { row: CoverageRow }) => (
+interface RowProps {
+  row: CoverageRow;
+  open: boolean;
+  onToggle: () => void;
+  /** Ochilganda ko'rsatiladigan MFY lar — hali yuklanmagan bo'lishi mumkin. */
+  mahallas: MahallaCoverageRow[] | undefined;
+  loading: boolean;
+}
+
+const CoverageTableRow = ({
+  row,
+  open,
+  onToggle,
+  mahallas,
+  loading,
+}: RowProps) => (
+  <>
   <TableRow>
     <TableCell className="text-sm font-medium">
       {/*
-        ⚠️ TUMAN NOMI HUDUD BO'LIMIGA HAVOLA: xodim qatorni ko'rib,
-        darhol o'sha tumanning MFY larini ochishi kerak — qaysi
-        biri botsiz ekanini ko'rish uchun. Usiz u menyuga qaytib,
-        filtrni qo'lda tanlardi.
+        ⚠️ TUMAN NOMI — OCHISH TUGMASI, HAVOLA EMAS: avval u Hudud
+        bo'limiga olib borardi va xodim u yerda filtrni qo'lda
+        tanlab, qaysi MFY botsiz ekanini O'ZI izlardi. Endi javob
+        shu yerda, qatorning ostida — sahifadan chiqmasdan.
       */}
-      <Link href="/territory" className="hover:text-primary">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex items-center gap-1.5 text-left hover:text-primary"
+        aria-expanded={open}
+      >
+        {open ? (
+          <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
+        ) : (
+          <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+        )}
         {row.districtName}
-      </Link>
+      </button>
     </TableCell>
 
     <TableCell className="tabular text-right text-sm text-muted-foreground">
@@ -376,7 +463,120 @@ const CoverageTableRow = ({ row }: { row: CoverageRow }) => (
       )}
     </TableCell>
   </TableRow>
+
+    {/*
+      ⚠️ ICHKI JADVAL BITTA HUJAYRAGA SIG'DIRILADI (`colSpan`):
+      alohida ustunlar qo'shilsa, ular yuqoridagi yig'ma jadvalning
+      ustunlari bilan surilib, ikkalasi ham o'qilmaydigan bo'lardi.
+    */}
+    {open ? (
+      <TableRow className="bg-muted/30 hover:bg-muted/30">
+        <TableCell colSpan={8} className="p-0">
+          <MahallaList rows={mahallas} loading={loading} />
+        </TableCell>
+      </TableRow>
+    ) : null}
+  </>
 );
+
+// ═══════════════════════════════════════════════════════════════════
+//  MFY RO'YXATI — "QAYSI BIRI ULANDI"
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * ⚠️ ULANMAGANLARI YUQORIDA: ro'yxatning butun ma'nosi — "qaysi
+ * mahallaga borish kerak". Alifbo tartibida ular 40 ta ulangan
+ * qator orasiga tarqalib ketardi.
+ */
+const MahallaList = ({
+  rows,
+  loading,
+}: {
+  rows: MahallaCoverageRow[] | undefined;
+  loading: boolean;
+}) => {
+  if (!rows) {
+    return (
+      <div className="flex items-center gap-2 px-4 py-3 text-sm text-muted-foreground">
+        {loading ? (
+          <>
+            <Spinner className="size-4" />
+            Yuklanmoqda…
+          </>
+        ) : (
+          "MFY topilmadi"
+        )}
+      </div>
+    );
+  }
+
+  const sorted = [...rows].sort((a, b) => {
+    if (a.connected !== b.connected) return a.connected ? 1 : -1;
+    return a.mahallaName.localeCompare(b.mahallaName, "uz");
+  });
+
+  return (
+    <div className="px-4 py-3">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>MFY</TableHead>
+            <TableHead>Holat</TableHead>
+            <TableHead>Chatlar</TableHead>
+            <TableHead>Qalqon</TableHead>
+          </TableRow>
+        </TableHeader>
+
+        <TableBody>
+          {sorted.map((row) => (
+            <TableRow key={`${row.districtId}-${row.mahallaName}`}>
+              <TableCell className="text-sm font-medium">
+                {row.mahallaName}
+              </TableCell>
+
+              <TableCell>
+                {row.connected ? (
+                  <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-200">
+                    Ulangan
+                  </Badge>
+                ) : (
+                  <Badge className="bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-200">
+                    Ulanmagan
+                  </Badge>
+                )}
+              </TableCell>
+
+              {/*
+                ⚠️ CHAT NOMI "ULANMAGAN" QATORDA HAM KO'RSATILADI va
+                o'sha yerda u ENG kerakli: guruh reyestrda bor-u bot
+                undan chiqarib yuborilganmi degan savolga javob shu
+                yerda. Chora ikkisida boshqa — guruh ochish emas,
+                botni qaytarish.
+              */}
+              <TableCell className="text-sm text-muted-foreground">
+                {row.chats.length > 0 ? row.chats.join(", ") : "—"}
+              </TableCell>
+
+              <TableCell className="text-sm">
+                {row.guard === null ? (
+                  <span className="text-muted-foreground">—</span>
+                ) : row.guard === "ok" ? (
+                  <span className="text-muted-foreground">
+                    {COVERAGE_GUARD_LABELS.ok}
+                  </span>
+                ) : (
+                  <span className="font-medium text-amber-600 dark:text-amber-500">
+                    {COVERAGE_GUARD_LABELS[row.guard]}
+                  </span>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+};
 
 const rateClass = (rate: number): string => {
   if (rate >= 100) {
