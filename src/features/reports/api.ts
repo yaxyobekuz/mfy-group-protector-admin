@@ -1,19 +1,27 @@
 /**
- * HISOBOTLAR, SOZLAMALAR VA AUDIT.
+ * HISOBOT KESIMLARI VA SOZLAMALAR.
+ *
+ * ⚠️ "Hisobotlar" SAHIFASI OLIB TASHLANGAN (2026-11-25), lekin bu
+ * fayl QOLADI: undagi kesimlarning bir qismini BOSH SAHIFA
+ * (`useCategoryReport`, `useDailyReport`, `useMobileReport`),
+ * XARITA (`useMapReport`, `useMahallaMap`) va tuman xaritasi
+ * paneli (`useDistrictMap`) ishlatadi. Faqat o'sha sahifaga
+ * tegishli kesimlar (umumiy ko'rinish, hudud, signal kesimi,
+ * takrorlanish, eksport, AI yordamchisi) olib tashlandi.
+ *
+ * ⚠️ AUDIT BO'LIMI HAM OLIB TASHLANDI — jurnal butunlay
+ * yo'q qilindi (sahifa, API va yozish).
  *
  * ⚠️ BARCHA KESIMLAR AYNI FILTRNI OLADI (`ReportFilters`): server
- * tomonida ham ular bitta `baseWhere()` ustiga quriladi. Filtrni
- * har kesim uchun alohida yuborish ikki tabda ikki xil "jami"
- * ko'rsatishga olib kelardi.
+ * tomonida ham ular bitta `baseWhere()` ustiga quriladi.
  */
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-import { ApiError, api, saveBlob } from "@/shared/api/client";
+import { ApiError, api } from "@/shared/api/client";
 import { queryKeys } from "@/shared/api/query-keys";
 import type {
-  AuditEntry,
   CategoryReportRow,
   DailyPoint,
   DistrictMapResponse,
@@ -21,12 +29,8 @@ import type {
   MapIssue,
   MobileReport,
   Paginated,
-  RecurringReport,
-  ReportOverview,
   Settings,
-  SignalReport,
   SignalSeverity,
-  TerritoryReport,
 } from "@/shared/api/types";
 
 export interface ReportFilters {
@@ -37,20 +41,6 @@ export interface ReportFilters {
   categoryId?: string;
 }
 
-export const useReportOverview = (filters: ReportFilters) =>
-  useQuery({
-    queryKey: queryKeys.reports.overview(filters),
-    queryFn: () => api.get<ReportOverview>("/reports/overview", { ...filters }),
-    placeholderData: (previous) => previous,
-  });
-
-export const useTerritoryReport = (filters: ReportFilters) =>
-  useQuery({
-    queryKey: queryKeys.reports.territory(filters),
-    queryFn: () => api.get<TerritoryReport>("/reports/territory", { ...filters }),
-    placeholderData: (previous) => previous,
-  });
-
 export const useCategoryReport = (filters: ReportFilters) =>
   useQuery({
     queryKey: queryKeys.reports.categories(filters),
@@ -58,21 +48,6 @@ export const useCategoryReport = (filters: ReportFilters) =>
     placeholderData: (previous) => previous,
   });
 
-export const useSignalReport = (filters: ReportFilters) =>
-  useQuery({
-    queryKey: queryKeys.reports.signals(filters),
-    queryFn: () => api.get<SignalReport>("/reports/signals", { ...filters }),
-    placeholderData: (previous) => previous,
-  });
-
-/**
- * TUMANLAR XARITASI — uch oqim (muammo, signal, xavfsizlik) tuman
- * kesimida, bitta so'rovda.
- *
- * ⚠️ `placeholderData`: filtr o'zgarganda xarita BO'SHAB KETMAYDI,
- * eski ranglar yangisi kelguncha turadi. Usiz har bosishda butun
- * viloyat oqarib, "ma'lumot yo'qoldi" degan taassurot berardi.
- */
 export const useDistrictMap = (filters: ReportFilters) =>
   useQuery({
     queryKey: queryKeys.reports.districtMap(filters),
@@ -102,75 +77,6 @@ export const useMapReport = (filters: ReportFilters & { status?: string }) =>
     queryFn: () => api.get<MapIssue[]>("/reports/map", { ...filters }),
     placeholderData: (previous) => previous,
   });
-
-/**
- * TIZIMLI MUAMMOLAR — AYNI MFY, AYNI YO'NALISHDA QAYTA-QAYTA.
- *
- * ⚠️ AYNI FILTRNI OLADI (fayl boshidagi qoida): kesim ekrandagi
- * davrga tegishli bo'lishi kerak.
- */
-export const useRecurringReport = (filters: ReportFilters) =>
-  useQuery({
-    queryKey: queryKeys.reports.recurring(filters),
-    queryFn: () => api.get<RecurringReport>("/reports/recurring", { ...filters }),
-    placeholderData: (previous) => previous,
-  });
-
-/**
- * HISOBOTNI EXCEL (XLSX) QILIB YUKLAB OLISH.
- *
- * ⚠️ `useQuery` EMAS, `useMutation`: bu SO'ROV emas, AMAL —
- * natijasi ekranda ko'rsatilmaydi, faylga tushadi. `useQuery`
- * bo'lsa, kesh uni saqlab, ikkinchi bosishda eski faylni
- * qaytarardi.
- *
- * ⚠️ FILTR O'SHA EKRANDAGISI: eksport ekranda ko'rinayotgan
- * raqamlardan BOSHQA narsa bermasligi kerak — aks holda
- * rahbariyat ikkisini solishtirib, qaysi biriga ishonishni
- * bilmasdi.
- */
-export const useExportReport = () =>
-  useMutation({
-    mutationFn: async (input: { kind: string; filters: ReportFilters }) => {
-      const { blob, filename } = await api.download(
-        `/reports/export/${input.kind}`,
-        { ...input.filters },
-      );
-
-      saveBlob(blob, filename);
-    },
-    onSuccess: () => {
-      toast.success("Hisobot yuklab olindi");
-    },
-    onError: (error) => {
-      toast.error(error instanceof ApiError ? error.message : "Yuklab olinmadi");
-    },
-  });
-
-/**
- * HISOBOT YORDAMCHISI — KO'RSATKICH BO'YICHA SAVOL.
- *
- * ⚠️ JAVOB KESHLANMAYDI: u ekranda, savol bergan odamga, bir
- * marta ko'rsatiladi. Keshga qo'yilsa, filtr o'zgargandan keyin
- * ham eski javob turib, BOSHQA davrga tegishli xulosani
- * ko'rsatardi.
- *
- * ⚠️ XATO TOAST QILINMAYDI: javob oynaning ICHIDA ko'rsatiladi
- * (`mutation.error`) — xodim savolini o'sha yerda tuzatib,
- * qaytadan so'raydi. Toast esa yo'qolib ketardi.
- */
-export const useReportAssistant = () =>
-  useMutation({
-    mutationFn: (input: { question: string; filters: ReportFilters }) =>
-      api.post<{ answer: string; context: Record<string, unknown> }>(
-        "/reports/assistant",
-        { question: input.question, ...input.filters },
-      ),
-  });
-
-// ═══════════════════════════════════════════════════════════════════
-//  SOZLAMALAR
-// ═══════════════════════════════════════════════════════════════════
 
 export const useSettings = () =>
   useQuery({
@@ -235,22 +141,3 @@ export const useSaveSettings = () => {
     },
   });
 };
-
-// ═══════════════════════════════════════════════════════════════════
-//  AUDIT
-// ═══════════════════════════════════════════════════════════════════
-
-export interface AuditFilters {
-  action?: string;
-  userId?: string;
-  entity?: string;
-  page?: number;
-  limit?: number;
-}
-
-export const useAudit = (filters: AuditFilters) =>
-  useQuery({
-    queryKey: queryKeys.audit.list(filters),
-    queryFn: () => api.get<Paginated<AuditEntry>>("/audit", { ...filters }),
-    placeholderData: (previous) => previous,
-  });

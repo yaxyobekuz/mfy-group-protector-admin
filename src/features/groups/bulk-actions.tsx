@@ -4,10 +4,9 @@
  * OMMAVIY AMALLAR — kuzatuv va qalqonni BIR VAQTDA ko'p guruhga.
  *
  * ⚠️ NIMA UCHUN KERAK: guruhlar o'nlab va ularni bitta-bitta yoqish
- * har guruhga bitta so'rov va bitta audit yozuvi demakdi — ya'ni
+ * har guruhga bitta so'rov demakdi — ya'ni
  * jurnal 40 qator bir xil yozuv bilan to'lardi va o'qib
- * bo'lmasdi (`audit.service.ts`: "hamma narsani yozish").
- * Ommaviy amal bitta so'rov yuboradi va auditga BITTA yozuv
+ * bo'lmasdi. Ommaviy amal bitta so'rov yuboradi va BITTA natija
  * qoldiradi.
  *
  * ⚠️ QAMROV — EKRANDAGI FILTR, ko'rinib turgan sahifa EMAS. Ro'yxat

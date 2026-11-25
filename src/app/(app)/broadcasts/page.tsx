@@ -343,7 +343,7 @@ export default function BroadcastsPage() {
             broadcasts.data?.items.map((item) => {
               /**
                * ⚠️ TANILMAGAN HOLAT KALIT KO'RINISHIDA CHIQADI: server
-               * yangi holat qo'shsa, panel yiqilmasligi kerak (audit
+               * yangi holat qo'shsa, panel yiqilmasligi kerak (boshqa
                * jurnalidagi ayni yondashuv).
                */
               const status = BROADCAST_STATUS[item.status] ?? {

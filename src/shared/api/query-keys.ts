@@ -108,10 +108,6 @@ export const queryKeys = {
     all: () => ["settings"] as const,
   },
 
-  audit: {
-    list: (params?: QueryParams) => ["audit", "list", params ?? {}] as const,
-  },
-
   citizens: {
     all: () => ["citizens"] as const,
     list: (params?: QueryParams) => ["citizens", "list", params ?? {}] as const,

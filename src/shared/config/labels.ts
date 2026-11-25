@@ -171,66 +171,6 @@ export const SCOPE_KIND: Record<ScopeKind, string> = {
   district: "Bitta tuman",
 };
 
-/**
- * AUDIT AMALLARI.
- *
- * ⚠️ TO'LIQ EMAS va bo'lishi shart emas: tanilmagan amal KALIT
- * ko'rinishida chiqadi ("signal.attach"). Bu `undefined` dan
- * yaxshi va yangi amal qo'shilganda jurnal darhol ishlaydi.
- */
-export const AUDIT_ACTION: Record<string, string> = {
-  "auth.login": "Tizimga kirdi",
-  "auth.login_failed": "Kirish urinishi muvaffaqiyatsiz",
-  "auth.refresh_reuse": "⚠️ Token qayta ishlatildi — sessiyalar yopildi",
-  "group.official_on": "Guruhni rasmiy deb belgiladi",
-  "group.official_off": "Guruhdan rasmiy belgisini oldi",
-  "group.assign_mahalla": "Guruhga MFY biriktirdi",
-  "group.guard_on": "Xavfsizlik qalqonini yoqdi",
-  "group.guard_off": "Xavfsizlik qalqonini o'chirdi",
-  // ⚠️ BU TO'RTTASINI XODIM QILMAYDI — Telegram hodisasi yozadi
-  // (`userId: null`). Jurnalda "Tizim" deb ko'rsatiladi va aynan
-  // shuning uchun ular bor: bot guruhdan chiqarilgani JIMGINA
-  // sodir bo'ladi va panelda guruh shunchaki yo'qolib qolardi.
-  "group.bot_joined": "Bot guruhga qo'shildi",
-  "group.bot_removed": "⚠️ Bot guruhdan chiqarildi — kuzatuv to'xtadi",
-  "group.bot_cannot_delete": "⚠️ Botdan o'chirish huquqi olindi — qalqon ishlamaydi",
-  "group.bot_can_delete": "Botga o'chirish huquqi berildi",
-  "security.false_positive": "Noto'g'ri o'chirishni tuzatdi (havola tiklandi)",
-  "signal.attach": "Signalni muammoga biriktirdi",
-  "signal.dismiss": "Signalni e'tiborsiz qoldirdi",
-  "issue.create": "Muammo yaratdi",
-  "issue.create_bot": "Botdan muammo yubordi",
-  "issue.assign": "Ijrochi belgiladi",
-  "issue.resolve": "Muammoni hal qildi",
-  "issue.reject": "Muammoni rad etdi",
-  "issue.reopen": "Muammoni qayta ochdi",
-  "issue_category.create": "Kategoriya yaratdi",
-  "issue_category.update": "Kategoriyani tahrirladi",
-  "issue_category.deactivate": "Kategoriyani o'chirdi",
-  "territory.district_create": "Tuman qo'shdi",
-  "territory.district_update": "Tumanni tahrirladi",
-  "territory.district_archive": "Tumanni arxivladi",
-  "territory.mahalla_create": "MFY qo'shdi",
-  "territory.mahalla_update": "MFY ni tahrirladi",
-  "territory.mahalla_archive": "MFY ni arxivladi",
-  "user.create": "Admin qo'shdi",
-  "user.update": "Adminni tahrirladi",
-  "user.archive": "Adminni arxivladi",
-  "user.restore": "Adminni qaytardi",
-  "user.reset_password": "Parolni tikladi",
-  "settings.update": "Sozlamalarni o'zgartirdi",
-  "citizen.block": "Fuqaroni bloklladi",
-  "citizen.unblock": "Fuqaro blokini yechdi",
-  "citizen.broadcast": "Fuqarolarga xabar yubordi",
-  "announcement.create": "Yangilik qo'shdi",
-  "announcement.update": "Yangilikni tahrirladi",
-  "announcement.delete": "Yangilikni o'chirdi",
-  "announcement.publish": "Yangilikni e'lon qildi",
-  "announcement.schedule": "Yangilikni rejalashtirdi",
-  "issue.resolve.bulk": "Takroriy murojaatlarni birga yopdi",
-  "issue.reject.bulk": "Takroriy murojaatlarni birga rad etdi",
-};
-
 /** Sanoq so'zi — "12 ta murojaat". */
 export const plural = (count: number, word: string): string => `${count} ta ${word}`;
 
@@ -323,7 +263,7 @@ export const THREAT_ACTION: Record<ThreatAction, LabelDef> = {
  *
  * ⚠️ KALIT `turi:qiymat` SHAKLIDA (`installer_extension:apk`) —
  * qiymat o'zgaruvchan, shuning uchun prefiks bo'yicha mos keladi.
- * Tanilmagan kalit KALIT ko'rinishida chiqadi (audit bilan ayni
+ * Tanilmagan kalit KALIT ko'rinishida chiqadi (boshqa ro'yxatlar bilan ayni
  * yondashuv): bu `undefined` dan yaxshi va yangi qoida qo'shilganda
  * panel darhol ishlayveradi.
  */

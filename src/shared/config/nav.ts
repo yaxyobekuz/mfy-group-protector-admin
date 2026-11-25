@@ -10,7 +10,6 @@
 
 import type { LucideIcon } from "lucide-react";
 import {
-  FileText,
   LayoutDashboard,
   Map as MapIcon,
   MapPin,
@@ -20,7 +19,6 @@ import {
   Send,
   UserCog,
   Radio,
-  ScrollText,
   Settings,
   ShieldAlert,
   Trophy,
@@ -104,7 +102,6 @@ export const NAV_ITEMS: NavItem[] = [
   },
   { href: "/territory", label: "Hudud", icon: MapPin, permission: "territory.view" },
   { href: "/map", label: "Xarita", icon: MapIcon, permission: "reports.view" },
-  { href: "/reports", label: "Hisobotlar", icon: FileText, permission: "reports.view" },
   /**
    * ⚠️ QAMROV — ALOHIDA SAHIFA, "Hisobotlar" ichidagi tab EMAS.
    * Sabab: u BOSHQA savolga javob beradi. Hisobotlar — kelgan
@@ -125,6 +122,5 @@ export const NAV_ITEMS: NavItem[] = [
     permission: "reports.view",
   },
   { href: "/users", label: "Adminlar", icon: Users, permission: "users.view" },
-  { href: "/audit", label: "Audit jurnali", icon: ScrollText, permission: "audit.view" },
   { href: "/settings", label: "Sozlamalar", icon: Settings, permission: "settings.manage" },
 ];

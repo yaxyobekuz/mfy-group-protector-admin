@@ -716,82 +716,6 @@ export interface PermissionCatalog {
 //  HISOBOT
 // ═══════════════════════════════════════════════════════════════════
 
-export interface ReportOverview {
-  total: number;
-  status: Record<IssueStatus, number>;
-  open: number;
-  source: Record<IssueSource, number>;
-  overdue: number;
-  /** Faqat YOPILGANLAR bo'yicha. */
-  avgResolutionHours: number | null;
-  resolutionRate: number | null;
-}
-
-export interface TerritoryReportRow {
-  mahallaId: string | null;
-  mahallaName: string;
-  district: Ref | null;
-  population: number | null;
-  count: number;
-  /** 1000 aholiga — `population` bo'lsa. */
-  per1000: number | null;
-}
-
-export interface TerritoryReportDistrict {
-  id: string;
-  name: string;
-  count: number;
-  /** ⚠️ `null` — aholi soni kiritilmagan (nol emas). */
-  population: number | null;
-  /** 1000 aholiga — `population` bo'lsa. */
-  per1000: number | null;
-  /**
-   * AHOLI QAYERDAN OLINDI.
-   *
-   * ⚠️ MANBA KO'RSATILADI: "MFY lardan" yig'ilgan son to'liq
-   * bo'lmasligi mumkin (bir qismi to'ldirilmagan) va o'shanda
-   * "1000 kishiga" ko'rsatkichi sun'iy ravishda KATTA chiqadi.
-   * Manba yozilmasa, xodim g'alati raqamning sababini topa
-   * olmasdi.
-   */
-  populationSource: "district" | "mahallas" | null;
-}
-
-export interface TerritoryReport {
-  mahallas: TerritoryReportRow[];
-  districts: TerritoryReportDistrict[];
-}
-
-/**
- * TIZIMLI MUAMMO — AYNI MFY, AYNI YO'NALISHDA QAYTA-QAYTA.
- *
- * ⚠️ "Kommunal xizmatlar — 400 ta" degan qator hech narsa
- * aytmaydi: ichimlik suvi bilan issiqlik ta'minoti IKKI BOSHQA
- * tashkilot. Shuning uchun kesim ENG ANIQ yo'nalish bo'yicha.
- */
-export interface RecurringRow {
-  mahallaId: string;
-  mahallaName: string;
-  district: Ref | null;
-  categoryId: string;
-  categoryName: string;
-  /** Ota yo'nalish nomi — "Kommunal xizmatlar → Ichimlik suvi". */
-  parentName: string | null;
-  total: number;
-  /**
-   * ⚠️ HODISA SONI — TAKRORIYLARNI HISOBGA OLMAGANDA: bitta
-   * transformator uzilishi 20 ta murojaat bo'lishi mumkin va
-   * "20 marta muammo bo'ldi" degan xulosa XATO bo'lardi.
-   */
-  incidents: number;
-  duplicates: number;
-  firstAt: string | null;
-  lastAt: string | null;
-  spanDays: number;
-  /** Oyiga o'rtacha hodisa — davrga nisbatan. */
-  perMonth: number;
-}
-
 /**
  * QAMROV — BITTA TUMAN QATORI.
  *
@@ -895,10 +819,6 @@ export interface CoverageReport {
   };
 }
 
-export interface RecurringReport {
-  items: RecurringRow[];
-}
-
 export interface CategoryReportRow {
   categoryId: string;
   name: string;
@@ -917,52 +837,6 @@ export interface CategoryReportRow {
   overdue: number;
 }
 
-/**
- * SIGNALLARNING YO'NALISH KESIMI — "qaysi yo'nalishda muammo ko'p".
- *
- * ⚠️ `CategoryReportRow` DAN ALOHIDA TIP: u MUROJAATLAR (rasmiy
- * fakt) uchun va ustunlari boshqa (`overdue` — muddat). Signal
- * taxmin, unda muddat YO'Q, o'rniga `attachRate` bor. Ikkisini
- * bitta tipga siqish "signal — muammo emas" doktrinasini kodda
- * yo'qotardi.
- */
-export interface SignalCategoryRow {
-  /** ⚠️ `null` — AI yo'nalishni aniqlay olmagan qator. */
-  categoryId: string | null;
-  name: string;
-  parentName: string | null;
-  color: string | null;
-  icon: string | null;
-
-  total: number;
-  /** Hali ko'rilmaganlari. */
-  new: number;
-  /** Muammoga aylantirilganlari — AI TO'G'RI topgani. */
-  attached: number;
-  /** "Muammo emas" deb yopilganlari — AI YANGLISHGANI. */
-  dismissed: number;
-  /** Yuqori jiddiylikdagilari. */
-  high: number;
-
-  /**
-   * ⚠️ SHU YO'NALISHDAGI ANIQLIK: biriktirilgan / ko'rilgan.
-   * Past qiymat "bu yo'nalishda muammo ko'p" EMAS, "AI shu
-   * yo'nalishda yanglishayapti" degani.
-   */
-  attachRate: number | null;
-}
-
-export interface SignalReport {
-  total: number;
-  status: Record<SignalStatus, number>;
-  kind: Record<SignalKind, number>;
-  severity: Record<SignalSeverity, number>;
-  /** Yo'nalish kesimi — jami bo'yicha kamayish tartibida. */
-  byCategory: SignalCategoryRow[];
-  /** ⚠️ AI ANIQLIGI: biriktirilgan / ko'rilgan. `new` maxrajda emas. */
-  attachRate: number | null;
-}
-
 export interface DailyPoint {
   date: string;
   total: number;
@@ -970,7 +844,7 @@ export interface DailyPoint {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  SOZLAMA VA AUDIT
+//  SOZLAMA
 // ═══════════════════════════════════════════════════════════════════
 
 export interface Settings {
@@ -1196,18 +1070,6 @@ export interface Announcement {
   viewCount: number;
   createdAt: string;
   media: AnnouncementMedia[];
-}
-
-export interface AuditEntry {
-  id: string;
-  action: string;
-  entity: string | null;
-  entityId: string | null;
-  meta: Record<string, unknown> | null;
-  ip: string | null;
-  createdAt: string;
-  userId: string | null;
-  user: (PersonRef & { username: string }) | null;
 }
 
 // ════════════════════════════════════════════════════════════════════
