@@ -811,6 +811,157 @@ export default function ReportsPage() {
               tone={signals.data?.status.new ? "warning" : "default"}
             />
 
+            {/*
+              ══ YO'NALISH KESIMI — BU TABDAGI ENG MUHIM JADVAL ══
+
+              ⚠️ SAVOL: "qaysi yo'nalishda muammo ko'payayapti".
+              Signallar MUAMMODAN OLDIN keladi (aholi guruhda
+              yozadi, rasmiy murojaat esa keyin yoziladi yoki
+              umuman yozilmaydi) — ya'ni bu jadval
+              "Yo'nalishlar" tabidagi murojaat taqsimotining
+              ERTANGI kunini ko'rsatadi.
+
+              ⚠️ DIAGRAMMA EMAS, JADVAL: ustunlarning ma'nosi
+              bir-biridan kelib chiqadi ("jami 40, lekin 35 tasi
+              muammo emas deb yopilgan") va diagramma bu
+              bog'liqlikni ko'rsata olmasdi — faqat eng baland
+              ustunni ko'rsatardi.
+
+              ⚠️ "ANIQLIK" USTUNI AYNI JADVALDA: past qiymat
+              "bu yo'nalishda muammo ko'p" EMAS, "AI shu
+              yo'nalishda yanglishayapti" degani. Ikkisini
+              ajratmasa, hisobot noto'g'ri qarorga olib kelardi
+              — masalan "Kommunalga odam qo'shish" kerakdek
+              ko'rinardi, aslida promptni tuzatish kerak edi.
+            */}
+            <Card className="lg:col-span-3">
+              <CardHeader>
+                <CardTitle className="text-sm">
+                  Signallar — yo&apos;nalishlar bo&apos;yicha
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {(signals.data?.byCategory.length ?? 0) === 0 ? (
+                  <EmptyState title="Ma'lumot yo'q" />
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Yo&apos;nalish</TableHead>
+                        <TableHead className="text-right">Jami</TableHead>
+                        <TableHead className="text-right">
+                          Ko&apos;rilmagan
+                        </TableHead>
+                        <TableHead className="text-right">Yuqori</TableHead>
+                        <TableHead className="text-right">
+                          Muammoga aylandi
+                        </TableHead>
+                        <TableHead className="text-right">Aniqlik</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {signals.data?.byCategory.map((row) => (
+                        <TableRow key={row.categoryId ?? "__none__"}>
+                          <TableCell className="text-sm">
+                            {row.parentName ? (
+                              <p className="text-xs text-muted-foreground">
+                                {row.parentName}
+                              </p>
+                            ) : null}
+
+                            <span className="inline-flex items-center gap-2">
+                              {/*
+                                ⚠️ RANG NUQTASI: yo'nalish
+                                panelda hamma joyda shu rang
+                                bilan ko'rinadi va jadvalda
+                                ham o'sha bog'lanish saqlanadi.
+                                Rang yo'q bo'lsa nuqta ham
+                                chizilmaydi — bo'sh doira
+                                "rangi yo'q" degan ma'nosiz
+                                belgi bo'lardi.
+                              */}
+                              {row.color ? (
+                                <span
+                                  className="size-2 shrink-0 rounded-full"
+                                  style={{ backgroundColor: row.color }}
+                                />
+                              ) : null}
+
+                              {/*
+                                ⚠️ YO'NALISHSIZ QATOR AJRATIB
+                                YOZILADI: u AI nimani aniqlay
+                                olmaganini ko'rsatadi va oddiy
+                                yo'nalish qatori bilan
+                                adashtirilmasligi kerak.
+                              */}
+                              <span
+                                className={
+                                  row.categoryId
+                                    ? undefined
+                                    : "text-muted-foreground italic"
+                                }
+                              >
+                                {row.name}
+                              </span>
+                            </span>
+                          </TableCell>
+
+                          <TableCell className="tabular text-right text-sm font-medium">
+                            {row.total}
+                          </TableCell>
+
+                          <TableCell className="tabular text-right text-sm">
+                            {/*
+                              ⚠️ KO'RILMAGANLARI AJRATILADI: bu
+                              — HOZIR qilinadigan ish. Jami son
+                              esa tarix.
+                            */}
+                            {row.new > 0 ? (
+                              <span className="font-medium text-amber-600 dark:text-amber-400">
+                                {row.new}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">0</span>
+                            )}
+                          </TableCell>
+
+                          <TableCell className="tabular text-right text-sm">
+                            {row.high > 0 ? (
+                              <span className="font-medium text-destructive">
+                                {row.high}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground">0</span>
+                            )}
+                          </TableCell>
+
+                          <TableCell className="tabular text-right text-sm text-muted-foreground">
+                            {row.attached}
+                          </TableCell>
+
+                          <TableCell className="tabular text-right text-sm">
+                            {/*
+                              ⚠️ `null` — "HALI O'LCHANMAGAN",
+                              nol EMAS: bu yo'nalishdagi
+                              signallarni hali hech kim
+                              ko'rmagan. "0%" deb yozilsa, AI
+                              butunlay yanglishgandek
+                              ko'rinardi.
+                            */}
+                            {row.attachRate == null ? (
+                              <span className="text-muted-foreground">—</span>
+                            ) : (
+                              `${row.attachRate}%`
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
             <Card className="lg:col-span-3">
               <CardHeader>
                 <CardTitle className="text-sm">Murojaatlar manbasi</CardTitle>

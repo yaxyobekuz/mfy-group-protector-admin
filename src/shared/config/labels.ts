@@ -38,11 +38,35 @@ export const SIGNAL_KIND: Record<SignalKind, LabelDef> = {
     label: "Taklif",
     className: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300",
   },
+  /**
+   * ⚠️ NAFAQAGA CHIQQAN TOIFA — 2026-11-25 dan AI uni QAYTARMAYDI
+   * (`signal-ai.constants.ts#PRODUCIBLE_KINDS`), eski yozuvlar esa
+   * migratsiyada o'chirildi.
+   *
+   * YORLIQ SHUNDA HAM QOLADI: Prisma enum'ida qiymat bor, ya'ni
+   * API uni nazariy jihatdan qaytarishi mumkin. Olib tashlansa
+   * `SIGNAL_KIND[signal.kind]` `undefined` berib, karta BUTUNLAY
+   * yiqilardi (`kind.label` → xato) — bitta eski yozuv uchun butun
+   * ro'yxat oq ekran bo'lardi.
+   *
+   * ⚠️ FILTR RO'YXATIDA YO'Q: `SIGNAL_KIND_FILTERS` ga qara.
+   */
   question: {
-    label: "Savol",
+    label: "Savol (eskirgan)",
     className: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
   },
 };
+
+/**
+ * FILTRDA KO'RSATILADIGAN TOIFALAR.
+ *
+ * ⚠️ `SIGNAL_KIND` DAN ALOHIDA: yorliqlar ro'yxati HAMMA qiymatni
+ * qoplashi kerak (eski yozuvni chizish uchun), filtr esa faqat
+ * HAQIQATAN uchraydiganini taklif qilishi kerak. "Savol" filtri
+ * qoldirilsa, u har doim bo'sh ro'yxat berib, operatorni "nega
+ * hech narsa yo'q" deb izlashga majbur qilardi.
+ */
+export const SIGNAL_KIND_FILTERS: SignalKind[] = ["complaint", "suggestion"];
 
 export const SIGNAL_SEVERITY: Record<SignalSeverity, LabelDef> = {
   low: {

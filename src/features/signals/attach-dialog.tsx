@@ -75,6 +75,13 @@ export const AttachSignalDialog = ({
    * ⚠️ OYNA OCHILGANDA FORMA TOZALANADI. Usiz oldingi signalning
    * kategoriyasi va sarlavhasi YANGISIDA qolib ketardi — va
    * operator buni sezmay, noto'g'ri kategoriya bilan biriktirardi.
+   *
+   * ⚠️ AI TAXMINI BU YERDA QO'YILMAYDI — pastdagi ALOHIDA effekt
+   * qo'yadi. Sabab: taxminni tekshirish uchun yo'nalishlar
+   * ro'yxati KERAK, u esa so'rov bilan keladi va oyna
+   * ochilganda hali bo'lmasligi mumkin. Ikkisi bitta effektga
+   * qo'shilsa, ro'yxat yangilanganda sarlavha va muhimlik ham
+   * qayta tozalanib, operator yozganini YO'QOTARDI.
    */
   useEffect(() => {
     if (!signal) return;
@@ -83,6 +90,37 @@ export const AttachSignalDialog = ({
     setTitle("");
     setPriority(SUGGESTED_PRIORITY[signal.severity]);
   }, [signal]);
+
+  /**
+   * AI TAXMINI OLDINDAN TANLANADI — lekin QAROR EMAS.
+   *
+   * Operator uni bir bosishda o'zgartiradi. "AI taklif, qaror
+   * emas" doktrinasi (`mobile-ai.service.ts`) shu yerda ham amal
+   * qiladi — farqi shunda, mobil taklifni FUQARO tasdiqlaydi, bu
+   * yerda esa OPERATOR.
+   *
+   * ⚠️ TAXMIN FAOL RO'YXATDA BORLIGI TEKSHIRILADI. Signal
+   * yozilgandan keyin yo'nalish o'chirilgan bo'lishi mumkin
+   * (`isActive: false` — yumshoq o'chirish) va u holda Select
+   * ro'yxatda YO'Q qiymatni ushlab turardi: maydon bo'sh
+   * ko'rinardi, "Yaratish" tugmasi esa YONIB turardi — operator
+   * bosib, o'chirilgan yo'nalishda murojaat yaratardi.
+   *
+   * ⚠️ FUNKSIONAL YANGILASH (`(current) => ...`): yuqoridagi
+   * effekt bilan AYNI commit'da ishlaydi va `categoryId` ni
+   * to'g'ridan-to'g'ri o'qish ESKI qiymatni berardi. Shart
+   * (`current` bo'sh) operator allaqachon tanlagan yo'nalishni
+   * taxmin bilan ALMASHTIRIB qo'yishdan ham saqlaydi.
+   */
+  useEffect(() => {
+    const suggested = signal?.category?.id;
+    if (!suggested || !categories) return;
+
+    const exists = categories.some((category) => category.id === suggested);
+    if (!exists) return;
+
+    setCategoryId((current) => current || suggested);
+  }, [signal, categories]);
 
   if (!signal) return null;
 
@@ -146,6 +184,24 @@ export const AttachSignalDialog = ({
                 </SelectContent>
               </Select>
             )}
+
+            {/*
+              ⚠️ TO'LDIRILGAN MAYDON SABABINI AYTADI: tanlov
+              o'zidan paydo bo'lgandek ko'rinsa, operator unga
+              ishonib, TEKSHIRMASDAN o'tib ketardi. "AI tanladi"
+              degan izoh esa uni bir ko'z tashlashga undaydi —
+              bu AI taxmini, fakt emas.
+
+              ⚠️ FAQAT TANLOV HALI O'ZGARTIRILMAGANDA ko'rinadi:
+              operator boshqasini tanlagach, izoh YOLG'ON bo'lib
+              qolardi.
+            */}
+            {signal.category && categoryId === signal.category.id ? (
+              <p className="text-xs text-muted-foreground">
+                Yo&apos;nalishni AI tanladi — tekshirib, kerak bo&apos;lsa
+                o&apos;zgartiring.
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-1.5">

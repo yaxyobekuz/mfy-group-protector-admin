@@ -414,6 +414,24 @@ export interface Signal {
   summary: string;
   status: SignalStatus;
 
+  /**
+   * AI TAXMIN QILGAN YO'NALISH — `null` BO'LISHI MUMKIN.
+   *
+   * ⚠️ `Issue.category` BILAN BIR XIL EMAS: bu TAXMIN, u esa odam
+   * tasdiqlagan fakt. Biriktirish oynasida taxmin oldindan
+   * tanlangan holda ko'rsatiladi, lekin qarorni ODAM qiladi.
+   *
+   * ⚠️ `null` — "aniqlanmadi", "Boshqa" EMAS. Panel ikkisini
+   * AJRATIB ko'rsatadi.
+   */
+  category: {
+    id: string;
+    name: string;
+    /** Ota yo'nalish — "Kommunal xizmatlar → Ichimlik suvi". */
+    parentName: string | null;
+    color: string | null;
+  } | null;
+
   senderName: string | null;
   sentAt: string | null;
   /** AI nechta xabarni ko'rib shu xulosaga kelgan. */
@@ -453,6 +471,15 @@ export interface AnalysisSummary {
   /** AI yiqilgan guruhlar — keyin qayta ko'riladi. */
   failedGroups: number;
   pending: number;
+  /**
+   * Shovqin filtri to'sgan signallar.
+   *
+   * ⚠️ OPERATORGA KO'RSATILADI: filtr jim ishlasa, u juda qattiq
+   * bo'lib ketganini hech kim sezmasdi.
+   */
+  filtered: number;
+  /** Takror deb avvalgi signalga qo'shilganlar (qamrovi oshdi). */
+  merged: number;
   /** AI o'chirilgan yoki kalit yo'q. */
   skipped: boolean;
 }
@@ -890,11 +917,48 @@ export interface CategoryReportRow {
   overdue: number;
 }
 
+/**
+ * SIGNALLARNING YO'NALISH KESIMI — "qaysi yo'nalishda muammo ko'p".
+ *
+ * ⚠️ `CategoryReportRow` DAN ALOHIDA TIP: u MUROJAATLAR (rasmiy
+ * fakt) uchun va ustunlari boshqa (`overdue` — muddat). Signal
+ * taxmin, unda muddat YO'Q, o'rniga `attachRate` bor. Ikkisini
+ * bitta tipga siqish "signal — muammo emas" doktrinasini kodda
+ * yo'qotardi.
+ */
+export interface SignalCategoryRow {
+  /** ⚠️ `null` — AI yo'nalishni aniqlay olmagan qator. */
+  categoryId: string | null;
+  name: string;
+  parentName: string | null;
+  color: string | null;
+  icon: string | null;
+
+  total: number;
+  /** Hali ko'rilmaganlari. */
+  new: number;
+  /** Muammoga aylantirilganlari — AI TO'G'RI topgani. */
+  attached: number;
+  /** "Muammo emas" deb yopilganlari — AI YANGLISHGANI. */
+  dismissed: number;
+  /** Yuqori jiddiylikdagilari. */
+  high: number;
+
+  /**
+   * ⚠️ SHU YO'NALISHDAGI ANIQLIK: biriktirilgan / ko'rilgan.
+   * Past qiymat "bu yo'nalishda muammo ko'p" EMAS, "AI shu
+   * yo'nalishda yanglishayapti" degani.
+   */
+  attachRate: number | null;
+}
+
 export interface SignalReport {
   total: number;
   status: Record<SignalStatus, number>;
   kind: Record<SignalKind, number>;
   severity: Record<SignalSeverity, number>;
+  /** Yo'nalish kesimi — jami bo'yicha kamayish tartibida. */
+  byCategory: SignalCategoryRow[];
   /** ⚠️ AI ANIQLIGI: biriktirilgan / ko'rilgan. `new` maxrajda emas. */
   attachRate: number | null;
 }

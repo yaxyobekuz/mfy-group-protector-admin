@@ -25,10 +25,16 @@ import {
 } from "@/features/signals/api";
 import { AttachSignalDialog } from "@/features/signals/attach-dialog";
 import { SignalCard } from "@/features/signals/signal-card";
+import { useActiveCategories } from "@/features/issues/api";
 import { useMahallas } from "@/features/territory/api";
 import { ApiError } from "@/shared/api/client";
 import type { Signal, SignalKind, SignalSeverity, SignalStatus } from "@/shared/api/types";
-import { SIGNAL_KIND, SIGNAL_SEVERITY, SIGNAL_STATUS } from "@/shared/config/labels";
+import {
+  SIGNAL_KIND,
+  SIGNAL_KIND_FILTERS,
+  SIGNAL_SEVERITY,
+  SIGNAL_STATUS,
+} from "@/shared/config/labels";
 import { formatRelativeUz } from "@/shared/lib/date";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
@@ -69,6 +75,13 @@ export default function SignalsPage() {
   const counts = useSignalCounts();
   const status = useSignalStatus();
   const mahallas = useMahallas();
+  /**
+   * ⚠️ FAQAT FAOLLARI: AI ham faqat shulardan tanlaydi
+   * (`signals.service.ts#runAnalysis`), ya'ni filtr ro'yxati
+   * tahlil ro'yxati bilan BIR XIL bo'lishi kerak. O'chirilgan
+   * yo'nalish filtrda qolsa, u har doim bo'sh natija berardi.
+   */
+  const categories = useActiveCategories();
 
   const runAnalysis = useRunAnalysis();
   const attach = useAttachSignal();
@@ -184,8 +197,14 @@ export default function SignalsPage() {
         ⚠️ TANLOVLAR SONI USTUNLAR SONIGA TENG: qidiruv o'z qatoriga
         chiqqach, pastdagi qator TEKIS bo'linishi kerak — aks holda
         bitta tanlov yolg'iz qolib, yonida bo'sh joy turardi.
+
+        ⚠️ 4 DAN 5 GA O'TDI — "Yo'nalish" filtri qo'shilgani uchun
+        (2026-11-25). `lg:grid-cols-4` qoldirilsa, beshinchi tanlov
+        ikkinchi qatorda YOLG'IZ qolib, yuqoridagi qoida buzilardi.
+        Yorliqlar qisqa ("Holat", "Turi", "Jiddiylik", "Yo'nalish",
+        "MFY"), ya'ni tor ustunda ham kesilmaydi.
       */}
-      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
         <Input
           className="col-span-full"
           placeholder="Matn bo'yicha izlash..."
@@ -223,9 +242,16 @@ export default function SignalsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value={ALL}>Barcha turlar</SelectItem>
-            {Object.entries(SIGNAL_KIND).map(([value, def]) => (
+            {/*
+              ⚠️ `SIGNAL_KIND` NING HAMMASI EMAS,
+              `SIGNAL_KIND_FILTERS`: "Savol" toifasi nafaqaga
+              chiqqan (AI uni qaytarmaydi) va filtrda qolsa har
+              doim bo'sh ro'yxat berib, operatorni "nega hech
+              narsa yo'q" deb izlashga majbur qilardi.
+            */}
+            {SIGNAL_KIND_FILTERS.map((value) => (
               <SelectItem key={value} value={value}>
-                {def.label}
+                {SIGNAL_KIND[value].label}
               </SelectItem>
             ))}
           </SelectContent>
@@ -245,6 +271,38 @@ export default function SignalsPage() {
             {Object.entries(SIGNAL_SEVERITY).map(([value, def]) => (
               <SelectItem key={value} value={value}>
                 {def.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/*
+          ⚠️ YO'NALISH FILTRI — HISOBOTDAN SHU YERGA O'TISH UCHUN.
+          Hisobotda "Kommunal — 40 signal" ko'rgan operator aynan
+          o'sha 40 tasini ko'rishi kerak; aks holda raqam ishga
+          aylanmay, shunchaki ko'rinish bo'lib qolardi.
+
+          ⚠️ "Aniqlanmagan" ALOHIDA VARIANT EMAS: u server
+          tomonda `categoryId: null` degan SO'ROVNI talab qiladi
+          va `ALL` dan ajratish uchun yana bitta maxsus qiymat
+          kerak bo'lardi. Bu holat hisobotda alohida qator bo'lib
+          ko'rinadi — "AI yo'nalishni aniqlay olmayapti" degan
+          xabar aynan o'sha yerda kerak.
+        */}
+        <Select
+          value={filters.categoryId ?? ALL}
+          onValueChange={(value) =>
+            patch({ categoryId: value === ALL ? undefined : value })
+          }
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Yo'nalish" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Barcha yo&apos;nalishlar</SelectItem>
+            {categories.data?.map((category) => (
+              <SelectItem key={category.id} value={category.id}>
+                {category.name}
               </SelectItem>
             ))}
           </SelectContent>

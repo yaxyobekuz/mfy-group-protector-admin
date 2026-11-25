@@ -29,6 +29,13 @@ export interface SignalFilters {
   status?: SignalStatus;
   kind?: SignalKind;
   severity?: SignalSeverity;
+  /**
+   * ⚠️ AI TAXMIN QILGAN YO'NALISH. Hisobotdagi "Kommunal — 40
+   * signal" raqamidan shu filtrga o'tiladi: raqam ishga
+   * aylanmasa, hisobot shunchaki qiziqarli ko'rinish bo'lib
+   * qolardi.
+   */
+  categoryId?: string;
   districtId?: string;
   mahallaId?: string;
   chatId?: string;
@@ -105,12 +112,18 @@ export const useRunAnalysis = () => {
             // "tekshirib bo'lmadi" — BOSHQA narsa. Jim
             // o'tkazilsa, operator "guruhda gap yo'q" deb
             // o'ylardi.
+            // ⚠️ TO'SILGANLAR AYTILADI: "3 signal" bilan "3 signal,
+            // 40 shovqin to'sildi" — BOSHQA xabar. Jim o'tkazilsa,
+            // filtr juda qattiq bo'lib qolganini hech kim sezmasdi.
             description:
               result.failedGroups > 0
                 ? `${result.failedGroups} guruh tekshirilmadi — keyingi aylanishda qayta ko'riladi`
-                : result.pending > 0
-                  ? `Navbatda yana ${result.pending} xabar bor`
-                  : undefined,
+                : result.filtered > 0 || result.merged > 0
+                  ? `${result.filtered} keraksiz to'sildi, ${result.merged} takror qo'shildi` +
+                    (result.pending > 0 ? ` · navbatda yana ${result.pending} xabar` : "")
+                  : result.pending > 0
+                    ? `Navbatda yana ${result.pending} xabar bor`
+                    : undefined,
           },
         );
       }

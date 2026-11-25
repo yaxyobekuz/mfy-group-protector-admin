@@ -73,6 +73,47 @@ export const SignalCard = ({
           <Badge className={kind.className}>{kind.label}</Badge>
           <Badge className={severity.className}>{severity.label}</Badge>
 
+          {/*
+            ── YO'NALISH (AI TAXMINI) ──────────────────────────────
+
+            ⚠️ YO'NALISH O'Z RANGI BILAN, `Badge` ning tayyor
+            variantlari bilan EMAS: panelda bu yo'nalish hamma
+            joyda (xarita, hisobot, ilova) AYNI rang bilan
+            ko'rinadi va kartada boshqa rang bersa, operator
+            ikkisini bog'lay olmasdi.
+
+            ⚠️ RANG YO'Q BO'LSA — NEYTRAL FON. Yo'nalishga rang
+            tanlanmagan bo'lishi mumkin (`color` — `String?`) va
+            `undefined` uslub yorliqni KO'RINMAS qilardi.
+
+            ⚠️ "ANIQLANMAGAN" HOLATI HAM KO'RSATILADI, jim
+            o'tkazilmaydi: yorliq yo'qligi operatorga "yo'nalish
+            Boshqa" deb o'qilardi. Aniqlanmagani esa ALOHIDA
+            ma'lumot — u biriktirish oynasida qo'lda tanlash
+            kerakligini oldindan aytadi.
+          */}
+          {signal.category ? (
+            <Badge
+              className="border-transparent"
+              style={
+                signal.category.color
+                  ? {
+                      backgroundColor: `${signal.category.color}1a`,
+                      color: signal.category.color,
+                    }
+                  : undefined
+              }
+            >
+              {signal.category.parentName
+                ? `${signal.category.parentName} → ${signal.category.name}`
+                : signal.category.name}
+            </Badge>
+          ) : (
+            <Badge className="bg-muted text-muted-foreground">
+              Yo&apos;nalish aniqlanmagan
+            </Badge>
+          )}
+
           {/* ⚠️ `new` holati KO'RSATILMAYDI: ro'yxat standart holda
               faqat yangilarini ko'rsatadi, ya'ni yorliq hamma
               kartada takrorlanib, shovqin bo'lardi. */}
