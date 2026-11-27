@@ -33,6 +33,20 @@ interface Row {
   color: string | null;
   icon: string | null;
   count: number;
+  /**
+   * MUDDATI O'TGAN VA HALI YOPILMAGANLARI — IXTIYORIY.
+   *
+   * ⚠️ YANGI WIDGET YOZILMADI, SHU KENGAYTIRILDI (CLAUDE.md:
+   * "yangi formatlovchi, yangi yorliq lug'ati yozilmaydi").
+   * Boshqaruv panelining "Asosiy" tabida yo'nalishlar faqat
+   * soni bilan ko'rsatiladi, "Murojaatlar" tabida esa kechikish
+   * bilan — ikki widget bo'lsa, ustun kengligi yoki rang
+   * shkalasi bir joyda o'zgarib, ikkinchisi eskirardi.
+   *
+   * ⚠️ `0` BO'LSA KO'RSATILMAYDI: "kechikish 0" degan rozetka
+   * har qatorda turib, haqiqiy kechikishni ko'rinmas qilardi.
+   */
+  overdue?: number;
 }
 
 export const CategoryBars = ({ rows, limit = 6 }: { rows: Row[]; limit?: number }) => {
@@ -71,6 +85,14 @@ export const CategoryBars = ({ rows, limit = 6 }: { rows: Row[]; limit?: number 
                 <span className="min-w-0 flex-1 truncate text-sm group-hover:text-foreground">
                   {row.name}
                 </span>
+                {/* ⚠️ KECHIKISH SONDAN OLDIN: "400 ta murojaat" degan
+                    raqam yo'nalish yomon ishlayotganini aytmaydi,
+                    "400 tadan 120 tasi muddatdan o'tgan" esa aytadi. */}
+                {row.overdue ? (
+                  <span className="tabular shrink-0 rounded-full bg-destructive/10 px-1.5 text-xs font-semibold text-destructive">
+                    {row.overdue}
+                  </span>
+                ) : null}
                 <span className="tabular shrink-0 text-sm font-semibold">
                   {row.count}
                 </span>

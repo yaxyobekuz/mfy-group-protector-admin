@@ -1,86 +1,143 @@
 "use client";
 
 /**
- * BOSHQARUV PANELI — "hozir nima qilish kerak".
+ * BOSHQARUV PANELI — TO'RT TAB.
  *
- * ⚠️ BU HISOBOT SAHIFASI EMAS. Hisobot "nima bo'ldi" degan savolga
- * javob beradi (`/reports`), bu sahifa esa "hozir nima kutib
- * turibdi": ko'rilmagan signallar, javobsiz murojaatlar,
- * biriktirilmagan guruhlar. Shuning uchun har plitka HAVOLA —
- * operator raqamni ko'rib, darhol ishga kirishishi kerak.
+ * ⚠️ BU HISOBOT SAHIFASI EMAS: panel "hozir nima kutib turibdi"
+ * degan savolga javob beradi — ko'rilmagan signallar, javobsiz
+ * murojaatlar, biriktirilmagan guruhlar. Shuning uchun har plitka
+ * HAVOLA: operator raqamni ko'rib, darhol ishga kirishishi kerak.
  *
- * ── BENTO TO'R ──────────────────────────────────────────────────
+ * ── NIMA UCHUN TABLAR ─────────────────────────────────────────
  *
- * ⚠️ KATAKCHALAR HAR XIL O'LCHAMDA, VA BU MA'NOLI: katakcha
- * o'lchami uning MUHIMLIGINI bildiradi. Hammasi bir xil bo'lsa,
- * operator qaysi biriga avval qarashni bilmasdi — bu esa
- * panelning asosiy vazifasiga zid.
+ * ⚠️ AVVAL HAMMASI BITTA UZUN USTUNDA EDI: signallar, murojaatlar,
+ * kuzatuv, auditoriya, ilova va tumanlar xaritasi — oltita blok
+ * ketma-ket. Ekranga faqat birinchi ikkisi sig'ardi, qolganini
+ * ko'rish uchun uzoq pastga surish kerak edi va xodim ularning
+ * BORLIGINI ham bilmasdi.
  *
- * ⚠️ TARTIB — SHOSHILINCHLIK BO'YICHA, go'zallik bo'yicha emas:
- * (1) e'tibor talab qiladigan raqamlar, (2) dinamika va holat,
- * (3) yo'nalish/hudud kesimi, (4) ilova va kuzatuv. Yuqoridagi
- * qator — "bugun nima qilish kerak", pastdagilar — "ishlar
- * qanday ketyapti".
+ * ⚠️ TABLAR SAHIFANI BO'LADI, MA'LUMOTNI YASHIRMAYDI: eng
+ * shoshilinch raqamlar ("Asosiy") birinchi ekranda to'liq
+ * ko'rinadi, chuqur kesimlar esa o'z tabida — har biri BITTA
+ * savolga javob beradi:
  *
- * ⚠️ DIAGRAMMALARDA RANG YAKKA O'ZI MA'LUMOT TASHIMAYDI: har
- * birida yorliq yoki legenda bor. Sabab `chart-colors.ts` da —
- * ro'yxatning birinchi ikki rangi daltonikda yaqin.
+ *   Asosiy      →  hozir nima qilish kerak (hammasining ustidan)
+ *   Murojaatlar →  rasmiy navbat qanday ketyapti
+ *   Signallar   →  AI guruhlarda nima topdi
+ *   Xarita      →  qayerda nima bo'lyapti
+ *
+ * ⚠️ FAOL TAB O'Z HOOKLARINI O'ZI OLADI: Radix faol bo'lmagan
+ * tabni UMUMAN chizmaydi, ya'ni tab mazmuni alohida komponentda
+ * (`overview-tab.tsx` va boshqalar) bo'lgani uchun uning
+ * so'rovlari ham faqat ochilganda ketadi. Avval sahifa ochilishi
+ * bilan OLTITA so'rov birdan ketardi.
+ *
+ * ⚠️ TAB URL'DA SAQLANADI (`?tab=`): sahifa yangilanganda yoki
+ * havola ulashilganda xodim O'SHA kesimda qoladi. Faqat
+ * `useState` bo'lsa, murojaatni ochib, orqaga qaytgan odam yana
+ * "Asosiy" dan boshlardi.
+ *
+ * ⚠️ RUXSATI YO'Q TAB KO'RSATILMAYDI, lekin himoya SERVERDA:
+ * menyuni yashirish — qulaylik, xavfsizlik emas (`nav.ts` dagi
+ * ayni qoida).
+ *
+ * ⚠️ URL'DAGI NOTANISH YOKI YOPIQ TAB — BIRINCHI OCHIQ TABGA
+ * TUSHADI: aks holda havola bo'sh ekran ochib, u "tizim buzilgan"
+ * dek ko'rinardi.
  */
 
-import {
-  AlertTriangle,
-  ArrowRight,
-  MapPinOff,
-  Megaphone,
-  MessageSquareWarning,
-  MessagesSquare,
-  Radio as RadioIcon,
-  Send,
-  Smartphone,
-  TrendingUp,
-  Users,
-} from "lucide-react";
-import Link from "next/link";
+import { useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { useSession } from "@/entities/session/auth-provider";
-import { useGroupStats } from "@/features/groups/api";
-import { useIssueStats } from "@/features/issues/api";
-import { useSignalCounts, useSignalStatus } from "@/features/signals/api";
-import {
-  useCategoryReport,
-  useDailyReport,
-  useMobileReport,
-} from "@/features/reports/api";
-import { formatPeople } from "@/shared/config/labels";
+import { useSignalStatus } from "@/features/signals/api";
 import { formatRelativeUz } from "@/shared/lib/date";
-import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/states";
-import { StatTile } from "@/widgets/stat-tile/stat-tile";
-import { CategoryBars } from "@/widgets/dashboard/category-bars";
-import { ChartFrame } from "@/widgets/dashboard/chart-frame";
-import { StatusDonut } from "@/widgets/dashboard/status-donut";
-import { TrendChart } from "@/widgets/dashboard/trend-chart";
-import { DistrictMapPanel } from "@/widgets/district-map/district-map-panel";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/tabs";
+import { IssuesTab } from "@/widgets/dashboard/issues-tab";
+import { MapTab } from "@/widgets/dashboard/map-tab";
+import { OverviewTab } from "@/widgets/dashboard/overview-tab";
+import { SignalsTab } from "@/widgets/dashboard/signals-tab";
+
+/**
+ * TABLAR — YAGONA RO'YXAT.
+ *
+ * ⚠️ TARTIB MA'NOLI: "Asosiy" birinchi (u hammasining ustidan
+ * qarash), keyin kundalik ish ("Murojaatlar", "Signallar"), oxirida
+ * tahlil ("Xarita"). Xarita boshiga qo'yilsa, ko'rilmagan
+ * signallar ekrandan pastga tushib ketardi.
+ *
+ * ⚠️ "Asosiy" DA RUXSAT YO'Q: uning ichidagi har blok O'Z
+ * ruxsatini tekshiradi va hech qanday ruxsati yo'q xodim
+ * sahifaning o'ziga ham kira olmaydi (pastdagi `hasAnyAccess`).
+ */
+interface DashboardTab {
+  value: string;
+  label: string;
+  /** Ko'rinishi uchun kerakli ruxsat (`undefined` — hammaga). */
+  permission?: string;
+}
+
+/**
+ * ⚠️ BELGI YO'Q — FAQAT YORLIQ: to'rtta tabning nomi
+ * ("Asosiy", "Murojaatlar", "Signallar", "Xarita") o'zi
+ * yetarlicha aniq va belgi ularga hech narsa qo'shmasdi.
+ * Yon menyuda esa belgi KERAK — u yig'ilganda faqat belgi
+ * qoladi (`app-shell.tsx`), bu yerda esa ro'yxat hech qachon
+ * yig'ilmaydi.
+ */
+const TABS: DashboardTab[] = [
+  { value: "overview", label: "Asosiy" },
+  { value: "issues", label: "Murojaatlar", permission: "issues.view" },
+  { value: "signals", label: "Signallar", permission: "signals.view" },
+  { value: "map", label: "Xarita", permission: "reports.view" },
+];
 
 export default function DashboardPage() {
   const { can, user } = useSession();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const signalCounts = useSignalCounts();
   const signalStatus = useSignalStatus();
-  const issueStats = useIssueStats();
-  const groupStats = useGroupStats();
-  const daily = useDailyReport(14);
-  // ⚠️ `/reports/*` server'da `reports.view` TALAB QILADI: hooklar
-  // faqat shu ruxsat bo'lganda ishga tushadi, aks holda 403 bo'lardi.
-  const mobile = useMobileReport({});
-  const categories = useCategoryReport({});
 
   /**
    * ⚠️ HECH QANDAY RUXSAT BO'LMASA — ANIQ XABAR. Bo'sh ekran
    * ko'rsatilsa, xodim "tizim buzilgan" deb o'ylardi; aslida
    * ma'muriyat unga hali ruxsat bermagan.
    */
-  const hasAnyAccess = can("signals.view") || can("issues.view") || can("groups.view");
+  const hasAnyAccess =
+    can("signals.view") || can("issues.view") || can("groups.view");
+
+  const visible = useMemo(
+    () => TABS.filter((tab) => !tab.permission || can(tab.permission)),
+    [can],
+  );
+
+  const requested = searchParams.get("tab");
+  const active =
+    visible.find((tab) => tab.value === requested)?.value ??
+    visible[0]?.value ??
+    "overview";
+
+  /**
+   * ⚠️ `replace`, `push` EMAS: tab almashtirish — ko'rinish
+   * o'zgarishi, navigatsiya emas. `push` bo'lsa, to'rt tabni
+   * ko'rgan odam "orqaga" tugmasini to'rt marta bosib, shundagina
+   * oldingi sahifaga qaytardi.
+   *
+   * ⚠️ `scroll: false`: tab almashganda sahifa boshiga sakrash
+   * KERAK EMAS — tablist sahifaning yuqorisida va u allaqachon
+   * ko'rinib turadi.
+   */
+  const select = (value: string) => {
+    const next = new URLSearchParams(searchParams.toString());
+    if (value === "overview") next.delete("tab");
+    else next.set("tab", value);
+
+    const query = next.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
 
   if (!hasAnyAccess) {
     return (
@@ -91,14 +148,6 @@ export default function DashboardPage() {
     );
   }
 
-  const totals = daily.data?.reduce(
-    (acc, point) => ({
-      total: acc.total + point.total,
-      resolved: acc.resolved + point.resolved,
-    }),
-    { total: 0, resolved: 0 },
-  );
-
   return (
     <>
       {/*
@@ -108,487 +157,69 @@ export default function DashboardPage() {
         qatorli va ism bilan — boshqa sahifalardagi bir qatorli
         sarlavhadan ataylab farq qiladi, chunki bu "uy" sahifasi.
       */}
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight lg:text-3xl">
-            Xush kelibsiz, {user?.username}
-          </h1>
-          {signalStatus.data?.lastRunAt ? (
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              Oxirgi tahlil: {formatRelativeUz(signalStatus.data.lastRunAt)}
-            </p>
-          ) : null}
-        </div>
-
-        {can("signals.view") ? (
-          <Button asChild>
-            <Link href="/signals">
-              Signallarni ko&apos;rish
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
+      <div className="mb-5">
+        <h1 className="text-2xl font-semibold tracking-tight lg:text-3xl">
+          Xush kelibsiz, {user?.username}
+        </h1>
+        {/*
+          ⚠️ OXIRGI TAHLIL VAQTI SARLAVHA OSTIDA: u BUTUN panelning
+          yoshini aytadi — "signal yo'q" degan raqam tahlil bir
+          soat oldin ishlaganini bilmasa, ma'nosiz.
+        */}
+        {can("signals.view") && signalStatus.data?.lastRunAt ? (
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Oxirgi tahlil: {formatRelativeUz(signalStatus.data.lastRunAt)}
+          </p>
         ) : null}
       </div>
 
-      {/*
-        ── BENTO TO'R ────────────────────────────────────────
+      <Tabs value={active} onValueChange={select}>
+        {/*
+          ⚠️ RO'YXAT SURILADI, SIQILMAYDI: telefonda to'rt tab bir
+          qatorga sig'maydi va siqilsa yorliqlar qirqilib ketardi.
 
-        ⚠️ `auto-rows-min` + `items-start`: katakchalar O'Z
-        mazmuniga qarab balandlik oladi. Standart `stretch`
-        bilan kaltaroq katakcha uzunining balandligiga
-        cho'zilib, ichida katta bo'sh maydon qolardi.
-      */}
-      <div className="grid auto-rows-min items-start gap-4 lg:grid-cols-6">
-        {/* ── 1-QATOR: E'TIBOR TALAB QILADIGANLAR ──────────── */}
-        {can("signals.view") ? (
-          <div className="lg:col-span-3 xl:col-span-2">
-            <StatTile
-              label="Ko'rilmagan signallar"
-              value={signalCounts.data?.new ?? "—"}
-              icon={RadioIcon}
-              /*
-               * ⚠️ AYNAN SHU PLITKA TO'LDIRILGAN: panelning asosiy
-               * ishi — signalni ko'rib chiqish. Boshqasi to'ldirilsa
-               * operator e'tibori ikkinchi darajali raqamga ketardi.
-               */
-              featured
-              hint={
-                signalCounts.data?.highNew
-                  ? `${signalCounts.data.highNew} tasi yuqori jiddiylikda`
-                  : "Tekshirib chiqish kerak"
-              }
-              href="/signals"
-            />
-          </div>
-        ) : null}
-
-        {can("issues.view") ? (
-          <>
-            <div className="lg:col-span-3 xl:col-span-2">
-              <StatTile
-                label="Ochiq murojaatlar"
-                value={issueStats.data?.open ?? "—"}
-                icon={MessageSquareWarning}
-                hint="Yangi va ko'rib chiqilmoqda"
-                href="/issues?status=new"
-              />
-            </div>
-
-            <div className="lg:col-span-3 xl:col-span-1">
-              <StatTile
-                label="Muddati o'tgan"
-                value={issueStats.data?.overdue ?? "—"}
-                icon={AlertTriangle}
-                tone={issueStats.data?.overdue ? "danger" : "default"}
-                hint={issueStats.data?.overdue ? "Kechikkan javob" : "Kechikish yo'q"}
-                href="/issues?overdue=true"
-              />
-            </div>
-          </>
-        ) : null}
-
-        {can("groups.view") ? (
-          <div className="lg:col-span-3 xl:col-span-1">
-            <StatTile
-              label="MFY biriktirilmagan"
-              value={groupStats.data?.unassigned ?? "—"}
-              icon={MapPinOff}
-              tone={groupStats.data?.unassigned ? "warning" : "default"}
-              // ⚠️ IZOH SABABNI AYTADI: biriktirilmagan guruh
-              // kuzatuvga ham qo'yilmaydi va bu "ish qoldi" degani.
-              hint="Biriktirilmasa kuzatuvga qo'yilmaydi"
-              href="/groups?unassigned=true"
-            />
-          </div>
-        ) : null}
-
-        {/* ── 2-QATOR: DINAMIKA (katta) + HOLAT HALQASI ────── */}
-        {can("reports.view") ? (
-          <ChartFrame
-            title="Oxirgi 14 kun"
-            subtitle="Kunlik murojaat oqimi"
-            href="/reports"
-            className="lg:col-span-6 xl:col-span-4"
-          >
-            {/* ⚠️ IKKI YIRIK RAQAM DIAGRAMMA USTIDA: grafik
-                yo'nalishni ko'rsatadi, raqam esa aniq qiymatni —
-                operatorga ikkalasi ham kerak. */}
-            <div className="mb-4 flex flex-wrap gap-8">
-              <Metric label="Jami murojaat" value={totals?.total ?? "—"} />
-              <Metric
-                label="Hal qilingan"
-                value={totals?.resolved ?? "—"}
-                tone="primary"
-              />
-              <Metric
-                label="Hal qilish ulushi"
-                value={
-                  totals && totals.total > 0
-                    ? `${Math.round((totals.resolved / totals.total) * 100)}%`
-                    : "—"
-                }
-              />
-            </div>
-
-            {daily.data && daily.data.length > 0 ? (
-              <TrendChart data={daily.data} />
-            ) : (
-              <p className="py-12 text-center text-sm text-muted-foreground">
-                Hali ma&apos;lumot yo&apos;q
-              </p>
-            )}
-          </ChartFrame>
-        ) : null}
-
-        {can("issues.view") ? (
-          <ChartFrame
-            title="Murojaatlar holati"
-            subtitle="Hozirgi taqsimot"
-            href="/issues"
-            hrefLabel="Ro'yxat"
-            className="lg:col-span-3 xl:col-span-2"
-          >
-            <StatusDonut counts={issueStats.data} />
-
-            {issueStats.data?.unassignedMahalla ? (
-              <Link
-                href="/issues"
-                className="mt-4 block rounded-xl bg-severity-normal/10 px-3.5 py-2.5 text-xs text-severity-normal transition-colors hover:bg-severity-normal/15"
-              >
-                {issueStats.data.unassignedMahalla} ta murojaatda hudud
-                belgilanmagan
-              </Link>
-            ) : null}
-          </ChartFrame>
-        ) : null}
-
-        {/* ── 3-QATOR: YO'NALISHLAR + KUZATUV ──────────────── */}
-        {can("reports.view") ? (
-          <ChartFrame
-            title="Eng ko'p yo'nalishlar"
-            subtitle="Murojaat soni bo'yicha"
-            href="/reports?tab=categories"
-            className="lg:col-span-3 xl:col-span-3"
-          >
-            <CategoryBars
-              rows={(categories.data ?? []).map((row) => ({
-                id: row.categoryId,
-                name: row.name,
-                color: row.color,
-                icon: row.icon,
-                count: row.count,
-              }))}
-            />
-          </ChartFrame>
-        ) : null}
-
-        {can("groups.view") ? (
-          <ChartFrame
-            title="Kuzatuv holati"
-            subtitle="Telegram guruhlari va kanallari"
-            href="/groups"
-            hrefLabel="Guruhlar"
-            className="lg:col-span-3 xl:col-span-3"
-          >
-            <div className="space-y-3">
-              <Row label="Jami chat" value={groupStats.data?.total ?? "—"} />
-              <Row
-                label="Kuzatuvda (rasmiy)"
-                value={groupStats.data?.official ?? "—"}
-              />
-              {/*
-                ⚠️ KANALLAR ALOHIDA QATOR: ularga qalqon tegishli
-                emas (zararli kontentni o'sha kanalning O'Z admini
-                yozadi) va pastdagi "Qalqon yoqilgan" soni ularni
-                UMUMAN hisobga olmaydi. Qator bo'lmasa, "jami 120,
-                qalqon 40" degan farq tushuntirilmagan qolardi.
-
-                ⚠️ NOL BO'LSA KO'RSATILMAYDI: kanali yo'q
-                tashkilotga keraksiz qator.
-              */}
-              {groupStats.data?.channels ? (
-                <Row
-                  label="Kanal"
-                  value={groupStats.data.channels}
-                  hint="Faqat kuzatuv — qalqon tegishli emas"
-                />
-              ) : null}
-              <Row
-                label="Qalqon yoqilgan"
-                value={groupStats.data?.guarded ?? "—"}
-                hint={groupStats.data?.channels ? "Faqat guruhlar" : undefined}
-              />
-              {/*
-                ⚠️ "YOQILGAN, LEKIN ISHLAMAYDI" — ENG XAVFLI HOLAT:
-                ma'muriyat himoya bor deb o'ylaydi, bot esa Telegram
-                ruxsati yo'qligi uchun hech narsa o'chira olmaydi va
-                guruhga ogohlantirish ham YOZMAYDI.
-
-                ⚠️ NOL BO'LSA KO'RSATILMAYDI: panelni doimiy "0"
-                turadigan qizil qator bilan bezash ogohlantirishning
-                ma'nosini yo'qotardi.
-              */}
-              {groupStats.data?.guardBlind ? (
-                <Row
-                  label="Qalqon ishlamayapti"
-                  value={groupStats.data.guardBlind}
-                  hint="Bot admin emas yoki o'chirish huquqi yo'q"
-                />
-              ) : null}
-              <Row
-                label="Navbatdagi xabar"
-                value={groupStats.data?.pendingMessages ?? "—"}
-                // ⚠️ IZOH: navbat uzun bo'lishi NORMAL (tahlil
-                // har 30 daqiqada). Operator buni muammo deb
-                // o'ylab qolmasligi kerak.
-                hint="Keyingi tahlilda ko'riladi"
-              />
-            </div>
-          </ChartFrame>
-        ) : null}
+          ⚠️ `overflow-y-hidden` MAJBURIY, YAKKA `overflow-x-auto`
+          YETMAYDI: CSS da bir o'q `visible` bo'lmay qolsa,
+          ikkinchisi avtomatik `auto` ga aylanadi — natijada
+          ro'yxatning o'ng chetida VERTIKAL scroll paydo bo'lardi
+          (balandlik `h-9` ga qotirilgan, ya'ni mazmun unga bir
+          piksel bilan sig'adi).
+        */}
+        <TabsList className="max-w-full overflow-x-auto overflow-y-hidden">
+          {visible.map((tab) => (
+            <TabsTrigger key={tab.value} value={tab.value}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
         {/*
-          ── 4-QATOR: OBUNACHILAR ───────────────────────────
-
-          ⚠️ SONLAR QO'SHILMAYDI va bu ataylab: guruhdagi odam
-          botga yozmagan bo'lishi mumkin, botga yozgan odam esa
-          hech qaysi MFY guruhida bo'lmasligi mumkin. Qo'shilsa,
-          bir odam IKKI MARTA sanalardi — va bu son hisobotga
-          chiqardi.
-
-          ⚠️ KANAL OBUNACHILARI HAM ALOHIDA, AYNI SABABDAN va u
-          eng kuchli holat: MFY ning guruhi ham, kanali ham bo'lsa,
-          o'sha mahalla aholisi odatda IKKALASIGA a'zo. Qo'shilsa,
-          "auditoriya 2 400 kishi" degan son haqiqiydan ikki
-          barobar katta chiqardi.
-
-          ⚠️ SO'Z HAM BOSHQA: guruhda "a'zo", kanalda "obunachi".
-          Bitta yorliq ostida ko'rsatilsa, xodim ularni bir xil
-          narsa deb o'qirdi.
-
-          ⚠️ "RO'YXATDAN O'TGAN" VA "FAOL" HAM ALOHIDA: botni bir
-          marta ochib tashlab ketgan odam ro'yxatda abadiy qoladi,
-          ya'ni jami son yildan-yilga o'sib, ma'nosini yo'qotadi.
+          ⚠️ HAR TAB O'Z KOMPONENTIDA: shunda faol bo'lmagan tab
+          chizilmaydi va uning so'rovlari ham ketmaydi (yuqoridagi
+          izoh).
         */}
-        {can("groups.view") || can("citizens.view") ? (
-          <ChartFrame
-            title="Obunachilar"
-            subtitle="Guruh, kanal va bot — uchalasi alohida"
-            className="lg:col-span-6"
-          >
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {can("groups.view") ? (
-                <>
-                  {/*
-                    ⚠️ `formatPeople` — YAGONA MANBA: usiz son
-                    "1240" bo'lib chiqardi va uch xonali
-                    guruhlardan ajralmasdi.
-                  */}
-                  <MiniStat
-                    icon={MessagesSquare}
-                    label="Guruh a'zolari"
-                    value={
-                      groupStats.data
-                        ? formatPeople(groupStats.data.groupMembers)
-                        : "—"
-                    }
-                    tone="primary"
-                  />
-                  {/*
-                    ⚠️ KANAL QATORI FAQAT KANAL BO'LSA: kanali yo'q
-                    tashkilotda doimiy "0" turadigan qator
-                    kartani bekorga to'ldirardi.
-                  */}
-                  {groupStats.data?.channels ? (
-                    <MiniStat
-                      icon={Megaphone}
-                      label="Kanal obunachilari"
-                      value={formatPeople(groupStats.data.channelMembers)}
-                      tone="primary"
-                    />
-                  ) : null}
-                  <MiniStat
-                    icon={RadioIcon}
-                    label="Kuzatuvdagi guruh"
-                    value={groupStats.data?.official ?? "—"}
-                  />
-                </>
-              ) : null}
+        <TabsContent value="overview">
+          <OverviewTab />
+        </TabsContent>
 
-              {can("citizens.view") && can("reports.view") ? (
-                <>
-                  <MiniStat
-                    icon={Send}
-                    label="Botda (xabar boradi)"
-                    value={mobile.data?.citizens.telegram ?? "—"}
-                  />
-                  <MiniStat
-                    icon={Users}
-                    label="30 kunda faol"
-                    value={mobile.data?.citizens.recent ?? "—"}
-                  />
-                </>
-              ) : null}
-            </div>
-
-            {can("broadcast.send") ? (
-              <div className="mt-4">
-                <Button variant="outline" size="sm" asChild>
-                  <Link href="/broadcasts">Xabar yuborish</Link>
-                </Button>
-              </div>
-            ) : null}
-          </ChartFrame>
+        {can("issues.view") ? (
+          <TabsContent value="issues">
+            <IssuesTab />
+          </TabsContent>
         ) : null}
 
-        {/* ── 5-QATOR: ILOVADAN KELGAN MUROJAATLAR ─────────── */}
-        {/* ⚠️ `reports.view` KERAK: kartadagi raqamlar
-            `/reports/mobile` dan keladi va u shu ruxsatga ega. */}
-        {can("citizens.view") && can("reports.view") ? (
-          <ChartFrame
-            title="Ilovadan kelgan murojaatlar"
-            subtitle="Fuqaro Mini App"
-            href="/reports?tab=mobile"
-            hrefLabel="Analitika"
-            className="lg:col-span-6"
-          >
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <MiniStat
-                icon={Smartphone}
-                label="Jami (ilova)"
-                value={mobile.data?.total ?? "—"}
-              />
-              <MiniStat
-                icon={MessageSquareWarning}
-                label="Ochiq"
-                value={mobile.data?.open ?? "—"}
-              />
-              <MiniStat
-                icon={Users}
-                label="Faol fuqarolar"
-                value={mobile.data?.citizens.active ?? "—"}
-                tone="primary"
-              />
-              <MiniStat
-                icon={TrendingUp}
-                label="O'rtacha javob"
-                value={
-                  mobile.data?.avgResponseHours != null
-                    ? `${mobile.data.avgResponseHours} soat`
-                    : "—"
-                }
-              />
-            </div>
-
-            <div className="mt-4 flex gap-2">
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/citizens">Fuqarolar</Link>
-              </Button>
-              <Button variant="outline" size="sm" asChild>
-                <Link href="/map">Xarita</Link>
-              </Button>
-            </div>
-          </ChartFrame>
+        {can("signals.view") ? (
+          <TabsContent value="signals">
+            <SignalsTab />
+          </TabsContent>
         ) : null}
-      </div>
 
-      {/*
-        ── TUMANLAR XARITASI ──────────────────────────────────
-
-        ⚠️ BENTO TO'RIDAN TASHQARIDA, TAGIDA: blokning o'z
-        ichki to'ri bor (xarita + yon ustun) va uni 6 ustunli
-        to'r ichiga tiqish ikki qavatli to'r hosil qilardi —
-        tor ekranda xarita siqilib, tumanlar o'qilmay qolardi.
-
-        ⚠️ ENG PASTDA: boshqaruv panelining yuqori qismi "hozir
-        nima qilish kerak" (raqamlar, havolalar), xarita esa
-        "qayerda nima bo'lyapti" — bu TAHLIL, shoshilinch ish
-        emas. Yuqoriga qo'yilsa, ko'rilmagan signallar
-        ekrandan pastga tushib ketardi.
-      */}
-      {can("reports.view") ? (
-        <div className="mt-4">
-          <DistrictMapPanel />
-        </div>
-      ) : null}
+        {can("reports.view") ? (
+          <TabsContent value="map">
+            <MapTab />
+          </TabsContent>
+        ) : null}
+      </Tabs>
     </>
   );
 }
-
-/**
- * YIRIK KO'RSATKICH — karta ichida.
- *
- * ⚠️ `StatTile` DAN FARQI: bu havola emas va o'z kartasi yo'q —
- * u boshqa ko'rsatkichlar bilan BIR kartada turadi.
- */
-const Metric = ({
-  label,
-  value,
-  tone = "default",
-}: {
-  label: string;
-  value: number | string;
-  tone?: "default" | "primary";
-}) => (
-  <div>
-    <p className="mb-1 text-xs text-muted-foreground">{label}</p>
-    <p
-      className={`metric text-3xl font-semibold ${
-        tone === "primary" ? "text-primary" : ""
-      }`}
-    >
-      {value}
-    </p>
-  </div>
-);
-
-/**
- * IXCHAM KO'RSATKICH — belgisi bilan.
- *
- * ⚠️ `Metric` DAN FARQI: bu TO'RTTALIK qatorda turadi va raqami
- * kichikroq. Yirik `Metric` o'lchamida to'rttasi bir qatorga
- * sig'masdi.
- */
-const MiniStat = ({
-  icon: Icon,
-  label,
-  value,
-  tone = "default",
-}: {
-  icon: typeof Smartphone;
-  label: string;
-  value: number | string;
-  tone?: "default" | "primary";
-}) => (
-  <div className="rounded-xl bg-secondary/50 p-3.5">
-    <div className="mb-2 flex items-center gap-2">
-      <Icon className="size-3.5 shrink-0 text-muted-foreground" />
-      <p className="truncate text-xs text-muted-foreground">{label}</p>
-    </div>
-    <p
-      className={`metric text-2xl font-semibold ${
-        tone === "primary" ? "text-primary" : ""
-      }`}
-    >
-      {value}
-    </p>
-  </div>
-);
-
-const Row = ({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: number | string;
-  hint?: string;
-}) => (
-  <div className="flex items-start justify-between gap-2 text-sm">
-    <div>
-      <p>{label}</p>
-      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
-    </div>
-    <p className="tabular font-semibold">{value}</p>
-  </div>
-);

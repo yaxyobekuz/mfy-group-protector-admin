@@ -53,10 +53,18 @@ export const useSecurityEvents = (filters: SecurityFilters) =>
     placeholderData: (previous) => previous,
   });
 
-export const useSecurityStats = () =>
+/**
+ * ⚠️ `enabled` — RUXSATSIZ XODIM UCHUN: boshqaruv paneli
+ * xavfsizlik kesimini ham ko'rsatadi, lekin `security.view` siz
+ * endpoint `403` qaytaradi. Shartsiz chaqirilsa, har kirishda
+ * keraksiz rad etilgan so'rov ketardi va u konsolda xato bo'lib
+ * ko'rinardi — go'yo tizim buzilgandek.
+ */
+export const useSecurityStats = (enabled = true) =>
   useQuery({
     queryKey: queryKeys.security.stats(),
     queryFn: () => api.get<SecurityStats>("/security/stats"),
+    enabled,
   });
 
 /**

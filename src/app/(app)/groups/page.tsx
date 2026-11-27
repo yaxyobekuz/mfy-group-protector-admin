@@ -35,6 +35,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { MapPinOff, Megaphone, Radio, Users } from "lucide-react";
 
 import { useSession } from "@/entities/session/auth-provider";
@@ -83,7 +84,35 @@ const ALL = "__all__";
 export default function GroupsPage() {
   const { can } = useSession();
 
-  const [filters, setFilters] = useState<GroupFilters>({ page: 1, limit: 50 });
+  /**
+   * ⚠️ BOSHLANG'ICH FILTR URL'DAN O'QILADI (`issues` va `signals`
+   * sahifalaridagi AYNI yo'l): boshqaruv panelidagi "MFY
+   * biriktirilmagan", "Kuzatuvda" va "Kanal" sanoqlari
+   * `/groups?unassigned=true` kabi havola beradi. O'qilmasa,
+   * bosilgan raqam to'liq ro'yxatni ochardi — operator esa o'sha
+   * 12 ta chatni 500 qator orasidan O'ZI izlab yurardi.
+   */
+  const searchParams = useSearchParams();
+
+  const [filters, setFilters] = useState<GroupFilters>(() => ({
+    unassigned: searchParams.get("unassigned") === "true" ? true : undefined,
+    // ⚠️ `isOfficial` — UCH HOLAT: `true`, `false` va "farqi yo'q".
+    // Shuning uchun `=== "true"` yetarli emas, qiymat O'QILADI.
+    isOfficial:
+      searchParams.get("official") === "true"
+        ? true
+        : searchParams.get("official") === "false"
+          ? false
+          : undefined,
+    chatType:
+      searchParams.get("chatType") === "channel"
+        ? "channel"
+        : searchParams.get("chatType") === "group"
+          ? "group"
+          : undefined,
+    page: 1,
+    limit: 50,
+  }));
 
   const groups = useGroups(filters);
   const stats = useGroupStats();

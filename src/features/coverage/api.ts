@@ -14,8 +14,10 @@ import { ApiError, api, saveBlob } from "@/shared/api/client";
 import { queryKeys } from "@/shared/api/query-keys";
 import type { CoverageReport, MahallaCoverageGroup } from "@/shared/api/types";
 
-export const useCoverageReport = () =>
+/** ⚠️ `enabled` — `useSecurityStats` dagi ayni sabab. */
+export const useCoverageReport = (enabled = true) =>
   useQuery({
+    enabled,
     queryKey: queryKeys.reports.coverage(),
     queryFn: () => api.get<CoverageReport>("/reports/coverage"),
     /**

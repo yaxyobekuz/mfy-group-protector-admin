@@ -60,10 +60,19 @@ export default function SignalsPage() {
   const searchParams = useSearchParams();
 
   const [filters, setFilters] = useState<SignalFilters>(() => ({
-    // ⚠️ STANDART HOLDA FAQAT `new`: e'tiborsiz qoldirilganlar
-    // o'chirilmaydi (AI xatosini ko'rish uchun), lekin ular ishga
-    // xalaqit bermasligi kerak.
-    status: "new",
+    /**
+     * ⚠️ STANDART HOLDA FAQAT `new`: e'tiborsiz qoldirilganlar
+     * o'chirilmaydi (AI xatosini ko'rish uchun), lekin ular ishga
+     * xalaqit bermasligi kerak.
+     *
+     * ⚠️ URL USTUN: boshqaruv panelining "Signallar" tabidagi
+     * plitkalar `?status=attached` va `?severity=high` havolasini
+     * beradi. O'qilmasa, "Murojaatga aylangan 40" plitkasini
+     * bosgan odam KO'RILMAGANLAR ro'yxatini ochardi — ya'ni
+     * raqam boshqa, ro'yxat boshqa narsani ko'rsatardi.
+     */
+    status: (searchParams.get("status") as SignalStatus | null) ?? "new",
+    severity: (searchParams.get("severity") as SignalSeverity | null) ?? undefined,
     districtId: searchParams.get("districtId") ?? undefined,
     page: 1,
     limit: 25,

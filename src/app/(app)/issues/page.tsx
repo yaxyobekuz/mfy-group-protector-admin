@@ -77,6 +77,15 @@ export default function IssuesPage() {
      * AYNI yo'l).
      */
     suspicious: searchParams.get("suspicious") === "true" ? true : undefined,
+    /**
+     * ⚠️ `duplicates` VA `source` HAM O'QILADI (`suspicious`
+     * bilan AYNI yo'l): boshqaruv panelining "Murojaatlar" tabida
+     * "Takroriy" va "Ilovadan kelganlar" sanoqlari shu
+     * havolalarni beradi. O'qilmasa, bosilgan raqam to'liq
+     * ro'yxatni ochardi — ya'ni plitka YOLG'ON va'da bo'lardi.
+     */
+    duplicates: searchParams.get("duplicates") === "true" ? true : undefined,
+    source: (searchParams.get("source") as IssueSource | null) ?? undefined,
     // ⚠️ `categoryId` HAM O'QILADI: boshqaruv panelidagi
     // "yo'nalishlar" diagrammasi shu havolani beradi va usiz
     // bosilgan ustun to'liq ro'yxatni ochardi.
