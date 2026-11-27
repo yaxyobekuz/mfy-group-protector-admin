@@ -1102,34 +1102,102 @@ export interface MahallaRules {
 //  TARQATMA
 // ════════════════════════════════════════════════════════════════════
 
-export type BroadcastAudience = "citizens" | "groups" | "both";
+/**
+ * ⚠️ `channels` GURUHDAN AJRATILGAN: kanalda e'lon yuzlab odamga
+ * bir xabar bilan yetadi va uni o'chirib bo'lmaydi — operator
+ * "guruhlarga yubordim" deb o'ylab, rasmiy kanallarga ham
+ * tarqatgan bo'lardi.
+ *
+ * ⚠️ `chats` — QAYTA YUBORISH UCHUN: faqat yetib bormaganlariga.
+ */
+export type BroadcastAudience =
+  | "citizens"
+  | "citizens_active"
+  | "groups"
+  | "channels"
+  | "chats"
+  | "both"
+  | "all";
+
 export type BroadcastMode = "text" | "forward" | "copy";
-export type BroadcastStatus = "pending" | "sending" | "done" | "failed";
+
+export type BroadcastStatus =
+  | "draft"
+  | "scheduled"
+  | "pending"
+  | "sending"
+  | "done"
+  | "failed"
+  | "cancelled";
+
+export type BroadcastParseMode = "plain" | "html";
+
+export type BroadcastDelivery = "sent" | "failed" | "blocked";
+
+export type BroadcastTargetKind = "citizen" | "group" | "channel";
+
+/** Inline tugma — faqat havolali. */
+export interface BroadcastButton {
+  text: string;
+  url: string;
+}
 
 export interface Broadcast {
   id: string;
+  title: string | null;
   audience: BroadcastAudience;
   mode: BroadcastMode;
-  /** ⚠️ `null` — uzatilgan xabar (matn serverda saqlanmagan). */
+
   text: string | null;
   status: BroadcastStatus;
+
   total: number;
   sent: number;
   failed: number;
+  /**
+   * ⚠️ `failed` DAN ALOHIDA: "bot bloklangan" — NORMAL hol va u
+   * bilan hech narsa qilib bo'lmaydi, tarmoq xatosi esa qayta
+   * yuborishni talab qiladi.
+   */
+  blocked: number;
+
   error: string | null;
-  /** `panel` yoki `bot` — qaysi yo'ldan yuborilgani. */
   via: string;
+
+  parseMode: BroadcastParseMode;
+  disablePreview: boolean;
+  silent: boolean;
+  pinMessage: boolean;
+  buttons: BroadcastButton[] | null;
+
+  scheduledAt: string | null;
+  cancelledAt: string | null;
+  activeDays: number | null;
+
   createdAt: string;
+  startedAt: string | null;
   finishedAt: string | null;
+
   district: { id: string; name: string } | null;
   mahalla: { id: string; name: string } | null;
   author: PersonRef | null;
 }
 
-/** Yuborishdan OLDIN hisoblangan auditoriya hajmi. */
+/** Yetkazish jurnalining bitta qatori. */
+export interface BroadcastRecipient {
+  id: string;
+  chatId: string;
+  kind: BroadcastTargetKind;
+  status: BroadcastDelivery;
+  error: string | null;
+  title: string | null;
+  createdAt: string;
+}
+
 export interface AudienceSize {
   citizens: number;
   groups: number;
+  channels: number;
   total: number;
 }
 

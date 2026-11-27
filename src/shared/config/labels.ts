@@ -358,14 +358,60 @@ export const URGENCY_LABELS: Record<string, LabelDef> = {
 
 export const AUDIENCE_LABELS: Record<string, string> = {
   citizens: "Bot foydalanuvchilari",
+  citizens_active: "Faol foydalanuvchilar",
   groups: "MFY guruhlari",
+  channels: "MFY kanallari",
+  chats: "Tanlangan chatlar",
   both: "Fuqarolar va guruhlar",
+  all: "Hammaga",
+};
+
+/**
+ * ⚠️ QISQA IZOH — TANLOV YONIDA: "Faol foydalanuvchilar" degan
+ * yorliq o'zi "qanchalik faol?" degan savol tug'diradi va
+ * operator uni taxmin qilib tanlardi.
+ */
+export const AUDIENCE_HINTS: Record<string, string> = {
+  citizens: "Botga yozgan hamma fuqaro",
+  citizens_active: "Oxirgi kunlarda botni ishlatganlar",
+  groups: "Bot a'zo bo'lgan MFY guruhlari",
+  channels: "Bot admin bo'lgan rasmiy kanallar",
+  chats: "Qayta yuborishda avtomatik tanlanadi",
+  both: "Fuqarolar + MFY guruhlari",
+  all: "Fuqarolar + guruhlar + kanallar",
 };
 
 export const BROADCAST_MODE_LABELS: Record<string, string> = {
   text: "Matn",
   forward: "Uzatilgan (manba bilan)",
   copy: "Asl holatda",
+};
+
+/** Yetkazish natijasi — jurnalda. */
+export const DELIVERY_LABELS: Record<string, LabelDef> = {
+  sent: {
+    label: "Yetdi",
+    className: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+  },
+  /**
+   * ⚠️ "XATO" EMAS, "BLOKLAGAN": bu nosozlik emas va operator uni
+   * tuzatishga urinmasligi kerak — odam botni o'zi bloklagan.
+   */
+  blocked: {
+    label: "Bloklagan",
+    className: "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300",
+  },
+  failed: {
+    label: "Yetmadi",
+    className: "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-200",
+  },
+};
+
+/** Manzil turi — jurnalda. */
+export const TARGET_KIND_LABELS: Record<string, string> = {
+  citizen: "Fuqaro",
+  group: "Guruh",
+  channel: "Kanal",
 };
 
 /**
@@ -375,6 +421,28 @@ export const BROADCAST_MODE_LABELS: Record<string, string> = {
  * olib kelardi.
  */
 export const BROADCAST_STATUS: Record<string, LabelDef> = {
+  draft: {
+    label: "Qoralama",
+    className: "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300",
+  },
+  /**
+   * ⚠️ "NAVBATDA" DAN AJRATILGAN: rejalashtirilgan tarqatma hali
+   * BOSHLANMAGAN va uni bekor qilish mumkin — navbatdagisi esa
+   * hozir ketyapti.
+   */
+  scheduled: {
+    label: "Rejalashtirilgan",
+    className: "bg-violet-50 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
+  },
+  /**
+   * ⚠️ "XATO" EMAS: operator uni O'ZI to'xtatgan va bu nosozlik
+   * emas. Bitta rangda ko'rsatilsa, u tizim xatosi bo'lib
+   * ko'rinardi.
+   */
+  cancelled: {
+    label: "To'xtatilgan",
+    className: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+  },
   pending: {
     label: "Navbatda",
     className: "bg-stone-100 text-stone-600 dark:bg-zinc-800 dark:text-zinc-300",
