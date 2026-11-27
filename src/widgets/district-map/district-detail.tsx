@@ -235,7 +235,6 @@ export const DistrictDetail = ({
                 label="Ko'rilmagan"
                 value={row.signalsNew}
                 tone={row.signalsNew > 0 ? "warning" : "default"}
-                hint="Odam qarori kutilmoqda"
               />
               <Metric
                 label="Yuqori jiddiylik"

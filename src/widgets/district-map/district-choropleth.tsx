@@ -114,7 +114,14 @@ const matchRow = (
 };
 
 /** Chiziqli interpolyatsiya ikki hex rang orasida. */
-const mix = (from: string, to: string, t: number): string => {
+/**
+ * ⚠️ `export` QILINDI: boshqaruv panelidagi xarita endi HAQIQIY
+ * geometriyani chizadi (`leaflet-map.tsx`), lekin rang shkalasi
+ * O'ZGARMAY qoldi — ko'rsatkich tanlovining butun ma'nosi o'sha
+ * gradientda. Nusxa olinsa, SVG va Leaflet bir xil ko'rsatkichni
+ * ikki xil rangda chizardi.
+ */
+export const mix = (from: string, to: string, t: number): string => {
   const parse = (hex: string): [number, number, number] => [
     parseInt(hex.slice(1, 3), 16),
     parseInt(hex.slice(3, 5), 16),

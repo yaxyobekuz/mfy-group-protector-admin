@@ -36,8 +36,10 @@
  */
 
 import { useMemo, useState } from "react";
+import { useTheme } from "next-themes";
 import Link from "next/link";
 import {
+  ArrowLeft,
   ArrowRight,
   Filter,
   Info,
@@ -47,7 +49,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-import { useDistrictMap, type ReportFilters } from "@/features/reports/api";
+import { useDistrictMap, useMahallaMap, type ReportFilters } from "@/features/reports/api";
+import { useBoundaries } from "@/features/territory/api";
 import { useAllCategories } from "@/features/issues/api";
 import { ApiError } from "@/shared/api/client";
 import type { DistrictMapRow } from "@/shared/api/types";
@@ -70,21 +73,29 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { ErrorState } from "@/shared/ui/states";
-import {
-  DistrictChoropleth,
-  METRICS,
-  buildLegend,
-  type MapMetric,
-} from "@/widgets/district-map/district-choropleth";
+import { METRICS, type MapMetric } from "@/widgets/district-map/district-choropleth";
+import { MapView } from "@/widgets/issue-map/map-view";
+import { buildTerritoryAreas } from "@/widgets/issue-map/territory-areas";
 import { DistrictDetail } from "@/widgets/district-map/district-detail";
 
 const ALL = "__all__";
+
+/**
+ * ⚠️ MARKAZ VA MASSHTAB `/map` BILAN AYNI: ikki xarita bir xil
+ * hududni ko'rsatadi va boshqa qiymat berilsa, tabdan sahifaga
+ * o'tgan xodim o'zini boshqa joyda deb o'ylardi.
+ *
+ * ⚠️ ZOOM 9, 11 EMAS: bu yerda xarita KARTA ichida va balandligi
+ * `aspect-[1000/546]` bilan cheklangan — 11 da viloyatning yarmi
+ * ko'rinmay qolardi.
+ */
+const CENTER: [number, number] = [40.7821, 72.3442];
+const ZOOM = 9;
 
 export const DistrictMapPanel = () => {
   const [filters, setFilters] = useState<ReportFilters>({});
   const [metricKey, setMetricKey] = useState<MapMetric>("issues");
   const [search, setSearch] = useState("");
-  const [hovered, setHovered] = useState<string | null>(null);
   /** Tanlangan tuman — bazada bor bo'lsa `row`, bo'lmasa faqat nomi. */
   const [selected, setSelected] = useState<{
     row: DistrictMapRow | null;
@@ -93,6 +104,31 @@ export const DistrictMapPanel = () => {
 
   const report = useDistrictMap(filters);
   const categories = useAllCategories();
+
+  /**
+   * ── TUMAN → MFY DRILL-DOWN ────────────────────────────────
+   *
+   * ⚠️ GEOMETRIYA ENDI BAZADAN KELADI, KODDAGI SVG DAN EMAS:
+   * `useBoundaries` tuman chegaralarini, `useMahallaMap` esa MFY
+   * poligonlarini beradi. Ikkisi ham `/map` sahifasida ishlatiladi
+   * va so'rovlar KESHLANGAN (`staleTime`), ya'ni tab almashtirish
+   * ularni qayta yuklamaydi.
+   *
+   * ⚠️ MFY KESIMI FAQAT TUMAN OCHILGANDA SO'RALADI: javobda
+   * poligonlar bor va u og'ir (~1 MB). Viloyat ko'rinishida u
+   * umuman kerak emas.
+   */
+  const boundaries = useBoundaries();
+  const [openDistrict, setOpenDistrict] = useState<string | null>(null);
+  const mahallas = useMahallaMap(openDistrict ? filters : {});
+
+  /**
+   * ⚠️ `resolvedTheme`, `theme` EMAS: foydalanuvchi "tizim"
+   * rejimini tanlasa, `theme` "system" bo'lib qoladi va xarita
+   * har doim oq turardi (`map/page.tsx` dagi ayni sabab).
+   */
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   const metric = METRICS.find((item) => item.key === metricKey) ?? METRICS[0]!;
   const rows = useMemo(() => report.data?.districts ?? [], [report.data]);
@@ -105,7 +141,46 @@ export const DistrictMapPanel = () => {
       .sort((a, b) => b[metric.key] - a[metric.key]);
   }, [rows, metric.key, search]);
 
-  const legend = useMemo(() => buildLegend(rows, metric), [rows, metric]);
+
+  /**
+   * XARITADAGI POLIGONLAR.
+   *
+   * ⚠️ `buildTerritoryAreas` — YAGONA MANBA: `/map` sahifasi ham
+   * shuni chaqiradi. Farq faqat SONDA: u yerda murojaat soni, bu
+   * yerda TANLANGAN KO'RSATKICH.
+   *
+   * ⚠️ TUMAN RANGI KO'RSATKICH GRADIENTIDAN (`mix`): eng
+   * kattasiga nisbatan, `DistrictChoropleth` dagi ayni hisob —
+   * aks holda bir xil ma'lumot ikki sahifada ikki xil rangda
+   * ko'rinardi.
+   *
+   * ⚠️ ICHKI MFY LAR RANGI BERILMAYDI (`color` yo'q): u yerda
+   * xaritaning O'Z shkalasi ishlaydi (murojaat soniga qarab).
+   * Sabab — `/reports/mahalla-map` faqat MUROJAAT sonini beradi:
+   * signal va xavfsizlik hodisasi MFY kesimida UMUMAN yo'q.
+   * Ko'rsatkich gradienti u yerda ishlatilsa, "signallar" rangi
+   * aslida murojaat sonini ko'rsatib, YOLG'ON kesim bo'lardi.
+   */
+  const areas = useMemo(() => {
+    const byId = new Map(rows.map((row) => [row.id, row]));
+    return buildTerritoryAreas({
+      districts: boundaries.data?.districts ?? [],
+      mahallas: mahallas.data ?? [],
+      openDistrict,
+      districtCount: (district) => byId.get(district.id)?.[metric.key] ?? 0,
+      mahallaCount: (item) => item.total,
+      onOpen: (id) => {
+        setOpenDistrict(id);
+        // ⚠️ O'NG USTUN HAM OCHILADI: avvalgi xatti-harakat
+        // saqlanadi — tuman bosilganda uning tafsiloti ko'rinardi.
+        const row = byId.get(id);
+        if (row) setSelected({ row, name: row.name });
+      },
+    });
+  }, [rows, metric, boundaries.data, mahallas.data, openDistrict]);
+
+  /** Ochilgan tumanning nomi — yo'lakchadagi yozuv uchun. */
+  const openDistrictName = rows.find((row) => row.id === openDistrict)?.name ?? null;
 
   /** Viloyat bo'yicha jami — xarita ustidagi plitkalar. */
   const totals = useMemo(() => {
@@ -155,12 +230,13 @@ export const DistrictMapPanel = () => {
         Ikkinchi `h1` sahifa tuzilmasini buzardi — bu yerda `h2`.
       */}
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight">Tumanlar xaritasi</h2>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            Hudud kesimida murojaat, signal va xavfsizlik
-          </p>
-        </div>
+        {/*
+          ⚠️ IZOH QATORI OLIB TASHLANDI: "Hudud kesimida murojaat,
+          signal va xavfsizlik" degan matn ostidagi ko'rsatkich
+          tanlovida AYNI nomlar bilan takrorlanardi — ya'ni u
+          hech narsa qo'shmasdi.
+        */}
+        <h2 className="text-lg font-semibold tracking-tight">Tumanlar xaritasi</h2>
 
         <Button variant="outline" size="sm" asChild>
           <Link href="/map">
@@ -328,16 +404,49 @@ export const DistrictMapPanel = () => {
                 {report.isLoading ? (
                   <div className="aspect-[1000/546] w-full animate-pulse rounded-xl bg-muted" />
                 ) : (
-                  <DistrictChoropleth
-                    rows={rows}
-                    metric={metric}
-                    selectedId={selected?.row?.id ?? null}
-                    hoveredSlug={hovered}
-                    onHover={setHovered}
-                    onSelect={(row, shape) =>
-                      setSelected({ row: row ?? null, name: row?.name ?? shape.name })
-                    }
-                  />
+                  <>
+                    {/*
+                      ⚠️ SXEMATIK SVG O'RNIGA HAQIQIY XARITA
+                      (2026-11-26): mijoz drill-down'ni HAMMA
+                      xaritada so'radi, `DISTRICT_SHAPES` esa qo'lda
+                      ajratilgan SVG yo'llari — unda MFY shakllari
+                      UMUMAN yo'q va ularni qo'shib bo'lmasdi
+                      (viloyat `viewBox` i haqiqiy proyeksiya emas).
+
+                      ⚠️ RANG SHKALASI SAQLANDI (`color` bilan):
+                      ko'rsatkich tanlovining butun ma'nosi o'sha
+                      gradientda — aks holda oltita ko'rsatkich bir
+                      xil ko'rinardi (`leaflet-map.tsx` izohi).
+                    */}
+                    <MapView
+                      center={CENTER}
+                      zoom={ZOOM}
+                      markers={[]}
+                      areas={areas}
+                      province={boundaries.data?.province}
+                      dark={isDark}
+                      className="aspect-[1000/546] w-full overflow-hidden rounded-xl"
+                    />
+
+                    {/*
+                      ⚠️ YO'LAKCHA FAQAT TUMAN OCHILGANDA: viloyat
+                      ko'rinishida qaytadigan joy yo'q.
+                    */}
+                    {openDistrict ? (
+                      <div className="absolute left-2 top-2 z-[400] flex items-center gap-2 rounded-lg bg-card/95 px-2.5 py-1.5 shadow-lift backdrop-blur">
+                        <button
+                          type="button"
+                          onClick={() => setOpenDistrict(null)}
+                          className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                        >
+                          <ArrowLeft className="size-3.5" />
+                          Viloyat
+                        </button>
+                        <span className="text-xs text-muted-foreground">/</span>
+                        <span className="text-xs font-semibold">{openDistrictName}</span>
+                      </div>
+                    ) : null}
+                  </>
                 )}
               </div>
 
@@ -345,37 +454,34 @@ export const DistrictMapPanel = () => {
               <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border pt-3">
                 <span className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                   <Layers className="size-3.5" />
-                  {metric.label}
+                  {/*
+                    ⚠️ DRILL-DOWN DA KO'RSATKICH NOMI O'ZGARADI:
+                    tuman ichida MFY lar MUROJAAT soni bo'yicha
+                    ranglanadi, tanlangan ko'rsatkich bo'yicha emas
+                    (`/reports/mahalla-map` signal va xavfsizlik
+                    kesimini bermaydi). Yorliq o'zgarmasa, xodim
+                    "signallar" degan rangni MFY kesimi deb o'qirdi.
+                  */}
+                  {openDistrict ? `${openDistrictName} — MFY lari` : "Tumanlar"}
                 </span>
 
-                {legend.length > 0 ? (
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* ⚠️ NOL ALOHIDA: shkaladan tashqarida. */}
-                    <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                      <span
-                        className="size-3 rounded ring-1 ring-border"
-                        style={{ backgroundColor: "hsl(var(--dm-zero))" }}
-                      />
-                      0
-                    </span>
-                    {legend.map((step) => (
-                      <span
-                        key={step.to}
-                        className="flex items-center gap-1 text-[11px] text-muted-foreground"
-                      >
-                        <span
-                          className="size-3 rounded ring-1 ring-black/10"
-                          style={{ backgroundColor: step.color }}
-                        />
-                        {step.from === step.to ? step.from : `${step.from}–${step.to}`}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="text-[11px] text-muted-foreground">
-                    Bu kesimda ma&apos;lumot yo&apos;q
-                  </span>
-                )}
+                {/*
+                  ⚠️ RANG SHKALASI LEGENDASI OLIB TASHLANDI: rang
+                  endi KO'RSATKICH emas, hududning O'ZIGA XOSLIGI
+                  (`territory-colors.ts`) va "kam → ko'p" degan
+                  shkala xaritadagi ranglarni tushuntirmay,
+                  chalg'itardi.
+
+                  ⚠️ KO'RSATKICH O'RNIDA QOLADI: tanlangan
+                  kesim yon ustundagi tartiblangan ro'yxatda va
+                  plitkalarda ko'rinadi — ya'ni "qayerda ko'p"
+                  degan savol javobsiz qolmaydi.
+                */}
+                <span className="text-[11px] text-muted-foreground">
+                  {openDistrict
+                    ? "Bosing — son va tafsilot o'ngda"
+                    : `${metric.label} — o'ngdagi ro'yxatda`}
+                </span>
 
                 {missing.length > 0 ? (
                   <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
@@ -430,23 +536,26 @@ export const DistrictMapPanel = () => {
                         const max = ranked[0]![metric.key];
                         return (
                           <li key={row.id}>
+                            {/*
+                              ⚠️ SICHQONCHA OSTIDAGI TUMANNI
+                              YORITISH OLIB TASHLANDI: u sxematik
+                              SVG ning `slug` iga bog'langan edi
+                              (`DISTRICT_SHAPES`), haqiqiy xarita esa
+                              `district.id` bilan ishlaydi. Yarim
+                              ishlaydigan holda qoldirilsa, ro'yxatga
+                              olib borilgan sichqoncha xaritada hech
+                              narsa qilmay, "buzuq" taassurot
+                              qoldirardi.
+                            */}
                             <button
                               type="button"
-                              onMouseEnter={() => {
-                                const shape = DISTRICT_SHAPES.find((item) => {
-                                  const aliases = new Set([
-                                    ...(SHAPE_ALIASES[item.slug] ?? []),
-                                    normalizeName(item.name),
-                                  ]);
-                                  return (
-                                    aliases.has(normalizeName(row.name)) ||
-                                    aliases.has(normalizeName(row.code))
-                                  );
-                                });
-                                setHovered(shape?.slug ?? null);
+                              onClick={() => {
+                                setSelected({ row, name: row.name });
+                                // ⚠️ RO'YXATDAN BOSISH HAM DRILL-DOWN
+                                // OCHADI: xaritada bosish bilan ayni
+                                // natija — ikki yo'l bir xil ishlaydi.
+                                setOpenDistrict(row.id);
                               }}
-                              onMouseLeave={() => setHovered(null)}
-                              onClick={() => setSelected({ row, name: row.name })}
                               className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition hover:bg-secondary"
                             >
                               <span className="metric w-4 shrink-0 text-xs text-muted-foreground">

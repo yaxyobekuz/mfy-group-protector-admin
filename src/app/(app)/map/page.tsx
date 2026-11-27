@@ -25,7 +25,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 
 import { useTheme } from "next-themes";
 
@@ -44,7 +44,11 @@ import {
   SelectValue,
 } from "@/shared/ui/select";
 import { EmptyState } from "@/shared/ui/states";
-import { MapView } from "@/widgets/issue-map/map-view";
+import { MapView, type MapArea } from "@/widgets/issue-map/map-view";
+import {
+  buildTerritoryAreas,
+  visibleTerritoryAreas,
+} from "@/widgets/issue-map/territory-areas";
 import { MapDetailPanel } from "@/features/issues/map-detail-panel";
 
 const ALL = "__all__";
@@ -70,17 +74,29 @@ export default function MapPage() {
    * qolardi — har biri BOSHQA savolga javob beradi:
    *   nuqtalar  — "qayerda NIMA bo'ldi"
    *   issiqlik  — "qayerda KO'P"
-   *   MFY       — "qaysi MAHALLADA ko'p"
-   *   tuman     — "qaysi TUMANDA ko'p"
-   *
-   * ⚠️ TUMAN VA MFY — IKKI BOSHQA SAVOL: viloyatda yuzlab MFY bor
-   * va ularning to'ri uzoqdan qaralganda bir xil rangli uyumga
-   * aylanadi. Tuman kesimi esa 14 ta poligon — "qayerga odam
-   * yuborish kerak" degan savolga BIR QARASHDA javob beradi.
+   *   hudud     — "qaysi TUMANDA ko'p" → "o'sha tumanning qaysi
+   *               MAHALLASIDA ko'p" (drill-down, pastda)
    */
-  const [view, setView] = useState<"points" | "heat" | "areas" | "districts">(
-    "points",
-  );
+  const [view, setView] = useState<"points" | "heat" | "areas">("points");
+
+  /**
+   * DRILL-DOWN: QAYSI TUMAN OCHILGAN.
+   *
+   * ⚠️ AVVAL "Tuman" VA "MFY" IKKI ALOHIDA REJIM EDI va ikkalasi
+   * ham yomon ishlardi: "Tuman" 16 ta poligon ko'rsatib,
+   * "qaysi mahallada" degan savolga javob bermasdi; "MFY" esa
+   * viloyat bo'ylab 900 ta poligonni birdan chizib, uzoqdan
+   * BIR XIL RANGLI UYUMGA aylanardi (CLAUDE.md dagi ogohlantirish).
+   *
+   * Endi ular BITTA "Hudud" rejimi: viloyat ko'rinishida tumanlar,
+   * tuman tanlanganda uning ICHIDAGI MFY lar. Ya'ni savol
+   * ketma-ketligi tabiiy bo'ldi — "qaysi tumanda ko'p" → "o'sha
+   * tumanning qaysi mahallasida".
+   *
+   * ⚠️ `null` — VILOYAT KO'RINISHI. Bo'sh satr emas: tuman id'si
+   * ham satr va ikkisi aralashib ketardi.
+   */
+  const [openDistrict, setOpenDistrict] = useState<string | null>(null);
   /** Bosilgan markerning murojaat id'si — o'ng panel shundan ochiladi. */
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -93,14 +109,24 @@ export default function MapPage() {
     return () => document.body.classList.remove("map-page");
   }, []);
 
-  const points = useMapReport({ status });
+  /**
+   * ⚠️ TANLANGAN TUMAN NUQTALARGA HAM QO'LLANADI: "aktiv tuman,
+   * qolganlari inactive" degani nuqtalar rejimida ham amal qilishi
+   * kerak — aks holda tuman tanlansa, chegara yorishib, nuqtalar
+   * BUTUN viloyat bo'ylab qolaverardi.
+   *
+   * ⚠️ FILTR SERVERDA (`districtId`), mijozda emas: `/reports/map`
+   * javobida nuqtaning tumani YO'Q (faqat yo'nalish va holat), ya'ni
+   * uni mijozda ajratib bo'lmasdi.
+   */
+  const points = useMapReport({ status, districtId: openDistrict ?? undefined });
 
   /**
    * ⚠️ MFY KESIMI FAQAT KERAK BO'LGANDA SO'RALADI: javobda
    * poligonlar bor va u og'ir. Nuqtalar rejimida u umuman kerak
    * emas.
    */
-  const mahallas = useMahallaMap(view === "points" ? {} : { status });
+  const mahallas = useMahallaMap(view === "areas" ? { status } : {});
 
   /**
    * XARITA ROMI — VILOYAT VA TUMAN CHEGARALARI.
@@ -205,22 +231,14 @@ export default function MapPage() {
    * apostrof va "tumani" so'zi har xil yozilishi mumkin, id esa
    * bitta.
    */
-  const areas = useMemo(() => {
-    if (view === "areas") {
-      return (mahallas.data ?? []).map((item) => ({
-        id: item.id,
-        name: item.name,
-        districtName: item.district.name,
-        count: countFor(item, selected),
-        lat: item.lat,
-        lng: item.lng,
-        geoJson: item.geoJson,
-        isApproximate: item.isApproximate,
-      }));
-    }
-
-    if (view !== "districts") return [];
-
+  /**
+   * ⚠️ TUR ANIQ YOZILGAN (`MapArea[]`): massiv ikki boshqa shakldan
+   * yig'iladi (tuman — `selected`/`dimmed` bilan, MFY —
+   * `isApproximate` bilan) va tursiz TypeScript ularning
+   * BIRLASHMASINI chiqarib, har maydonga murojaatni xato deb
+   * belgilardi.
+   */
+  const areas = useMemo<MapArea[]>(() => {
     const counts = new Map<string, number>();
 
     for (const item of mahallas.data ?? []) {
@@ -229,22 +247,45 @@ export default function MapPage() {
     }
 
     /**
+     * ⚠️ POLIGONLARNI `buildTerritoryAreas` YIG'ADI — YAGONA
+     * MANBA: boshqaruv panelidagi "Xarita" tabi AYNI xatti-harakatni
+     * talab qiladi va nusxa olinsa, bittasida qoida o'zgarib
+     * ikkinchisi eskirardi.
+     *
      * ⚠️ CHEGARASI BOR TUMANLARGINA: chegarasizini doira qilib
      * chizish mumkin emas — tumanning markazi reyestrda yo'q va
      * uni murojaatlardan hisoblash butun tuman o'rtasiga emas,
      * eng faol MFY ga tushardi.
      */
-    return (boundaries.data?.districts ?? []).map((district) => ({
-      id: district.id,
-      name: district.name,
-      // ⚠️ Tuman kesimida ustki daraja — viloyatning o'zi.
-      districtName: "",
-      count: counts.get(district.id) ?? 0,
-      lat: null,
-      lng: null,
-      geoJson: district.geoJson,
-    }));
-  }, [view, mahallas.data, selected, boundaries.data]);
+    return buildTerritoryAreas({
+      districts: boundaries.data?.districts ?? [],
+      mahallas: mahallas.data ?? [],
+      openDistrict,
+      districtCount: (district) => counts.get(district.id) ?? 0,
+      mahallaCount: (item) => countFor(item, selected),
+      onOpen: setOpenDistrict,
+      /**
+       * ⚠️ NUQTA VA ISSIQLIK REJIMIDA HAM TUMANLAR CHIZILADI,
+       * LEKIN YENGIL: mijoz "viloyat turganda tumanlar kesimida
+       * chegara ko'rinsin" deb so'ragan va u faqat "Hudud"
+       * rejimida bor edi — qolgan ikkitasida nuqtalar tayanchsiz,
+       * bo'sh fonda suzib turardi.
+       *
+       * ⚠️ MFY LAR U REJIMLARDA CHIZILMAYDI: tuman tanlansa ham
+       * ichiga 90 ta poligon qo'yish nuqtalarni butunlay bosib
+       * qo'yardi (pastdagi `mahallas` so'rovi ham shu sababdan
+       * faqat "Hudud" rejimida so'raladi).
+       */
+      outline: view !== "areas",
+    });
+  }, [view, mahallas.data, selected, boundaries.data, openDistrict]);
+
+  /** Ochilgan tumanning nomi — boshqaruv satridagi yozuv uchun. */
+  const openDistrictName =
+    boundaries.data?.districts.find((item) => item.id === openDistrict)?.name ?? null;
+
+  /** Kesimni tashiydigan poligonlar — sanoq va bo'sh holat uchun. */
+  const visibleAreas = visibleTerritoryAreas(areas);
 
   if (!can("reports.view")) {
     return (
@@ -340,8 +381,7 @@ export default function MapPage() {
               [
                 ["points", "Nuqtalar"],
                 ["heat", "Issiqlik"],
-                ["districts", "Tuman"],
-                ["areas", "MFY"],
+                ["areas", "Hudud"],
               ] as const
             ).map(([value, label]) => (
               <button
@@ -360,14 +400,49 @@ export default function MapPage() {
             ))}
           </div>
 
+          {/*
+            ⚠️ SANOQ DRILL-DOWN DARAJASIGA QARAB: viloyat
+            ko'rinishida tumanlar, ochilgan tumanda esa uning
+            MFY lari sanaladi. Yagona matn qoldirilsa, tuman
+            ochilganda "16 ta tuman" degan son turib, ekranda
+            MFY lar ko'rinardi.
+          */}
           <span className="px-1 text-sm text-muted-foreground">
-            {view === "areas" || view === "districts"
-              ? `${areas.filter((area) => area.count > 0).length} / ${areas.length} ta ${
-                  view === "areas" ? "MFY" : "tuman"
-                }`
-              : `${markers.length} / ${points.data?.length ?? 0} ta nuqta`}
+            {view !== "areas"
+              ? `${markers.length} / ${points.data?.length ?? 0} ta nuqta`
+              : `${visibleAreas.filter((area) => area.count > 0).length} / ${
+                  visibleAreas.length
+                } ta ${openDistrict === null ? "tuman" : "MFY"}`}
           </span>
         </div>
+
+        {/*
+          ── DRILL-DOWN YO'LAKCHASI ───────────────────────────
+
+          ⚠️ FAQAT TUMAN OCHILGANDA KO'RINADI: viloyat
+          ko'rinishida qaytadigan joy yo'q va doimiy turadigan
+          bo'sh tugma boshqaruv satrini bekorga uzaytirardi.
+
+          ⚠️ ALOHIDA PANEL, REJIM TUGMALARI YONIDA EMAS:
+          "Nuqtalar / Issiqlik / Hudud" — KO'RINISH tanlovi,
+          bu esa qayerdaligingizni aytadi. Bitta qatorga
+          qo'shilsa, ikkisi bir xil og'irlikdagi tanlovdek
+          ko'rinardi.
+        */}
+        {view === "areas" && openDistrict !== null ? (
+          <div className="pe-auto pe-stack flex items-center gap-2 rounded-xl bg-card/95 px-3 py-2 shadow-lift backdrop-blur">
+            <button
+              type="button"
+              onClick={() => setOpenDistrict(null)}
+              className="flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" />
+              Viloyat
+            </button>
+            <span className="text-sm text-muted-foreground">/</span>
+            <span className="text-sm font-semibold">{openDistrictName}</span>
+          </div>
+        ) : null}
       </div>
 
       {/* ── INTERAKTIV LEGENDA — yo'nalish bo'yicha filtr ──────── */}
@@ -441,7 +516,21 @@ export default function MapPage() {
         xabar MFY rejimida chalg'ituvchi bo'lardi — u yerda
         koordinata umuman kerak emas, MFY biriktirilishi yetarli.
       */}
-      {view === "areas" && areas.length > 0 && areas.every((a) => a.count === 0) ? (
+      {/*
+        ⚠️ "CHEGARA YO'Q" VA "MUROJAAT YO'Q" — IKKI BOSHQA HOLAT:
+        birinchisida tuman ochildi-yu, ichi BO'SH chiqadi va
+        operator buni nosozlik deb o'ylardi; ikkinchisida
+        chegaralar chizilgan, lekin hammasida nol.
+      */}
+      {view === "areas" && openDistrict !== null && visibleAreas.length === 0 ? (
+        <div className="pointer-events-none mt-3 flex">
+          <p className="pointer-events-auto rounded-full bg-card/95 px-4 py-2 text-sm text-muted-foreground shadow-md backdrop-blur">
+            Bu tumanning MFY chegaralari hali yuklanmagan
+          </p>
+        </div>
+      ) : view === "areas" &&
+        visibleAreas.length > 0 &&
+        visibleAreas.every((a) => a.count === 0) ? (
         <div className="pointer-events-none mt-3 flex">
           <p className="pointer-events-auto rounded-full bg-card/95 px-4 py-2 text-sm text-muted-foreground shadow-md backdrop-blur">
             Bu kesimda murojaat yo&apos;q
